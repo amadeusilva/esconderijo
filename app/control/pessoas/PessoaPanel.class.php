@@ -43,9 +43,10 @@ class PessoaPanel extends TPage
         $dropdown->addAction('Imprimir', new TAction([$this, 'onPrint'], ['key' => $param['key'], 'static' => '1']), 'far:file-pdf red');
         //$dropdown->addAction( 'Gerar etiqueta', new TAction([$this, 'onGeraEtiqueta'], ['key'=>$param['key'], 'static' => '1']), 'far:envelope purple');
         //$dropdown->addAction('Editar', new TAction([$this, 'onEdit'], ['key' => $param['key']]), 'far:edit blue');
-        $dropdown->addAction('Fechar', new TAction([$this, 'onClose']), 'fa:times red');
 
         $this->form->addHeaderWidget($dropdown);
+
+        $this->form->addHeaderActionLink('Fechar', new TAction([$this, 'onClose']), 'fa:times red');
 
         // vertical box container
         $container = new TVBox;
@@ -116,7 +117,7 @@ class PessoaPanel extends TPage
             //CONTATOS
             $this->lista_contatos = new BootstrapDatagridWrapper(new TDataGrid);
             $this->lista_contatos->style = 'width:100%';
-            //$this->detail_list_contratos->disableDefaultClick();
+            $this->lista_contatos->disableDefaultClick();
 
             $column_tipo_contato_id = $this->lista_contatos->addColumn(new TDataGridColumn('TipoContato->item', 'Tipo', 'left'));
             $column_contato = $this->lista_contatos->addColumn(new TDataGridColumn('contato', 'Contato', 'left'));
@@ -136,6 +137,21 @@ class PessoaPanel extends TPage
                     $div->add('Não');
                     return $div;
                 }
+            });
+
+            $column_contato->setTransformer(function ($value, $object) {
+                if ($value) {
+                    if ($object->tipo_contato_id == 101) {
+                        $value = str_replace([' ', '-', '(', ')'], ['', '', '', ''], $value);
+                        $icon  = "<i class='fab fa-whatsapp' aria-hidden='true'></i>";
+                        return "{$icon} <a target='newwindow' href='https://api.whatsapp.com/send?phone=55{$value}&text=Olá'> {$value} </a>";
+                    } else if ($object->tipo_contato_id == 102) {
+                        $icon  = "<i class='far fa-envelope' aria-hidden='true'></i>";
+                        return "{$icon} <a generator='newwindow' href='mailto:$value'>$value</a>";
+                    }
+                }
+
+                return $value;
             });
 
             $actioneditarcontato = new TDataGridAction(['EddPessoaContato', 'onEdite'], ['id' => '{id}', 'tipo_contato_id' => '{tipo_contato_id}', 'pessoa_id' => $this->pessoa->id]);
@@ -171,11 +187,19 @@ class PessoaPanel extends TPage
             //PARENTES
             $this->lista_parentes = new BootstrapDatagridWrapper(new TDataGrid);
             $this->lista_parentes->style = 'width:100%';
-            //$this->detail_list_contratos->disableDefaultClick();
+            $this->lista_parentes->disableDefaultClick();
 
             $column_parentesco_id = $this->lista_parentes->addColumn(new TDataGridColumn('Parentesco->item', 'Grau', 'left'));
             $column_pessoa_parente_id = $this->lista_parentes->addColumn(new TDataGridColumn('PessoaParente->nome', 'Nome', 'left'));
             $column_obs_parentesco = $this->lista_parentes->addColumn(new TDataGridColumn('obs_parentesco', 'Obs', 'left'));
+
+            $column_pessoa_parente_id->setTransformer(function ($value, $object) {
+                if ($value) {
+                    $icon  = "<i class='far fa-user' aria-hidden='true'></i>"; //fa:user blue
+                    return "{$icon} <a generator='adianti' href='index.php?class=PessoaPanel&method=onView&key=$object->pessoa_parente_id'>$value</a>";
+                }
+                return $value;
+            });
 
             $actionverrelacao = new TDataGridAction(['DadosRelacao', 'onVerRelacao'],   ['id' => '{id}']);
             $actionverpdfrelacao = new TDataGridAction([$this, 'onViewDocImagem'],   ['id' => '{id}']);

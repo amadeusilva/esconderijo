@@ -42,6 +42,7 @@ class DadosParentes extends TPage
         $this->detail_list = new BootstrapDatagridWrapper(new TDataGrid);
         $this->detail_list->style = 'width:100%';
         $this->detail_list->disableDefaultClick();
+        //$this->detail_list->setMutationAction(new TAction([$this, 'onRodapePainel']));
 
         $col_parentesco_id  = new TDataGridColumn('parentesco_id', 'Grau', 'left');
         $col_cpf            = new TDataGridColumn('cpf', 'CPF', 'left');
@@ -103,36 +104,10 @@ class DadosParentes extends TPage
         $panel->addHeaderActionLink('Vincular',  new TAction(['AddParente', 'onClear'], ['register_state' => 'false']), 'fa:plus green');
         $panel->getBody()->style = 'overflow-x:auto';
 
-        $dadosiniciaispf = TSession::getValue('dados_iniciais_pf');
-        $dadosparentespf = TSession::getValue('dados_parentes_pf');
-        $dadosrelacao = TSession::getValue('dados_relacao');
-
-        $ele_ela = '';
-        $filho_filha = 0;
-        $sing_plur = 'filho';
-
-        if ($dadosparentespf) {
-            foreach ($dadosparentespf as $banda) {
-                if ($banda->parentesco_id >= 921 and $banda->parentesco_id <= 926) {
-                    $ele_ela = $banda->popular;
-                } else if ($banda->parentesco_id >= 903 and $banda->parentesco_id <= 904) {
-                    $filho_filha += 1;
-                }
-            }
-
-            if ($filho_filha > 1) {
-                $sing_plur = 'filhos';
-            }
-
-
-            if ($dadosiniciaispf['genero'] == 'M') {
-                $eles = $dadosiniciaispf['popular'] . '</b> & <b>' . $ele_ela;
-            } else {
-                $eles = $ele_ela  . '</b> & <b>' . $dadosiniciaispf['popular'];
-            }
-
-            $panel->addFooter('<b>' . $eles . '</b> - <b>' . $dadosrelacao['tempo'] . ' - <b>' . $filho_filha . '</b> ' . $sing_plur . '!');
-        }
+        $textorodape = self::onRodapePainel();
+        //$label = new TLabel($textorodape, '#62a8ee', 12, 'b');
+        //$label->style = 'text-align:left;border-bottom:1px solid #62a8ee;width:100%';
+        $panel->addFooter($textorodape);
 
         $this->form->addContent([$panel]);
 
@@ -146,6 +121,57 @@ class DadosParentes extends TPage
         $vbox->add(new TXMLBreadCrumb('menu.xml', 'PessoaFisicaDataGrid'));
         $vbox->add($this->form);
         parent::add($vbox);
+    }
+
+    public static function onRodapePainel()
+    {
+
+        try {
+
+            $textorodape = '';
+
+            $dadosiniciaispf = TSession::getValue('dados_iniciais_pf');
+            $dadosparentespf = TSession::getValue('dados_parentes_pf');
+            $dadosrelacao = TSession::getValue('dados_relacao');
+
+            if ($dadosiniciaispf) {
+
+                TTransaction::open('adea');
+
+                //Amadeus & Elane - 16 anos de casados - 2 filhos
+                //Pessoa: Amadeus | Casado com Elane | 1 filho
+
+                $pessoa = 'Dados Relacionais: <b>' . $dadosiniciaispf['popular'] . '</b>';
+                $banda_ele_ela = '';
+                $tempo_relacao = ''; //$dadosrelacao['tempo'];
+                $n_filhos = 0;
+
+                if ($dadosparentespf) {
+                    foreach ($dadosparentespf as $parente) {
+                        if ($parente->parentesco_id >= 921 and $parente->parentesco_id <= 926) {
+                            $banda_ele_ela = ' com <b>' . $parente->popular . '</b>';
+                        } else if ($parente->parentesco_id >= 903 and $parente->parentesco_id <= 904) {
+                            $n_filhos += 1;
+                        }
+                    }
+                }
+
+                $texto_filhos = $n_filhos > 1 ? ', <b>' . $n_filhos . '</b> Filhos' : ', <b>' . $n_filhos . '</b> Filho';
+
+                if ($dadosrelacao) {
+                    $buscaestadocivil = ListaItens::where('id', '=', $dadosiniciaispf['estado_civil_id'])->first()->item;
+                    $tempo_relacao = ', <b>' . $buscaestadocivil . '</b> há <b>' . $dadosrelacao['tempo'] . '</b>';
+                }
+
+                $textorodape = $pessoa . $tempo_relacao . $banda_ele_ela . $texto_filhos . '.';
+
+                TTransaction::close();  // close the transaction
+            }
+
+            return $textorodape;
+        } catch (Exception $e) {
+            new TMessage('error', $e->getMessage());
+        }
     }
 
     public function onEdit()
@@ -262,6 +288,8 @@ class DadosParentes extends TPage
         $objects = TSession::getValue('dados_parentes_pf');
         unset($objects[$key]);
         TSession::setValue('dados_parentes_pf', $objects);
+
+        AdiantiCoreApplication::loadPage('DadosParentes', 'onReload');
 
         $this->onReload();
     }

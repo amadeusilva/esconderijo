@@ -52,17 +52,15 @@ class AddParente extends TWindow
         if (isset($pessoa_painel->id) and !empty($pessoa_painel->id)) {
             try {
                 TTransaction::open('adea');
+
                 $pessoa_parente_painel = PessoaParentesco::where('pessoa_id', '=', $pessoa_painel->id)->load();
 
-                if ($pessoa_painel->genero == 'Masculino') {
-                    $filter->add(new TFilter('id', '!=', 921));
-                    $filter->add(new TFilter('id', '!=', 923));
-                    $filter->add(new TFilter('id', '!=', 925));
-                } else {
-                    $filter->add(new TFilter('id', '!=', 922));
-                    $filter->add(new TFilter('id', '!=', 924));
-                    $filter->add(new TFilter('id', '!=', 926));
-                }
+                $filter->add(new TFilter('id', '!=', 921));
+                $filter->add(new TFilter('id', '!=', 923));
+                $filter->add(new TFilter('id', '!=', 925));
+                $filter->add(new TFilter('id', '!=', 922));
+                $filter->add(new TFilter('id', '!=', 924));
+                $filter->add(new TFilter('id', '!=', 926));
 
                 foreach ($pessoa_parente_painel as $pes_par_pai) {
                     if ($pes_par_pai->parentesco_id == 901 or $pes_par_pai->parentesco_id == 902) {
@@ -354,6 +352,45 @@ class AddParente extends TWindow
                         TForm::sendData('form_PessoaParente', $pf);
                         TButton::enableField('form_PessoaParente', 'inserir');
                     }
+                } else if ($parentesco_id == 903 or $parentesco_id == 904) {
+                    $generopessoa = '';
+
+                    if (isset($pessoa_painel)) {
+                        $pp = PessoaParentesco::where('parentesco_id', '=', $parentesco_id)->where('pessoa_parente_id', '=', $pf->id)->where('pessoa_id', '!=', $pessoa_painel->id)->load();
+                        $generopessoa = $pessoa_painel->genero == 'Masculino' ? 'M' : 'F';
+                    } else {
+                        $pp = PessoaParentesco::where('parentesco_id', '=', $parentesco_id)->where('pessoa_parente_id', '=', $pf->id)->load();
+                        $generopessoa = $pessoa_sessao['genero'];
+                    }
+
+                    if ($pp) {
+                        $buscagrau = ListaItens::where('id', '=', $parentesco_id)->first();
+                        $nome1 = '';
+                        $grau = '';
+                        $item = '';
+                        $nome2 = '';
+                        $tem_pai_mae = 0;
+                        foreach ($pp as $p) {
+                            if ($p->Pessoa->PessoaFisica->genero == $generopessoa) {
+                                $nome1 = $p->PessoaParente->nome;
+                                $grau = $buscagrau->item;
+                                $item = $p->Parentesco->item;
+                                $nome2 = $p->Pessoa->nome;
+                                $tem_pai_mae = 1;
+                            }
+                        }
+                        if ($tem_pai_mae > 0) {
+                            throw new Exception('Você não pode vincular <b>' . $nome1 . '</b> como <b>' . $grau . '</b>!<br>Vínculo EXISTENTE: <b>' . $item . '</b> de <b>' . $nome2 . '</b>. <br> Se acreditar que este vínculo está incorreto, entre em contato com o Administrador do sistema!');
+                        } else {
+                            $pf->dt_nascimento =  TDate::date2br($pf->dt_nascimento);
+                            TForm::sendData('form_PessoaParente', $pf);
+                            TButton::enableField('form_PessoaParente', 'inserir');
+                        }
+                    } else {
+                        $pf->dt_nascimento =  TDate::date2br($pf->dt_nascimento);
+                        TForm::sendData('form_PessoaParente', $pf);
+                        TButton::enableField('form_PessoaParente', 'inserir');
+                    }
                 } else {
                     $pf->dt_nascimento =  TDate::date2br($pf->dt_nascimento);
                     TForm::sendData('form_PessoaParente', $pf);
@@ -392,6 +429,7 @@ class AddParente extends TWindow
             $pfvazia = new stdClass;
             $pfvazia->cpf = '';
             $pfvazia->nome = '';
+            $pfvazia->popular = '';
             $pfvazia->dt_nascimento = '';
             TForm::sendData('form_PessoaParente', $pfvazia);
         }
@@ -415,6 +453,7 @@ class AddParente extends TWindow
             //$pfvazia->parentesco_id = '';
             $pfvazia->cpf = '';
             $pfvazia->nome = '';
+            $pfvazia->popular = '';
             $pfvazia->dt_nascimento = '';
             //TEntry::disableField('form_PessoaParente', 'cpf');
             TForm::sendData('form_PessoaParente', $pfvazia);
@@ -447,6 +486,7 @@ class AddParente extends TWindow
             } else {
                 TEntry::disableField('form_PessoaParente', 'cpf');
                 TEntry::disableField('form_PessoaParente', 'nome');
+                TEntry::disableField('form_PessoaParente', 'popular');
                 TDate::disableField('form_PessoaParente', 'dt_nascimento');
                 TRadioGroup::disableField('form_PessoaParente', 'endereco_id');
             }

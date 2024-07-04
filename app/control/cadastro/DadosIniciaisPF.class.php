@@ -338,10 +338,12 @@ class DadosIniciaisPF extends TPage
 
                 if ($pf) {
                     if ($pf->cpf != $param['cpf_cnpj']) {
-                        throw new Exception('<b>Atenção:</b> A pessoa: <b>' . $pf->nome . ' (' . $novadata->format('d/m/Y') . ')</b>.<br>Registro EXISTENTE em outro CPF. <br> Se acreditar que estes dados estão incorretos, entre em contato com o Administrador do sistema!');
+                        throw new Exception('<b>Atenção!</b> Encontramos a pessoa: <b>' . $pf->nome . ' (' . $novadata->format('d/m/Y') . ')</b> REGISTRADO em outro CPF. Se acreditar que estes dados estão incorretos, entre em contato com o Administrador do sistema!');
+                    } else {
+                        return true;
                     }
                 } else {
-                    return 1;
+                    return true;
                 }
             }
             TTransaction::close();
@@ -349,9 +351,137 @@ class DadosIniciaisPF extends TPage
             new TMessage('error', $e->getMessage());
             $pfvazia = new stdClass;
             $pfvazia->nome = '';
+            $pfvazia->popular = '';
             $pfvazia->dt_nascimento = '';
             $pfvazia->genero = '';
             TForm::sendData('form_pf', $pfvazia);
+        }
+    }
+
+    public function onMudancaEstadoCivilFilhoFilha($data)
+    {
+        $dadosiniciaispf = TSession::getValue('dados_iniciais_pf');
+        $dados_parentes_pf = TSession::getValue('dados_parentes_pf');
+
+        //estado civil: 803-804: convivent / 805-806: ue / 807-808: casad
+        //parentesco: 921-922: espos / 923-924: companheir / 925-926: convivente
+
+        if (TSession::getValue('dados_parentes_pf')) {
+
+            $tem_esposa_esposo = 0;
+            $tem_companheira_companheiro = 0;
+            $tem_convivente = 0;
+            $tem_filho_filha = 0;
+            $nome = '';
+            $cpf_filho_filha = '';
+            $genero = '';
+
+            foreach ($dados_parentes_pf as $d) {
+                if ($d->parentesco_id == 921 or $d->parentesco_id == 922) {
+                    $nome = $d->nome;
+                    $tem_esposa_esposo = $d->parentesco_id;
+                    if ($d->parentesco_id == 921) {
+                        $genero = 'Esposo';
+                    } else {
+                        $genero = 'Esposa';
+                    }
+                } else if ($d->parentesco_id == 923 or $d->parentesco_id == 924) {
+                    $nome = $d->nome;
+                    $tem_companheira_companheiro = $d->parentesco_id;
+                    if ($d->parentesco_id == 923) {
+                        $genero = 'Companheiro';
+                    } else {
+                        $genero = 'Companheira';
+                    }
+                } else if ($d->parentesco_id == 925 or $d->parentesco_id == 926) {
+                    $nome = $d->nome;
+                    $tem_convivente = $d->parentesco_id;
+                    if ($d->parentesco_id == 925) {
+                        $genero = 'Convivente';
+                    } else {
+                        $genero = 'Convivente';
+                    }
+                } else if ($d->parentesco_id == 903 or $d->parentesco_id == 904) {
+                    $nome = $d->nome;
+                    $cpf_filho_filha = $d->cpf;
+                    $tem_filho_filha = $d->parentesco_id;
+                    if ($d->parentesco_id == 903) {
+                        $genero = 'Filho';
+                    } else {
+                        $genero = 'Filha';
+                    }
+                }
+            }
+
+            if ($tem_esposa_esposo > 0) {
+
+                if ($dadosiniciaispf['estado_civil_id'] == 807 and $tem_esposa_esposo == 922) {
+                    return $this->onFilhoFilha($tem_filho_filha, $cpf_filho_filha, $data, $nome, $genero);
+                } else if ($dadosiniciaispf['estado_civil_id'] == 808 and $tem_esposa_esposo == 921) {
+                    return $this->onFilhoFilha($tem_filho_filha, $cpf_filho_filha, $data, $nome, $genero);
+                } else if ($dadosiniciaispf['estado_civil_id'] == 805 and $tem_companheira_companheiro == 924) {
+                    return $this->onFilhoFilha($tem_filho_filha, $cpf_filho_filha, $data, $nome, $genero);
+                } else if ($dadosiniciaispf['estado_civil_id'] == 806 and $tem_companheira_companheiro == 923) {
+                    return $this->onFilhoFilha($tem_filho_filha, $cpf_filho_filha, $data, $nome, $genero);
+                } else if ($dadosiniciaispf['estado_civil_id'] == 803 and $tem_convivente == 926) {
+                    return $this->onFilhoFilha($tem_filho_filha, $cpf_filho_filha, $data, $nome, $genero);
+                } else if ($dadosiniciaispf['estado_civil_id'] == 804 and $tem_convivente == 925) {
+                    return $this->onFilhoFilha($tem_filho_filha, $cpf_filho_filha, $data, $nome, $genero);
+                } else {
+                    $posAction = new TAction([$this, 'onAvanca3']);
+                    $posAction->setParameter('data', $data);
+
+                    $param['genero'] = '';
+                    $param['estado_civil_id'] = '';
+                    TForm::sendData('form_pf', $param);
+
+                    new TQuestion('Você vinculou <b>' . $nome . '</b> como <b> ' . $genero . '</b>, os vínculos de parentescos são baseados nos 
+                    dados de <b>gênero</b> e <b>estado civil</b>, se prosseguir perderá o vínculo e será necessário inserir novamente, Deseja prosseguir?', $posAction);
+                }
+            } else {
+                return $this->onFilhoFilha($tem_filho_filha, $cpf_filho_filha, $data, $nome, $genero);
+            }
+        } else {
+            return true;
+        }
+    }
+
+    public function onFilhoFilha($tem_filho_filha, $cpf_filho_filha, $data, $nome, $genero)
+    {
+        $dadosiniciaispf = TSession::getValue('dados_iniciais_pf');
+
+        if ($tem_filho_filha > 0) {
+
+            TTransaction::open('adea');
+            $pessoa_vinculada = 0;
+            $pf_filho_filha = ViewPessoaFisica::where('cpf', '=', $cpf_filho_filha)->first();
+            if ($pf_filho_filha) {
+                $tem_vinculo = PessoaParentesco::where('parentesco_id', '=', $tem_filho_filha)->where('pessoa_parente_id', '=', $pf_filho_filha->id)->load();
+                if ($tem_vinculo) {
+                    foreach ($tem_vinculo as $pessoagenero) {
+                        if ($pessoagenero->Pessoa->PessoaFisica->genero == $dadosiniciaispf['genero']) {
+                            $pessoa_vinculada = 1;
+                        }
+                    }
+                }
+            }
+
+            TTransaction::close();
+            if ($pessoa_vinculada == 0) {
+                return true;
+            } else {
+                $posAction = new TAction([$this, 'onAvanca3']);
+                $posAction->setParameter('data', $data);
+
+                $param['genero'] = '';
+                $param['estado_civil_id'] = '';
+                TForm::sendData('form_pf', $param);
+
+                new TQuestion('Você vinculou <b>' . $nome . '</b> como <b> ' . $genero . '</b>, os vínculos de parentescos são baseados nos 
+                dados de <b>gênero</b> e <b>estado civil</b>, se prosseguir perderá o vínculo e será necessário inserir novamente, Deseja prosseguir?', $posAction);
+            }
+        } else {
+            return true;
         }
     }
 
@@ -364,76 +494,10 @@ class DadosIniciaisPF extends TPage
 
             $this->form->validate();
             $data = $this->form->getData();
-            $data->nome = strtoupper($data->nome);
-            $data->popular = ucwords($data->popular);
-            $data->email = strtolower($data->email);
-
-            $dadosiniciaispf = TSession::getValue('dados_iniciais_pf');
-            $dados_parentes_pf = TSession::getValue('dados_parentes_pf');
-
-            //estado civil: 803-804: convivent / 805-806: ue / 807-808: casad
-            //parentesco: 921-922: espos / 923-924: companheir / 925-926: convivente
-
-            if (TSession::getValue('dados_parentes_pf')) {
-
-                $tem_esposa_esposo = 0;
-                $tem_companheira_companheiro = 0;
-                $tem_convivente = 0;
-                $nome = '';
-                $genero = '';
-
-                foreach ($dados_parentes_pf as $d) {
-                    if ($d->parentesco_id == 921 or $d->parentesco_id == 922) {
-                        $nome = $d->nome;
-                        $tem_esposa_esposo = $d->parentesco_id;
-                        if ($d->parentesco_id == 921) {
-                            $genero = 'Esposo';
-                        } else {
-                            $genero = 'Esposa';
-                        }
-                    } else if ($d->parentesco_id == 923 or $d->parentesco_id == 924) {
-                        $nome = $d->nome;
-                        $tem_companheira_companheiro = $d->parentesco_id;
-                        if ($d->parentesco_id == 923) {
-                            $genero = 'Companheiro';
-                        } else {
-                            $genero = 'Companheira';
-                        }
-                    } else if ($d->parentesco_id == 925 or $d->parentesco_id == 926) {
-                        $nome = $d->nome;
-                        $tem_convivente = $d->parentesco_id;
-                        if ($d->parentesco_id == 925) {
-                            $genero = 'Convivente';
-                        } else {
-                            $genero = 'Convivente';
-                        }
-                    }
-                }
-
-                if ($dadosiniciaispf['estado_civil_id'] == 807 and $tem_esposa_esposo == 922) {
-                    $this->onAvanca2($data);
-                } else if ($dadosiniciaispf['estado_civil_id'] == 808 and $tem_esposa_esposo == 921) {
-                    $this->onAvanca2($data);
-                } else if ($dadosiniciaispf['estado_civil_id'] == 805 and $tem_companheira_companheiro == 924) {
-                    $this->onAvanca2($data);
-                } else if ($dadosiniciaispf['estado_civil_id'] == 806 and $tem_companheira_companheiro == 923) {
-                    $this->onAvanca2($data);
-                } else if ($dadosiniciaispf['estado_civil_id'] == 803 and $tem_convivente == 926) {
-                    $this->onAvanca2($data);
-                } else if ($dadosiniciaispf['estado_civil_id'] == 804 and $tem_convivente == 925) {
-                    $this->onAvanca2($data);
-                } else {
-                    $posAction = new TAction([$this, 'onAvanca3']);
-                    $posAction->setParameter('data', $data);
-
-                    $param['estado_civil_id'] = '';
-                    TForm::sendData('form_pf', $param);
-
-                    new TQuestion('Você vinculou <b>' . $nome . '</b> como <b> ' . $genero . '</b>, se prosseguir perderá o vínculo, Deseja prosseguir?', $posAction);
-                }
-            } else {
-                $verificarpessoa = self::verificaNomeDtnascimento((array)$data);
-                if ($verificarpessoa == 1) {
+            $retorno1 = $this->onMudancaEstadoCivilFilhoFilha($data);
+            if ($retorno1 == true) {
+                $retorno2 = self::verificaNomeDtnascimento((array)$data);
+                if ($retorno2 == true) {
                     $this->onAvanca2($data);
                 }
             }
@@ -463,6 +527,8 @@ class DadosIniciaisPF extends TPage
 
         foreach ($dados_parentes_pf as $d) {
             if ($d->parentesco_id >= 921 and $d->parentesco_id <= 926) {
+                $key = $d->cpf;
+            } else if ($d->parentesco_id == 903 or $d->parentesco_id == 904) {
                 $key = $d->cpf;
             }
         }
