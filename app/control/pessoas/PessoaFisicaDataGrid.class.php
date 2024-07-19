@@ -31,8 +31,12 @@ class PessoaFisicaDataGrid extends TPage
         TSession::delValue('dados_parentes_pf');
         TSession::delValue('endereco_pessoa');
         TSession::delValue('dados_relacao');
+        
         TSession::delValue('pessoa_painel');
         TSession::delValue('pessoa_painel_vinculos');
+
+        //atualização cadastral
+        //TSession::delValue('dados_pf_atualizacao_cadastral');
 
         $this->setDatabase('adea');        // defines the database
         $this->setActiveRecord('ViewPessoaFisica');       // defines the active record

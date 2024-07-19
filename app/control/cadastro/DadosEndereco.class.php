@@ -18,6 +18,7 @@ use Adianti\Widget\Form\TEntry;
 class DadosEndereco extends TPage
 {
     use ControleEndereco;
+    use ControlePessoas;
     protected $form; // form
 
     // trait with saveFile, saveFiles, ...
@@ -42,10 +43,8 @@ class DadosEndereco extends TPage
         $this->form->setClientValidation(true);
 
         //dados de endereço
-        $cep                 = new TEntry('cep');
         $cep  = new TDBEntry('cep', 'adea', 'Endereco', 'cep');
         $cep->setMask('99.999-999');
-        $cep->setExitAction(new TAction(array($this, 'onCEPAction')));
 
         $estado_id       = new TDBCombo('estado_id', 'adea', 'Estado', 'id', 'estado', 'estado');
         $estado_id->enableSearch();
@@ -78,6 +77,18 @@ class DadosEndereco extends TPage
         $bairro_id->setSize('100%');
         $n->setSize('100%');
         $ponto_referencia->setSize('100%');
+
+        //$action = new TAction(array($this, 'onCEPAction'));
+        
+        //$action->setParameter('cep', $cep);
+        //$b2 = new TActionLink('completar', $action, 'white', 10, '', 'far:check-square #FEFF00');
+        //$b2->class = 'btn btn-success';
+
+        //$this->form->addAction('Completar Endereço', new TAction(array($this, 'onCompletaCEPclick')), 'far:check-square green');
+
+        $cep->setExitAction(new TAction(array($this, 'onCEPAction')));
+
+        //$cep->setExitAction(new TAction(array($this, 'onCompletaCEPclick')));
 
         $row = $this->form->addFields(
             [new TLabel('CEP'),    $cep],
@@ -147,6 +158,15 @@ class DadosEndereco extends TPage
         $vbox->add(new TXMLBreadCrumb('menu.xml', 'PessoaFisicaDataGrid'));
         $vbox->add($this->form);
         parent::add($vbox);
+    }
+
+    public static function onCompletaCEPclick($data)
+    {
+        if (isset($data['cep']) and !empty($data['cep'])) {
+            TButton::enableField('form_endereco', 'completar');
+        } else {
+            TButton::disableField('form_endereco', 'completar');
+        }
     }
 
     public function onEdit()
@@ -254,26 +274,28 @@ class DadosEndereco extends TPage
             PessoaParentesco::where('pessoa_parente_id', '=', $pessoa->id)->delete();
 
             if (isset($dadosparentespf) and !empty($dadosparentespf)) {
-                foreach ($dadosparentespf as $key => $outroarray) {
-                    $pessoabanco = Pessoa::where('cpf_cnpj', '=', $key)->first();
-                    if ($pessoabanco) {
-                        if ($outroarray->endereco_id == 's') {
-                            $pessoabanco->endereco_id = $dadosiniciaispf['endereco_id'];
+
+                foreach ($dadosparentespf as $key => $parente) {
+
+                    $parente->pessoa_id = $pessoa->id; // passando a pessoa id para o objeto que salvara pessoa parente
+                    // parentesco ja eta nno parente
+
+                    $buscapessoaparente = Pessoa::where('cpf_cnpj', '=', $key)->first();
+
+                    if ($buscapessoaparente) {
+                        if ($parente->endereco_id == 's') {
+                            $buscapessoaparente->endereco_id = $dadosiniciaispf['endereco_id'];
+                            $buscapessoaparente->store();
                         }
 
-                        $pessoaparente = new PessoaParentesco();
-                        $pessoaparente->pessoa_id = $pessoa->id;
-                        $pessoaparente->parentesco_id = $outroarray->parentesco_id;
-                        $pessoaparente->pessoa_parente_id = $pessoabanco->id;
-                        $pessoaparente->store();
-                        $this->onSalvaParenteInverso($dadosiniciaispf['genero'], $pessoa->id, $outroarray->parentesco_id, $pessoabanco->id);
+                        $parente->pessoa_parente_id = $buscapessoaparente->id; // passando a pessoa parente id para o objeto que salvara pessoa parente
                     } else {
                         $pessoanova = new Pessoa();
                         $pessoanova->tipo_pessoa = 1;
-                        $pessoanova->cpf_cnpj = $outroarray->cpf;
-                        $pessoanova->nome = $outroarray->nome;
-                        $pessoanova->popular = $outroarray->popular;
-                        if ($outroarray->endereco_id == 's') {
+                        $pessoanova->cpf_cnpj = $parente->cpf;
+                        $pessoanova->nome = $parente->nome;
+                        $pessoanova->popular = $parente->popular;
+                        if ($parente->endereco_id == 's') {
                             $pessoanova->endereco_id = $dadosiniciaispf['endereco_id'];
                         }
                         $pessoanova->status_pessoa = 21;
@@ -282,22 +304,17 @@ class DadosEndereco extends TPage
                         PessoaFisica::where('pessoa_id', '=', $pessoanova->id)->delete();
                         $pessoafisicanova = new PessoaFisica();
                         $pessoafisicanova->pessoa_id = $pessoanova->id;
-                        $pessoafisicanova->genero = $outroarray->genero;
-
-
-                        $nova_dt_nascimento = DateTime::createFromFormat('d/m/Y', $outroarray->dt_nascimento);
-                        $outroarray->dt_nascimento = $nova_dt_nascimento->format('Y/m/d');
-                        $pessoafisicanova->dt_nascimento = $outroarray->dt_nascimento;
-
+                        $pessoafisicanova->genero = $parente->genero;
+                        $nova_dt_nascimento = DateTime::createFromFormat('d/m/Y', $parente->dt_nascimento);
+                        $parente->dt_nascimento = $nova_dt_nascimento->format('Y/m/d');
+                        $pessoafisicanova->dt_nascimento = $parente->dt_nascimento;
                         $pessoafisicanova->store();
 
-                        $pessoaparente = new PessoaParentesco();
-                        $pessoaparente->pessoa_id = $pessoa->id;
-                        $pessoaparente->parentesco_id = $outroarray->parentesco_id;
-                        $pessoaparente->pessoa_parente_id = $pessoanova->id;
-                        $pessoaparente->store();
-                        $this->onSalvaParenteInverso($dadosiniciaispf['genero'], $pessoa->id, $outroarray->parentesco_id, $pessoanova->id);
+                        $parente->pessoa_parente_id = $pessoanova->id; // passando a pessoa parente id para o objeto que salvara pessoa parente
                     }
+
+                    //Salvando Parentesco
+                    $this->onSalvaParente($parente);
                 }
             }
 
@@ -308,6 +325,25 @@ class DadosEndereco extends TPage
 
                 $buscarelacao1 = PessoaParentesco::where('pessoa_id', '=', $pessoa->id)->where('parentesco_id', '>=', 921)->where('parentesco_id', '<=', 926)->first();
                 $buscarelacao2 = PessoaParentesco::where('pessoa_id', '=', $buscarelacao1->pessoa_parente_id)->where('parentesco_id', '>=', 921)->where('parentesco_id', '<=', 926)->first();
+
+                $pegarfilhos1 = PessoaParentesco::where('pessoa_id', '=', $pessoa->id)->where('parentesco_id', '>=', 903)->where('parentesco_id', '<=', 904)->load();
+                if ($pegarfilhos1) {
+                    foreach ($pegarfilhos1 as $filhos1) {
+                        $filhos1->pessoa_id = $buscarelacao1->pessoa_parente_id;
+                        //Salvando Parentesco
+                        $this->onSalvaParente($filhos1);
+                    }
+                }
+                $pegarfilhos2 = PessoaParentesco::where('pessoa_id', '=', $buscarelacao1->pessoa_parente_id)->where('parentesco_id', '>=', 903)->where('parentesco_id', '<=', 904)->load();
+                if ($pegarfilhos2) {
+                    foreach ($pegarfilhos2 as $filhos2) {
+                        $filhos2->pessoa_id = $buscarelacao1->pessoa_id;
+                        //Salvando Parentesco
+                        $this->onSalvaParente($filhos2);
+                    }
+                }
+
+                $this->onMudaEstadoCivil($buscarelacao1);
 
                 PessoasRelacao::where('relacao_id', '=', $buscarelacao1->id)->delete();
                 PessoasRelacao::where('relacao_id', '=', $buscarelacao2->id)->delete();
@@ -348,75 +384,5 @@ class DadosEndereco extends TPage
         } catch (Exception $e) {
             new TMessage('error', $e->getMessage());
         }
-    }
-
-    /*
-    920 - SOGRA - F
-    919 - SOGRO - M
-    918 - TIA - F
-    917 - TIO - M
-    916 - SOBRINHA - F
-    915 - SOBRINHO - M
-    914 - IRMÃ - F / 913 - IRMÃO - M
-    912 - BISNETA - F
-    911 - BISNETO - M
-    910 - NETA - F
-    909 - NETO - M
-    908 - BISAVÓ - F
-    907 - BISAVÔ - M
-    906 - AVÓ - F
-    905 - AVÔ - M
-*/
-
-    public function onSalvaParenteInverso($pessoaparentegenero, $pessoa_id, $parentesco_id, $pessoa_parente_id)
-    {
-        if ($parentesco_id == 901 or $parentesco_id == 902) { // 902 - MÃE - F / 901 - PAI - M
-            $novoparentesco_id = $pessoaparentegenero == 'M' ? 903 : 904; // 904 - FILHA - F / 903 - FILHO - M
-
-        } else if ($parentesco_id == 903 or $parentesco_id == 904) { // 904 - FILHA - F / 903 - FILHO - M
-            $novoparentesco_id = $pessoaparentegenero == 'M' ? 901 : 902; // 902 - MÃE - F / 901 - PAI - M
-
-            $buscarelacao = PessoaParentesco::where('pessoa_id', '=', $pessoa_id)->where('parentesco_id', '>=', 921)->where('parentesco_id', '<=', 926)->first();
-            if ($buscarelacao) {
-                $pai_mae = new PessoaParentesco;
-                $pai_mae->pessoa_id = $buscarelacao->pessoa_parente_id;
-                $pai_mae->parentesco_id = $parentesco_id;
-                $pai_mae->pessoa_parente_id = $pessoa_parente_id;
-                $pai_mae->store();
-
-                $pai_mae = new PessoaParentesco;
-                $pai_mae->pessoa_id = $pessoa_parente_id;
-                $pai_mae->parentesco_id = $buscarelacao->PessoaParente->PessoaFisica->genero == 'M' ? 901 : 902;
-                $pai_mae->pessoa_parente_id = $buscarelacao->pessoa_parente_id;
-                $pai_mae->store();
-            }
-        } else if ($parentesco_id == 921 or $parentesco_id == 922) { // 922 - ESPOSA - F / 921 - ESPOSO - M
-            $buscaesps = PessoaFisica::where('pessoa_id', '=', $pessoa_parente_id)->first();
-            if ($buscaesps) {
-                $buscaesps->estado_civil_id = $parentesco_id == 922 ? 808 : 807;
-                $buscaesps->store();
-            }
-            $novoparentesco_id = $pessoaparentegenero == 'M' ? 921 : 922;
-        } else if ($parentesco_id == 923 or $parentesco_id == 924) { // 924 - COMPANHEIRA - F / 923 - COMPANHEIRO - M
-            $buscaesps = PessoaFisica::where('pessoa_id', '=', $pessoa_parente_id)->first();
-            if ($buscaesps) {
-                $buscaesps->estado_civil_id = $parentesco_id == 924 ? 806 : 805;
-                $buscaesps->store();
-            }
-            $novoparentesco_id = $pessoaparentegenero == 'M' ? 923 : 924;
-        } else if ($parentesco_id == 925 or $parentesco_id == 926) { // 926 - CONVIVENTE - F / 925 - CONVIVENTE - M
-            $novoparentesco_id = $pessoaparentegenero == 'M' ? 925 : 926;
-            $buscaesps = PessoaFisica::where('pessoa_id', '=', $pessoa_parente_id)->first();
-            if ($buscaesps) {
-                $buscaesps->estado_civil_id = $parentesco_id == 926 ? 804 : 803;
-                $buscaesps->store();
-            }
-        }
-        PessoaParentesco::where('pessoa_id', '=', $pessoa_parente_id)->where('parentesco_id', '=', $novoparentesco_id)->where('pessoa_parente_id', '=', $pessoa_id)->delete();
-        $novoparentesco = new PessoaParentesco();
-        $novoparentesco->pessoa_id = $pessoa_parente_id;
-        $novoparentesco->parentesco_id = $novoparentesco_id;
-        $novoparentesco->pessoa_parente_id = $pessoa_id;
-        $novoparentesco->store();
     }
 }

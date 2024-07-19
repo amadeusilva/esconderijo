@@ -19,7 +19,9 @@ SELECT
     pessoa.popular,
     pessoa_fisica.genero,
     pessoa_fisica.dt_nascimento,
+    pessoa_fisica.estado_civil_id,
     (SELECT item FROM lista_itens WHERE lista_itens.id = pessoa_fisica.estado_civil_id) AS estado_civil,
+    pessoa.endereco_id,
     (SELECT CONCAT(
         (SELECT CONCAT(
             (SELECT tipo_logradouro.abrev FROM tipo_logradouro WHERE tipo_logradouro.id = logradouro.tipo_id),
@@ -51,7 +53,9 @@ AND pessoa.tipo_pessoa = 1
         parent::addAttribute('popular');
         parent::addAttribute('genero');
         parent::addAttribute('dt_nascimento');
+        parent::addAttribute('estado_civil_id');
         parent::addAttribute('estado_civil');
+        parent::addAttribute('endereco_id');
         parent::addAttribute('endereco');
         parent::addAttribute('status_pessoa');
     }

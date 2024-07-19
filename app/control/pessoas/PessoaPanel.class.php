@@ -91,6 +91,7 @@ class PessoaPanel extends TPage
             $row->layout = ['col-sm-7', 'col-sm-5'];
 
             $panelpessoa->add($this->formpessoa)->style = 'overflow-x:auto';
+            $panelpessoa->addHeaderActionLink('<b>Atualizar Cadastro</b>',  new TAction(['DadosIniciaisPF', 'onEdit'], ['id' => $this->pessoa->id, 'register_state' => 'false']), 'far:edit green');
 
             $this->form->addContent([$panelpessoa]);
 

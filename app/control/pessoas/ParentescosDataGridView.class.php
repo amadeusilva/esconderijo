@@ -40,7 +40,8 @@ class ParentescosDataGridView extends TPage
         $this->form = new BootstrapFormBuilder('form_parentescos');
         $this->form->setFormTitle('Relação de Parentescos');
 
-        $pessoa_id = new TEntry('pessoa_id');
+        //$pessoa_id = new TEntry('pessoa_id');
+        $pessoa_id  = new TDBEntry('pessoa_id', 'adea', 'Pessoa', 'nome');
         $pessoa_id->setSize('100%');
         $this->form->addFields([new TLabel('Pessoa:')], [$pessoa_id]);
 
@@ -51,7 +52,8 @@ class ParentescosDataGridView extends TPage
         $parentesco_id->setSize('100%');
         $this->form->addFields([new TLabel('Parentesco:')], [$parentesco_id]);
 
-        $pessoa_parente_id = new TEntry('pessoa_parente_id');
+        //$pessoa_parente_id = new TEntry('pessoa_parente_id');
+        $pessoa_parente_id  = new TDBEntry('pessoa_parente_id', 'adea', 'Pessoa', 'nome');
         $pessoa_parente_id->setSize('100%');
         $this->form->addFields([new TLabel('Parente:')], [$pessoa_parente_id]);
 

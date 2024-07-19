@@ -133,7 +133,7 @@ class AddParente extends TWindow
                 }
             }
         }
-        $parentesco_id = new TDBCombo('parentesco_id', 'adea', 'ListaItens', 'id', '{item} {abrev}', 'item', $filter);
+        $parentesco_id = new TDBCombo('parentesco_id', 'adea', 'ListaItens', 'id', '{item} {abrev}', 'id', $filter);
         $parentesco_id->enableSearch();
 
         $cpf       = new TEntry('cpf');
@@ -269,11 +269,7 @@ class AddParente extends TWindow
                     $data->pessoa_parente_id = $pessoa_nova->id;
                 }
 
-                $novoparentesco = new PessoaParentesco();
-                $novoparentesco->fromArray((array) $data); // load the object with data
-                $novoparentesco->store();
-
-                $this->onSalvaParenteInverso($pessoa_painel->genero, $pessoa_painel->id, $data->parentesco_id, $data->pessoa_parente_id);
+                $this->onSalvaParente($data);
 
                 self::onClose();
 
@@ -380,7 +376,7 @@ class AddParente extends TWindow
                             }
                         }
                         if ($tem_pai_mae > 0) {
-                            throw new Exception('Você não pode vincular <b>' . $nome1 . '</b> como <b>' . $grau . '</b>!<br>Vínculo EXISTENTE: <b>' . $item . '</b> de <b>' . $nome2 . '</b>. <br> Se acreditar que este vínculo está incorreto, entre em contato com o Administrador do sistema!');
+                            throw new Exception('Você não pode vincular <b>' . $nome1 . '</b> como <b>' . $grau . '</b>!<br>Vínculo EXISTENTE: <b>' . $item . '</b> de <b>' . $nome2 . '</b>. <br> Use o vínculo de <b>Enteado(a)</b>, mas se acreditar que este vínculo está incorreto, entre em contato com o Administrador do sistema!');
                         } else {
                             $pf->dt_nascimento =  TDate::date2br($pf->dt_nascimento);
                             TForm::sendData('form_PessoaParente', $pf);

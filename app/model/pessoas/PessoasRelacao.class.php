@@ -25,6 +25,6 @@ class PessoasRelacao extends TRecord
 
     public function get_PessoaParentesco()
     {
-        return PessoaParentesco::find($this->id);
+        return PessoaParentesco::find($this->relacao_id);
     }
 }

@@ -152,11 +152,13 @@ class DadosParentes extends TPage
                             $banda_ele_ela = ' com <b>' . $parente->popular . '</b>';
                         } else if ($parente->parentesco_id >= 903 and $parente->parentesco_id <= 904) {
                             $n_filhos += 1;
+                        } else if ($parente->parentesco_id >= 933 and $parente->parentesco_id <= 934) {
+                            $n_filhos += 1;
                         }
                     }
                 }
 
-                $texto_filhos = $n_filhos > 1 ? ', <b>' . $n_filhos . '</b> Filhos' : ', <b>' . $n_filhos . '</b> Filho';
+                $texto_filhos = $n_filhos > 1 ? ', <b>' . $n_filhos . '</b> Filhos' : ', <b>' . $n_filhos . '</b> Filho(a)';
 
                 if ($dadosrelacao) {
                     $buscaestadocivil = ListaItens::where('id', '=', $dadosiniciaispf['estado_civil_id'])->first()->item;

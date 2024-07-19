@@ -18,6 +18,7 @@ use Adianti\Widget\Form\TEntry;
  */
 class DadosIniciaisPF extends TPage
 {
+    use ControlePessoas;
     protected $form; // form
 
     // trait with onSave, onClear, onEdit
@@ -143,10 +144,13 @@ class DadosIniciaisPF extends TPage
                 $dados_relacao['doc_imagem'] = substr((json_decode(urldecode($dados_relacao['doc_imagem']))->fileName), 4); // aqui foi a solução
             }
 
+            if ($dados_relacao['doc_imagem']) {
+                $c = new THyperLink('(Documento Anexado)', 'download.php?file=tmp/' . $dados_relacao['doc_imagem'], 'blue', 12, 'biu');
+            } else {
+                $c = '';
+            }
 
-            $c = new THyperLink('Documento Anexado', 'download.php?file=tmp/' . $dados_relacao['doc_imagem'], 'blue', 12, 'biu');
-
-            $labeldadosrelacao = new TLabel('Tipo de Vínculo: ' . $dados_relacao['tipo_vinculo'] . ' - (' . $dados_relacao['dt_inicial'] . ') - Há ' . $dados_relacao['tempo'] . '. (' . $c . ').', '#555555', 12, 'b');
+            $labeldadosrelacao = new TLabel('Tipo de Vínculo: ' . $dados_relacao['tipo_vinculo'] . ' - (' . $dados_relacao['dt_inicial'] . ') - Há ' . $dados_relacao['tempo'] . '. ' . $c, '#555555', 12, 'b');
             $this->form->addContent([$label]);
             $this->form->addContent([$labeldadosrelacao]);
         }
@@ -193,65 +197,6 @@ class DadosIniciaisPF extends TPage
         parent::add($vbox);
     }
 
-    public static function onEstadocivilChange($param)
-    {
-        try {
-            TTransaction::open('adea');
-
-            $dados_relacao = TSession::getValue('dados_relacao');
-
-            if (!empty($param['estado_civil_id'])) {
-                if ($param['estado_civil_id'] >= 803 and $param['estado_civil_id'] <= 808) {
-                    if ($dados_relacao) {
-                        if ($param['estado_civil_id'] != $dados_relacao['estado_civil_id']) {
-                            AdiantiCoreApplication::loadPage('DadosRelacao', 'onEdit', ['param' => $param]);
-                            $param['estado_civil_id'] = '';
-                            TForm::sendData('form_pf', $param);
-                        }
-                    } else {
-                        AdiantiCoreApplication::loadPage('DadosRelacao', 'onEdit', ['param' => $param]);
-                        $param['estado_civil_id'] = '';
-                        TForm::sendData('form_pf', $param);
-                    }
-                } else if ($dados_relacao) {
-                    $posAction = new TAction(array(__CLASS__, 'onDeletarelacao'));
-                    $posAction->setParameter('deleterelacao', 1);
-                    $posAction->setParameter('novoparam', $param);
-                    $posAction->setParameter('register_state', 'false');
-
-                    $param['estado_civil_id'] = '';
-                    TForm::sendData('form_pf', $param);
-
-                    // shows the question dialog
-                    new TQuestion('<b>Atenção!</b> Você possui dados de relação, caso confirme a ação de mudança, <b>você perderá os dados já preenchidos</b>, Deseja prosseguir?', $posAction);
-                }
-            }
-            TTransaction::close();
-        } catch (Exception $e) {
-            new TMessage('error', $e->getMessage());
-        }
-    }
-
-    public static function onGeneroChange($param)
-    {
-        try {
-            TTransaction::open('adea');
-            if (!empty($param['genero'])) {
-
-                $criteria = TCriteria::create(['lista_id' => 17, 'abrev' => 'GP', 'obs' => $param['genero']]);
-
-                // formname, field, database, model, key, value, ordercolumn = NULL, criteria = NULL, startEmpty = FALSE
-                TDBCombo::reloadFromModel('form_pf', 'estado_civil_id', 'adea', 'ListaItens', 'id', 'item', 'id', $criteria, TRUE);
-            } else {
-                TCombo::clearField('form_pf', 'estado_civil_id');
-            }
-
-            TTransaction::close();
-        } catch (Exception $e) {
-            new TMessage('error', $e->getMessage());
-        }
-    }
-
     public function onDecisao()
     {
         $dadosiniciaispf = TSession::getValue('dados_iniciais_pf');
@@ -268,93 +213,36 @@ class DadosIniciaisPF extends TPage
         new TQuestion('Caso volte para a lista de pessoas <b>você perderá os dados já preenchidos</b>, Deseja prosseguir?', $posAction);
     }
 
-    public function onDeletarelacao($param)
+    public function onEdit($param)
     {
-        if (isset($param['deleterelacao']) and $param['deleterelacao'] == 1) {
 
-            TSession::delValue('dados_relacao');
-            TSession::setValue('dados_iniciais_pf', (array) $param['novoparam']);
-
-            AdiantiCoreApplication::loadPage(__CLASS__, 'onEdit');
-        }
-    }
-
-    public function onEdit()
-    {
         $dadosiniciaispf = TSession::getValue('dados_iniciais_pf');
-
-        TSession::delValue('pessoa_painel');
-        TSession::delValue('pessoa_painel_vinculos');
 
         if ($dadosiniciaispf) {
             TForm::sendData('form_pf', $dadosiniciaispf);
-        }
-    }
+        } else if (TSession::getValue('pessoa_painel')) {
+            try {
+                if (isset($param['id'])) {
+                    $pessoa_painel = TSession::getValue('pessoa_painel');
 
-    public static function onCalculaIdade($param)
-    {
-        if (isset($param['dt_nascimento']) and !empty($param['dt_nascimento'])) {
-            //converte a data static BR para Americana
-            $novadata = DateTime::createFromFormat('d/m/Y', $param['dt_nascimento']);
-            $param['dt_nascimento'] = $novadata->format('Y/m/d');
-            $interval = $novadata->diff(new DateTime(date('Y-m-d')));
-            $idade_cauculada = new stdClass;
-            $idade_cauculada->idade = $interval->format('%Y anos');
+                    $pessoa_painel->cpf_cnpj = $pessoa_painel->cpf;
+                    $pessoa_painel->genero = $pessoa_painel->genero == 'Masculino' ? 'M' : 'F';
+                    $pessoa_painel->dt_nascimento =  $pessoa_painel->dt_nascimento;
+                    $pessoa_painel->idade = self::onCalculaIdade($pessoa_painel->dt_nascimento);
+                    $this->form->setData($pessoa_painel);   // fill the form with the active record data.
 
-            TForm::sendData('form_pf', $idade_cauculada);
-        }
-    }
-
-    public static function onConsultaCPF($param)
-    {
-        try {
-            TTransaction::open('adea');
-            if (isset($param['cpf_cnpj']) and !empty($param['cpf_cnpj'])) {
-                $pessoaexistente = Pessoa::where('cpf_cnpj', '=', $param['cpf_cnpj'])->first();
-                if ($pessoaexistente) {
-
-                    $posAction = new TAction(array('DadosIniciaisPF', 'onClear'));
-
-                    // show the message dialog
-                    new TMessage('error', 'CPF já cadastrado para: <b>' . $pessoaexistente->nome . '</b>', $posAction);
-                }
-            }
-            TTransaction::close();
-        } catch (Exception $e) {
-            new TMessage('error', $e->getMessage());
-        }
-    }
-
-    public static function verificaNomeDtnascimento($param)
-    {
-        try {
-            TTransaction::open('adea');
-            if ($param['cpf_cnpj'] and $param['nome'] and $param['dt_nascimento']) {
-
-                $novadata = DateTime::createFromFormat('d/m/Y', $param['dt_nascimento']);
-                $param['dt_nascimento'] = $novadata->format('Y/m/d');
-
-                $pf = ViewPessoaFisica::where('nome', '=', $param['nome'])->where('dt_nascimento', '=', $param['dt_nascimento'])->first();
-
-                if ($pf) {
-                    if ($pf->cpf != $param['cpf_cnpj']) {
-                        throw new Exception('<b>Atenção!</b> Encontramos a pessoa: <b>' . $pf->nome . ' (' . $novadata->format('d/m/Y') . ')</b> REGISTRADO em outro CPF. Se acreditar que estes dados estão incorretos, entre em contato com o Administrador do sistema!');
-                    } else {
-                        return true;
-                    }
+                    $param['dt_nascimento'] = $pessoa_painel->dt_nascimento;
+                    $param['genero'] = $pessoa_painel->genero;
+                    $param['estado_civil_id'] = $pessoa_painel->estado_civil_id;
+                    TForm::sendData('form_pf', $param);
                 } else {
-                    return true;
+                    $this->form->clear(true);
                 }
+            } catch (Exception $e) // in case of exception
+            {
+                new TMessage('error', $e->getMessage()); // shows the exception error message
+                TTransaction::rollback(); // undo all pending operations
             }
-            TTransaction::close();
-        } catch (Exception $e) {
-            new TMessage('error', $e->getMessage());
-            $pfvazia = new stdClass;
-            $pfvazia->nome = '';
-            $pfvazia->popular = '';
-            $pfvazia->dt_nascimento = '';
-            $pfvazia->genero = '';
-            TForm::sendData('form_pf', $pfvazia);
         }
     }
 
@@ -368,122 +256,111 @@ class DadosIniciaisPF extends TPage
 
         if (TSession::getValue('dados_parentes_pf')) {
 
-            $tem_esposa_esposo = 0;
-            $tem_companheira_companheiro = 0;
-            $tem_convivente = 0;
-            $tem_filho_filha = 0;
-            $nome = '';
-            $cpf_filho_filha = '';
-            $genero = '';
+            $pessoa_vinculada = [];
+            $tem_pessoa_vinculada = 0;
 
-            foreach ($dados_parentes_pf as $d) {
-                if ($d->parentesco_id == 921 or $d->parentesco_id == 922) {
-                    $nome = $d->nome;
-                    $tem_esposa_esposo = $d->parentesco_id;
-                    if ($d->parentesco_id == 921) {
-                        $genero = 'Esposo';
-                    } else {
-                        $genero = 'Esposa';
+            foreach ($dados_parentes_pf as $key => $d) {
+                if ($d->parentesco_id >= 921 and $d->parentesco_id <= 926) {
+                    $pessoa_vinculada[$key]['nome'] = $d->nome;
+                    $pessoa_vinculada[$key]['cpf'] = $d->cpf;
+                    $pessoa_vinculada[$key]['parentesco_id'] = $d->parentesco_id;
+
+                    if ($d->parentesco_id = 921) {
+                        $pessoa_vinculada[$key]['genero'] = 'Esposo';
+                    } else if ($d->parentesco_id = 922) {
+                        $pessoa_vinculada[$key]['genero'] = 'Esposa';
+                    } else if ($d->parentesco_id = 923) {
+                        $pessoa_vinculada[$key]['genero'] = 'Companheiro';
+                    } else if ($d->parentesco_id = 924) {
+                        $pessoa_vinculada[$key]['genero'] = 'Companheira';
+                    } else if ($d->parentesco_id = 925) {
+                        $pessoa_vinculada[$key]['genero'] = 'Convivente';
+                    } else if ($d->parentesco_id = 926) {
+                        $pessoa_vinculada[$key]['genero'] = 'Convivente';
                     }
-                } else if ($d->parentesco_id == 923 or $d->parentesco_id == 924) {
-                    $nome = $d->nome;
-                    $tem_companheira_companheiro = $d->parentesco_id;
-                    if ($d->parentesco_id == 923) {
-                        $genero = 'Companheiro';
+
+                    if ($dadosiniciaispf['estado_civil_id'] == 807 and $d->parentesco_id == 922) {
+                        $pessoa_vinculada[$key]['tem_vinculo'] = 0;
+                    } else if ($dadosiniciaispf['estado_civil_id'] == 808 and $d->parentesco_id == 921) {
+                        $pessoa_vinculada[$key]['tem_vinculo'] = 0;
+                    } else if ($dadosiniciaispf['estado_civil_id'] == 805 and $d->parentesco_id == 924) {
+                        $pessoa_vinculada[$key]['tem_vinculo'] = 0;
+                    } else if ($dadosiniciaispf['estado_civil_id'] == 806 and $d->parentesco_id == 923) {
+                        $pessoa_vinculada[$key]['tem_vinculo'] = 0;
+                    } else if ($dadosiniciaispf['estado_civil_id'] == 803 and $d->parentesco_id == 926) {
+                        $pessoa_vinculada[$key]['tem_vinculo'] = 0;
+                    } else if ($dadosiniciaispf['estado_civil_id'] == 804 and $d->parentesco_id == 925) {
+                        $pessoa_vinculada[$key]['tem_vinculo'] = 0;
                     } else {
-                        $genero = 'Companheira';
-                    }
-                } else if ($d->parentesco_id == 925 or $d->parentesco_id == 926) {
-                    $nome = $d->nome;
-                    $tem_convivente = $d->parentesco_id;
-                    if ($d->parentesco_id == 925) {
-                        $genero = 'Convivente';
-                    } else {
-                        $genero = 'Convivente';
+                        $pessoa_vinculada[$key]['tem_vinculo'] = 1;
+                        $tem_pessoa_vinculada = 1;
                     }
                 } else if ($d->parentesco_id == 903 or $d->parentesco_id == 904) {
-                    $nome = $d->nome;
-                    $cpf_filho_filha = $d->cpf;
-                    $tem_filho_filha = $d->parentesco_id;
+                    $pessoa_vinculada[$key]['nome'] = $d->nome;
+                    $pessoa_vinculada[$key]['cpf'] = $d->cpf;
+                    $pessoa_vinculada[$key]['parentesco_id'] = $d->parentesco_id;
                     if ($d->parentesco_id == 903) {
-                        $genero = 'Filho';
+                        $pessoa_vinculada[$key]['genero'] = 'Filho';
                     } else {
-                        $genero = 'Filha';
+                        $pessoa_vinculada[$key]['genero'] = 'Filha';
                     }
-                }
-            }
 
-            if ($tem_esposa_esposo > 0) {
+                    TTransaction::open('adea');
 
-                if ($dadosiniciaispf['estado_civil_id'] == 807 and $tem_esposa_esposo == 922) {
-                    return $this->onFilhoFilha($tem_filho_filha, $cpf_filho_filha, $data, $nome, $genero);
-                } else if ($dadosiniciaispf['estado_civil_id'] == 808 and $tem_esposa_esposo == 921) {
-                    return $this->onFilhoFilha($tem_filho_filha, $cpf_filho_filha, $data, $nome, $genero);
-                } else if ($dadosiniciaispf['estado_civil_id'] == 805 and $tem_companheira_companheiro == 924) {
-                    return $this->onFilhoFilha($tem_filho_filha, $cpf_filho_filha, $data, $nome, $genero);
-                } else if ($dadosiniciaispf['estado_civil_id'] == 806 and $tem_companheira_companheiro == 923) {
-                    return $this->onFilhoFilha($tem_filho_filha, $cpf_filho_filha, $data, $nome, $genero);
-                } else if ($dadosiniciaispf['estado_civil_id'] == 803 and $tem_convivente == 926) {
-                    return $this->onFilhoFilha($tem_filho_filha, $cpf_filho_filha, $data, $nome, $genero);
-                } else if ($dadosiniciaispf['estado_civil_id'] == 804 and $tem_convivente == 925) {
-                    return $this->onFilhoFilha($tem_filho_filha, $cpf_filho_filha, $data, $nome, $genero);
-                } else {
-                    $posAction = new TAction([$this, 'onAvanca3']);
-                    $posAction->setParameter('data', $data);
+                    $pf_filho_filha = ViewPessoaFisica::where('cpf', '=', $d->cpf)->first();
 
-                    $param['genero'] = '';
-                    $param['estado_civil_id'] = '';
-                    TForm::sendData('form_pf', $param);
+                    if (isset($pf_filho_filha->id) and !empty($pf_filho_filha->id)) {
 
-                    new TQuestion('Você vinculou <b>' . $nome . '</b> como <b> ' . $genero . '</b>, os vínculos de parentescos são baseados nos 
-                    dados de <b>gênero</b> e <b>estado civil</b>, se prosseguir perderá o vínculo e será necessário inserir novamente, Deseja prosseguir?', $posAction);
-                }
-            } else {
-                return $this->onFilhoFilha($tem_filho_filha, $cpf_filho_filha, $data, $nome, $genero);
-            }
-        } else {
-            return true;
-        }
-    }
+                        $tem_vinculo = PessoaParentesco::where('parentesco_id', '=', $d->parentesco_id)->where('pessoa_parente_id', '=', $pf_filho_filha->id)->load();
 
-    public function onFilhoFilha($tem_filho_filha, $cpf_filho_filha, $data, $nome, $genero)
-    {
-        $dadosiniciaispf = TSession::getValue('dados_iniciais_pf');
+                        $pessoa_vinculada[$key]['tem_vinculo'] = 0;
 
-        if ($tem_filho_filha > 0) {
-
-            TTransaction::open('adea');
-            $pessoa_vinculada = 0;
-            $pf_filho_filha = ViewPessoaFisica::where('cpf', '=', $cpf_filho_filha)->first();
-            if ($pf_filho_filha) {
-                $tem_vinculo = PessoaParentesco::where('parentesco_id', '=', $tem_filho_filha)->where('pessoa_parente_id', '=', $pf_filho_filha->id)->load();
-                if ($tem_vinculo) {
-                    foreach ($tem_vinculo as $pessoagenero) {
-                        if ($pessoagenero->Pessoa->PessoaFisica->genero == $dadosiniciaispf['genero']) {
-                            $pessoa_vinculada = 1;
+                        if (isset($tem_vinculo) and !empty($tem_vinculo)) {
+                            foreach ($tem_vinculo as $pessoagenero) {
+                                if ($pessoagenero->Pessoa->PessoaFisica->genero == $dadosiniciaispf['genero']) {
+                                    $pessoa_vinculada[$key]['tem_vinculo'] = 1;
+                                    $tem_pessoa_vinculada = 1;
+                                }
+                            }
                         }
                     }
+                    TTransaction::close();
                 }
             }
 
-            TTransaction::close();
-            if ($pessoa_vinculada == 0) {
-                return true;
-            } else {
+            if ($tem_pessoa_vinculada > 0) {
                 $posAction = new TAction([$this, 'onAvanca3']);
                 $posAction->setParameter('data', $data);
+                $posAction->setParameter('pessoa_vinculada', $pessoa_vinculada);
+
 
                 $param['genero'] = '';
                 $param['estado_civil_id'] = '';
                 TForm::sendData('form_pf', $param);
 
-                new TQuestion('Você vinculou <b>' . $nome . '</b> como <b> ' . $genero . '</b>, os vínculos de parentescos são baseados nos 
-                dados de <b>gênero</b> e <b>estado civil</b>, se prosseguir perderá o vínculo e será necessário inserir novamente, Deseja prosseguir?', $posAction);
+                $table = new TTable;
+                $table->border = 1;
+                $table->style = 'border-collapse:collapse; text-align:center;';
+                $table->width = '100%';
+                $table->addRowSet('<b>CPF</b>', '<b>Nome</b>', '<b>Vínculo</b>');
+                foreach ($pessoa_vinculada as $key => $pessoa) {
+                    if ($pessoa['tem_vinculo'] == 1) {
+                        $table->addRowSet($pessoa['cpf'], $pessoa['nome'], $pessoa['genero']);
+                    }
+                }
+
+                new TQuestion('<b>Atenção!</b> As mudanças realizadas afetam o(s) seguinte(s) vínculo(s): <br><br>' .
+                    $table
+                    . '</b><br>Os vínculos de parentescos são baseados nos dados de <b>gênero</b> e <b>estado civil</b>, 
+                 se prosseguir perderá o vínculo e será necessário inserir novamente, Deseja prosseguir?', $posAction);
+            } else {
+                return true;
             }
         } else {
             return true;
         }
     }
+
 
     /**
      * confirmation screen
@@ -494,11 +371,15 @@ class DadosIniciaisPF extends TPage
 
             $this->form->validate();
             $data = $this->form->getData();
+
+            TSession::setValue('dados_iniciais_pf', (array) $data);
+
             $retorno1 = $this->onMudancaEstadoCivilFilhoFilha($data);
             if ($retorno1 == true) {
                 $retorno2 = self::verificaNomeDtnascimento((array)$data);
                 if ($retorno2 == true) {
-                    $this->onAvanca2($data);
+                    //avança 2
+                    AdiantiCoreApplication::loadPage('DadosParentes', 'onReload');
                 }
             }
         } catch (Exception $e) {
@@ -510,32 +391,16 @@ class DadosIniciaisPF extends TPage
         }
     }
 
-    public function onAvanca2($data)
-    {
-        TSession::setValue('dados_iniciais_pf', (array) $data);
-        AdiantiCoreApplication::loadPage('DadosParentes', 'onReload');
-    }
-
-    //estado civil: 803-804: convivent / 805-806: ue / 807-808: casad
-    //parentesco: 921-922: espos / 923-924: companheir / 925-926: convivente
-
     public function onAvanca3($data)
     {
+
         $dados_parentes_pf = TSession::getValue('dados_parentes_pf');
 
-        $key = 0;
-
-        foreach ($dados_parentes_pf as $d) {
-            if ($d->parentesco_id >= 921 and $d->parentesco_id <= 926) {
-                $key = $d->cpf;
-            } else if ($d->parentesco_id == 903 or $d->parentesco_id == 904) {
-                $key = $d->cpf;
+        foreach ($data['pessoa_vinculada'] as $key => $pessoa) {
+            if ($pessoa['tem_vinculo'] == 1) {
+                unset($dados_parentes_pf[$pessoa['cpf']]);
+                TSession::setValue('dados_parentes_pf', $dados_parentes_pf);
             }
-        }
-
-        if ($key != 0) {
-            unset($dados_parentes_pf[$key]);
-            TSession::setValue('dados_parentes_pf', $dados_parentes_pf);
         }
 
         TSession::setValue('dados_iniciais_pf', (array) $data['data']);
