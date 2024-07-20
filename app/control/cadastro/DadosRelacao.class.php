@@ -17,6 +17,7 @@ use Adianti\Widget\Form\THidden;
  */
 class DadosRelacao extends TWindow
 {
+    use ControlePessoas;
     protected $form; // form
 
     // trait with saveFile, saveFiles, ...
@@ -106,31 +107,17 @@ class DadosRelacao extends TWindow
         parent::add($this->form);
     }
 
-    public static function onCalculaTempo($param)
-    {
-        if (isset($param) and !empty($param)) {
-            if (isset($param['dt_inicial']) and !empty($param['dt_inicial'])) {
-                $novadata = DateTime::createFromFormat('d/m/Y', $param['dt_inicial']);
-                $param['dt_inicial'] = $novadata->format('Y/m/d');
-            } else {
-                $novadata = DateTime::createFromFormat('d/m/Y', $param);
-                $param = $novadata->format('Y/m/d');
-            }
-
-            $interval = $novadata->diff(new DateTime(date('Y-m-d')));
-            $tempo_calculado = new stdClass;
-            $tempo_calculado->tempo = $interval->format('%Y anos');
-
-            TForm::sendData('form_dados_relacao', $tempo_calculado);
-        }
-    }
-
     /**
      * method onEdit()
      * Executed whenever the user clicks at the edit button da datagrid
      */
     public function onVerRelacao($param)
     {
+
+        if ($param['param']) {
+            $param['id'] = $param['param']['id'];
+        }
+
         try {
             if ($param['id']) {
 
@@ -156,22 +143,23 @@ class DadosRelacao extends TWindow
         }
     }
 
-    public static function onVinculo($param)
+    public static function onCalculaTempo($param)
     {
-        $tipo_vinculo = '';
+        if (isset($param) and !empty($param)) {
+            if (isset($param['dt_inicial']) and !empty($param['dt_inicial'])) {
+                $novadata = DateTime::createFromFormat('d/m/Y', $param['dt_inicial']);
+                $param['dt_inicial'] = $novadata->format('Y/m/d');
+            } else {
+                $novadata = DateTime::createFromFormat('d/m/Y', $param);
+                $param = $novadata->format('Y/m/d');
+            }
 
-        if ($param == 805 or $param == 806) {
-            $tipo_vinculo = 'Declaração de União Estável';
-            TQuickForm::showField('form_dados_relacao', 'doc_imagem');
-        } else if ($param == 803 or $param == 804) {
-            $tipo_vinculo = 'Sem documento de registro em cartório';
-            TQuickForm::hideField('form_dados_relacao', 'doc_imagem');
-        } else if ($param == 807 or $param == 808) {
-            $tipo_vinculo = 'Certidão de Casamento';
-            TQuickForm::showField('form_dados_relacao', 'doc_imagem');
+            $interval = $novadata->diff(new DateTime(date('Y-m-d')));
+            $tempo_calculado = new stdClass;
+            $tempo_calculado->tempo = $interval->format('%Y anos');
+
+            TForm::sendData('form_dados_relacao', $tempo_calculado);
         }
-
-        return $tipo_vinculo;
     }
 
     public function onEdit($param)

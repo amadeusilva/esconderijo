@@ -134,23 +134,32 @@ class DadosIniciaisPF extends TPage
         );
         $row->layout = ['col-sm-4', 'col-sm-4', 'col-sm-4'];
 
-        if (TSession::getValue('dados_relacao')) {
+        if (TSession::getValue('dados_relacao') or TSession::getValue('pessoa_painel')) {
 
             $label = new TLabel('<br>Dados da Relação', '#62a8ee', 14, 'b');
             $label->style = 'text-align:left;border-bottom:1px solid #62a8ee;width:100%';
-            $dados_relacao = TSession::getValue('dados_relacao');
 
-            if (!empty($dados_relacao['doc_imagem'])) {
-                $dados_relacao['doc_imagem'] = substr((json_decode(urldecode($dados_relacao['doc_imagem']))->fileName), 4); // aqui foi a solução
+            if (TSession::getValue('dados_relacao')) {
+                $dados_relacao = (object) TSession::getValue('dados_relacao');
+            } else {
+                $pessoa_painel = TSession::getValue('pessoa_painel');
+                $dados_relacao = self::onDadosRelacao($pessoa_painel->id);
             }
 
-            if ($dados_relacao['doc_imagem']) {
-                $c = new THyperLink('(Documento Anexado)', 'download.php?file=tmp/' . $dados_relacao['doc_imagem'], 'blue', 12, 'biu');
+
+            if (!empty($dados_relacao->doc_imagem) and !TSession::getValue('pessoa_painel')) {
+                $dados_relacao->doc_imagem = substr((json_decode(urldecode($dados_relacao->doc_imagem))->fileName), 4); // aqui foi a solução
+            }
+
+            if ($dados_relacao->doc_imagem and !TSession::getValue('pessoa_painel')) {
+                $c = new THyperLink('(Documento Anexado)', 'download.php?file=tmp/' . $dados_relacao->doc_imagem, 'blue', 12, 'biu');
+            } else if (TSession::getValue('pessoa_painel')) {
+                $c = new THyperLink('(Documento Anexado)', 'download.php?file=' . $dados_relacao->doc_imagem, 'blue', 12, 'biu');
             } else {
                 $c = '';
             }
 
-            $labeldadosrelacao = new TLabel('Tipo de Vínculo: ' . $dados_relacao['tipo_vinculo'] . ' - (' . $dados_relacao['dt_inicial'] . ') - Há ' . $dados_relacao['tempo'] . '. ' . $c, '#555555', 12, 'b');
+            $labeldadosrelacao = new TLabel('Tipo de Vínculo: ' . $dados_relacao->tipo_vinculo . ' - (' . $dados_relacao->dt_inicial . ') - Há ' . $dados_relacao->tempo . '. ' . $c, '#555555', 12, 'b');
             $this->form->addContent([$label]);
             $this->form->addContent([$labeldadosrelacao]);
         }
@@ -197,6 +206,31 @@ class DadosIniciaisPF extends TPage
         parent::add($vbox);
     }
 
+    public static function onDadosRelacao($param)
+    {
+
+        try {
+
+            TTransaction::open('adea');   // open a transaction with database 'samples'
+
+            $pessoabanda = PessoaParentesco::where('parentesco_id', '>=', 921)->where('parentesco_id', '<=', 926)->where('pessoa_id', '=', $param)->first();
+
+            $object = PessoasRelacao::where('relacao_id', '=', $pessoabanda->id)->first();        // instantiates object City
+            $object->estado_civil_id = $object->PessoaParentesco->Pessoa->PessoaFisica->estado_civil_id;
+            $object->tipo_vinculo = self::onVinculo($object->estado_civil_id);
+            $object->dt_inicial =  TDate::date2br($object->dt_inicial);
+            $object->tempo = self::onCalculaTempo($object->dt_inicial);
+
+            return $object;   // fill the form with the active record data
+
+            TTransaction::close();           // close the transaction
+        } catch (Exception $e) // in case of exception
+        {
+            new TMessage('error', $e->getMessage()); // shows the exception error message
+            TTransaction::rollback(); // undo all pending operations
+        }
+    }
+
     public function onDecisao()
     {
         $dadosiniciaispf = TSession::getValue('dados_iniciais_pf');
@@ -229,6 +263,7 @@ class DadosIniciaisPF extends TPage
                     $pessoa_painel->genero = $pessoa_painel->genero == 'Masculino' ? 'M' : 'F';
                     $pessoa_painel->dt_nascimento =  $pessoa_painel->dt_nascimento;
                     $pessoa_painel->idade = self::onCalculaIdade($pessoa_painel->dt_nascimento);
+
                     $this->form->setData($pessoa_painel);   // fill the form with the active record data.
 
                     $param['dt_nascimento'] = $pessoa_painel->dt_nascimento;

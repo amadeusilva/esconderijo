@@ -114,6 +114,46 @@ trait ControlePessoas
         }
     }
 
+    public static function onVinculo($param)
+    {
+        $tipo_vinculo = '';
+
+        if ($param == 805 or $param == 806) {
+            $tipo_vinculo = 'Declaração de União Estável';
+            TQuickForm::showField('form_dados_relacao', 'doc_imagem');
+        } else if ($param == 803 or $param == 804) {
+            $tipo_vinculo = 'Sem documento de registro em cartório';
+            TQuickForm::hideField('form_dados_relacao', 'doc_imagem');
+        } else if ($param == 807 or $param == 808) {
+            $tipo_vinculo = 'Certidão de Casamento';
+            TQuickForm::showField('form_dados_relacao', 'doc_imagem');
+        }
+
+        return $tipo_vinculo;
+    }
+
+    public static function onCalculaTempo($param)
+    {
+
+        if (isset($param) and !empty($param)) {
+            if (isset($param['dt_inicial']) and !empty($param['dt_inicial'])) {
+                $novadata = DateTime::createFromFormat('d/m/Y', $param['dt_inicial']);
+                $param['dt_inicial'] = $novadata->format('Y/m/d');
+            } else {
+                $novadata = DateTime::createFromFormat('d/m/Y', $param);
+                $param = $novadata->format('Y/m/d');
+            }
+
+            $interval = $novadata->diff(new DateTime(date('Y-m-d')));
+            $tempo_calculado = new stdClass;
+            $tempo_calculado->tempo = $interval->format('%Y anos');
+
+            //return $tempo_calculado;
+
+            TForm::sendData('form_dados_relacao', $tempo_calculado);
+        }
+    }
+
     public static function onEstadocivilChange($param)
     {
         try {
@@ -125,6 +165,22 @@ trait ControlePessoas
                 if ($param['estado_civil_id'] >= 803 and $param['estado_civil_id'] <= 808) {
                     if ($dados_relacao) {
                         if ($param['estado_civil_id'] != $dados_relacao['estado_civil_id']) {
+                            AdiantiCoreApplication::loadPage('DadosRelacao', 'onEdit', ['param' => $param]);
+                            $param['estado_civil_id'] = '';
+                            TForm::sendData('form_pf', $param);
+                        }
+                    } else if (TSession::getValue('pessoa_painel')) {
+                        $pessoa_painel = TSession::getValue('pessoa_painel');
+                        if ($pessoa_painel->estado_civil_id == $param['estado_civil_id']) {
+
+                            $pessoabanda = PessoaParentesco::where('parentesco_id', '>=', 921)->where('parentesco_id', '<=', 926)->where('pessoa_id', '=', $pessoa_painel->id)->first();
+
+                            $param['id'] = $pessoabanda->id;
+
+                            AdiantiCoreApplication::loadPage('DadosRelacao', 'onVerRelacao', ['param' => $param]);
+
+                            //TForm::sendData('form_pf', (array) $pessoa_painel->estado_civil_id);
+                        } else {
                             AdiantiCoreApplication::loadPage('DadosRelacao', 'onEdit', ['param' => $param]);
                             $param['estado_civil_id'] = '';
                             TForm::sendData('form_pf', $param);
