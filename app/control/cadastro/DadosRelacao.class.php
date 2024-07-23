@@ -114,13 +114,12 @@ class DadosRelacao extends TWindow
     public function onVerRelacao($param)
     {
 
-        if ($param['param']) {
-            $param['id'] = $param['param']['id'];
-        }
+        //if ($param['param']) {
+        //    $param['id'] = $param['param']['id'];
+        //}
 
         try {
-            if ($param['id']) {
-
+            if (isset($param['id']) and !empty($param['id'])) {
                 TTransaction::open('adea');   // open a transaction with database 'samples'
 
                 $key = $param['id'];  // get the parameter
@@ -133,6 +132,20 @@ class DadosRelacao extends TWindow
                 $this->form->setData($object);   // fill the form with the active record data
 
                 TTransaction::close();           // close the transaction
+
+            } else if (TSession::getValue('dados_relacao')) {
+
+                $dados_relacao =   TSession::getValue('dados_relacao');
+
+                $object = new stdClass;  // create an empty object
+                $object->estado_civil_id = $dados_relacao['estado_civil_id'];
+                $object->tipo_vinculo = self::onVinculo($dados_relacao['estado_civil_id']);
+                $object->dt_inicial = $dados_relacao['dt_inicial'];
+                $object->tempo = $dados_relacao['tempo'];
+                if ($dados_relacao['doc_imagem']) {
+                    $object->doc_imagem = $dados_relacao['doc_imagem'];
+                }
+                $this->form->setData($object);
             } else {
                 $this->form->clear(true);
             }
@@ -140,25 +153,6 @@ class DadosRelacao extends TWindow
         {
             new TMessage('error', $e->getMessage()); // shows the exception error message
             TTransaction::rollback(); // undo all pending operations
-        }
-    }
-
-    public static function onCalculaTempo($param)
-    {
-        if (isset($param) and !empty($param)) {
-            if (isset($param['dt_inicial']) and !empty($param['dt_inicial'])) {
-                $novadata = DateTime::createFromFormat('d/m/Y', $param['dt_inicial']);
-                $param['dt_inicial'] = $novadata->format('Y/m/d');
-            } else {
-                $novadata = DateTime::createFromFormat('d/m/Y', $param);
-                $param = $novadata->format('Y/m/d');
-            }
-
-            $interval = $novadata->diff(new DateTime(date('Y-m-d')));
-            $tempo_calculado = new stdClass;
-            $tempo_calculado->tempo = $interval->format('%Y anos');
-
-            TForm::sendData('form_dados_relacao', $tempo_calculado);
         }
     }
 
@@ -175,6 +169,7 @@ class DadosRelacao extends TWindow
      */
     public function onClear($param)
     {
+
         $this->form->clear(TRUE);
         $param['dt_inicial'] = '';
         $param['tempo'] = '';
@@ -188,6 +183,7 @@ class DadosRelacao extends TWindow
      */
     public function onSave($param)
     {
+
         try {
 
             if (!isset($param['param']['param']['param'])) {
@@ -230,9 +226,16 @@ class DadosRelacao extends TWindow
                 self::onClose();
 
                 $pessoa_painel = TSession::getValue('pessoa_painel');
-                $posAction = new TDataGridAction(['PessoaPanel', 'onView'],   ['key' => $pessoa_painel->id, 'register_state' => 'false']);
-                // shows the success message
-                new TMessage('info', 'Registro Salvo!', $posAction);
+
+                if ($param['param']['atualiza_cadastro'] == true) {
+                    $posAction = new TDataGridAction(['DadosIniciaisPF', 'onEdit'],   ['id' => $pessoa_painel->id, 'register_state' => 'false']);
+                    // shows the success message
+                    new TMessage('info', 'Registro Salvo!', $posAction);
+                } else {
+                    $posAction = new TDataGridAction(['PessoaPanel', 'onView'],   ['key' => $pessoa_painel->id, 'register_state' => 'false']);
+                    // shows the success message
+                    new TMessage('info', 'Registro Salvo!', $posAction);
+                }
             } else {
                 TSession::setValue('dados_relacao', (array) $data);
 

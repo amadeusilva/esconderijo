@@ -147,10 +147,13 @@ trait ControlePessoas
             $interval = $novadata->diff(new DateTime(date('Y-m-d')));
             $tempo_calculado = new stdClass;
             $tempo_calculado->tempo = $interval->format('%Y anos');
+            $tempo_calculado->idade = $interval->format('%Y anos');
 
             //return $tempo_calculado;
 
             TForm::sendData('form_dados_relacao', $tempo_calculado);
+            TForm::sendData('form_pf', $tempo_calculado);
+            TForm::sendData('form_PessoaParente', $tempo_calculado);
         }
     }
 
@@ -171,19 +174,20 @@ trait ControlePessoas
                         }
                     } else if (TSession::getValue('pessoa_painel')) {
                         $pessoa_painel = TSession::getValue('pessoa_painel');
-                        if ($pessoa_painel->estado_civil_id == $param['estado_civil_id']) {
+                        if ($pessoa_painel->estado_civil_id != $param['estado_civil_id']) {
 
-                            $pessoabanda = PessoaParentesco::where('parentesco_id', '>=', 921)->where('parentesco_id', '<=', 926)->where('pessoa_id', '=', $pessoa_painel->id)->first();
 
-                            $param['id'] = $pessoabanda->id;
-
-                            AdiantiCoreApplication::loadPage('DadosRelacao', 'onVerRelacao', ['param' => $param]);
-
-                            //TForm::sendData('form_pf', (array) $pessoa_painel->estado_civil_id);
-                        } else {
                             AdiantiCoreApplication::loadPage('DadosRelacao', 'onEdit', ['param' => $param]);
                             $param['estado_civil_id'] = '';
                             TForm::sendData('form_pf', $param);
+
+                            //$pessoabanda = PessoaParentesco::where('parentesco_id', '>=', 921)->where('parentesco_id', '<=', 926)->where('pessoa_id', '=', $pessoa_painel->id)->first();
+
+                            //$param['id'] = $pessoabanda->id;
+
+                            //AdiantiCoreApplication::loadPage('DadosRelacao', 'onVerRelacao', ['param' => $param]);
+
+                            //TForm::sendData('form_pf', (array) $pessoa_painel->estado_civil_id);
                         }
                     } else {
                         AdiantiCoreApplication::loadPage('DadosRelacao', 'onEdit', ['param' => $param]);

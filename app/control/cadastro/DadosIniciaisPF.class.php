@@ -146,15 +146,24 @@ class DadosIniciaisPF extends TPage
                 $dados_relacao = self::onDadosRelacao($pessoa_painel->id);
             }
 
+            $action = new TAction(['DadosRelacao', 'onVerRelacao']);
+            if (isset($dados_relacao->id_relacao) and !empty($dados_relacao->id_relacao)) {
+                $action->setParameter('id', $dados_relacao->id_relacao);
+                $action->setParameter('atualiza_cadastro', true);
+            }
+            $b2 = new TActionLink('Editar Relação', $action, 'white', 10, '', 'far:edit white');
+            $b2->class = 'btn btn-info';
 
             if (!empty($dados_relacao->doc_imagem) and !TSession::getValue('pessoa_painel')) {
                 $dados_relacao->doc_imagem = substr((json_decode(urldecode($dados_relacao->doc_imagem))->fileName), 4); // aqui foi a solução
             }
 
-            if ($dados_relacao->doc_imagem and !TSession::getValue('pessoa_painel')) {
-                $c = new THyperLink('(Documento Anexado)', 'download.php?file=tmp/' . $dados_relacao->doc_imagem, 'blue', 12, 'biu');
-            } else if (TSession::getValue('pessoa_painel')) {
-                $c = new THyperLink('(Documento Anexado)', 'download.php?file=' . $dados_relacao->doc_imagem, 'blue', 12, 'biu');
+            if ($dados_relacao->doc_imagem) {
+                if ($dados_relacao->doc_imagem and !TSession::getValue('pessoa_painel')) {
+                    $c = new THyperLink('(Documento Anexado)', 'download.php?file=tmp/' . $dados_relacao->doc_imagem, 'blue', 12, 'biu');
+                } else if (TSession::getValue('pessoa_painel')) {
+                    $c = new THyperLink('(Documento Anexado)', 'download.php?file=' . $dados_relacao->doc_imagem, 'blue', 12, 'biu');
+                }
             } else {
                 $c = '';
             }
@@ -162,6 +171,7 @@ class DadosIniciaisPF extends TPage
             $labeldadosrelacao = new TLabel('Tipo de Vínculo: ' . $dados_relacao->tipo_vinculo . ' - (' . $dados_relacao->dt_inicial . ') - Há ' . $dados_relacao->tempo . '. ' . $c, '#555555', 12, 'b');
             $this->form->addContent([$label]);
             $this->form->addContent([$labeldadosrelacao]);
+            $this->form->addContent([$b2]);
         }
 
         $label = new TLabel('<br>Contatos', '#62a8ee', 14, 'b');
@@ -216,6 +226,7 @@ class DadosIniciaisPF extends TPage
             $pessoabanda = PessoaParentesco::where('parentesco_id', '>=', 921)->where('parentesco_id', '<=', 926)->where('pessoa_id', '=', $param)->first();
 
             $object = PessoasRelacao::where('relacao_id', '=', $pessoabanda->id)->first();        // instantiates object City
+            $object->id_relacao = $pessoabanda->id;
             $object->estado_civil_id = $object->PessoaParentesco->Pessoa->PessoaFisica->estado_civil_id;
             $object->tipo_vinculo = self::onVinculo($object->estado_civil_id);
             $object->dt_inicial =  TDate::date2br($object->dt_inicial);
@@ -300,17 +311,17 @@ class DadosIniciaisPF extends TPage
                     $pessoa_vinculada[$key]['cpf'] = $d->cpf;
                     $pessoa_vinculada[$key]['parentesco_id'] = $d->parentesco_id;
 
-                    if ($d->parentesco_id = 921) {
+                    if ($d->parentesco_id == 921) {
                         $pessoa_vinculada[$key]['genero'] = 'Esposo';
-                    } else if ($d->parentesco_id = 922) {
+                    } else if ($d->parentesco_id == 922) {
                         $pessoa_vinculada[$key]['genero'] = 'Esposa';
-                    } else if ($d->parentesco_id = 923) {
+                    } else if ($d->parentesco_id == 923) {
                         $pessoa_vinculada[$key]['genero'] = 'Companheiro';
-                    } else if ($d->parentesco_id = 924) {
+                    } else if ($d->parentesco_id == 924) {
                         $pessoa_vinculada[$key]['genero'] = 'Companheira';
-                    } else if ($d->parentesco_id = 925) {
+                    } else if ($d->parentesco_id == 925) {
                         $pessoa_vinculada[$key]['genero'] = 'Convivente';
-                    } else if ($d->parentesco_id = 926) {
+                    } else if ($d->parentesco_id == 926) {
                         $pessoa_vinculada[$key]['genero'] = 'Convivente';
                     }
 
@@ -364,10 +375,10 @@ class DadosIniciaisPF extends TPage
             }
 
             if ($tem_pessoa_vinculada > 0) {
+
                 $posAction = new TAction([$this, 'onAvanca3']);
                 $posAction->setParameter('data', $data);
                 $posAction->setParameter('pessoa_vinculada', $pessoa_vinculada);
-
 
                 $param['genero'] = '';
                 $param['estado_civil_id'] = '';
@@ -378,8 +389,10 @@ class DadosIniciaisPF extends TPage
                 $table->style = 'border-collapse:collapse; text-align:center;';
                 $table->width = '100%';
                 $table->addRowSet('<b>CPF</b>', '<b>Nome</b>', '<b>Vínculo</b>');
-                foreach ($pessoa_vinculada as $key => $pessoa) {
-                    if ($pessoa['tem_vinculo'] == 1) {
+
+                foreach ($pessoa_vinculada as $pessoa) {
+
+                    if (isset($pessoa['tem_vinculo']) and $pessoa['tem_vinculo'] == 1) {
                         $table->addRowSet($pessoa['cpf'], $pessoa['nome'], $pessoa['genero']);
                     }
                 }
@@ -410,6 +423,7 @@ class DadosIniciaisPF extends TPage
             TSession::setValue('dados_iniciais_pf', (array) $data);
 
             $retorno1 = $this->onMudancaEstadoCivilFilhoFilha($data);
+
             if ($retorno1 == true) {
                 $retorno2 = self::verificaNomeDtnascimento((array)$data);
                 if ($retorno2 == true) {

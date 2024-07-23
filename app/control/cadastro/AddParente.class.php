@@ -154,6 +154,7 @@ class AddParente extends TWindow
         $dt_nascimento->setMask('dd/mm/yyyy');
         $acaodtnascimento = new TAction(array($this, 'verificaNomeDtnascimento'));
         $dt_nascimento->setExitAction($acaodtnascimento);
+        $idade = new TEntry('idade');
 
         $options = ['s' => 'Sim', 'n' => 'Não'];
         $endereco_id = new TRadioGroup('endereco_id');
@@ -167,6 +168,7 @@ class AddParente extends TWindow
         $popular->setEditable(FALSE);
         $genero->setEditable(FALSE);
         $dt_nascimento->setEditable(FALSE);
+        $idade->setEditable(FALSE);
         $endereco_id->setEditable(FALSE);
         $parentesco_id->setSize('100%');
         $cpf->setSize('100%');
@@ -174,6 +176,7 @@ class AddParente extends TWindow
         $popular->setSize('100%');
         $genero->setSize('100%');
         $dt_nascimento->setSize('100%');
+        $idade->setSize('100%');
         $endereco_id->setSize('100%');
 
         // add the form fields
@@ -189,6 +192,8 @@ class AddParente extends TWindow
         $row->layout = ['col-sm-12'];
         $row = $this->form->addFields([new TLabel('Nascimento', 'red'), $dt_nascimento]);
         $row->layout = ['col-sm-12'];
+        $row = $this->form->addFields([new TLabel('Idade', 'red'), $idade]);
+        $row->layout = ['col-sm-12'];
         $row = $this->form->addFields([new TLabel('Mora comigo?', 'red')], [$endereco_id]);
         $row->layout = ['col-sm-5', 'col-sm-7'];
 
@@ -203,6 +208,7 @@ class AddParente extends TWindow
         $popular->addValidation('Nome Popular', new TRequiredValidator);
         $genero->addValidation('Gênero', new TRequiredValidator);
         $dt_nascimento->addValidation('Nascimento', new TRequiredValidator);
+        $idade->addValidation('Idade', new TRequiredValidator);
         $endereco_id->addValidation('Mora comigo?', new TRequiredValidator);
 
         // define the form action
@@ -416,6 +422,7 @@ class AddParente extends TWindow
                         throw new Exception('<b>Atenção:</b> Você não pode vincular<b> ' . $pf->nome . ' (' . $novadata->format('d/m/Y') . ')</b>.<br>Pessoa EXISTENTE em outro CPF. <br> Se acreditar que estes dados estão incorretos, entre em contato com o Administrador do sistema!');
                     }
                 } else {
+                    self::onCalculaTempo(TDate::date2br($param['dt_nascimento']));
                     TButton::enableField('form_PessoaParente', 'inserir');
                 }
             }

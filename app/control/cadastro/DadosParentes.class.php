@@ -19,6 +19,7 @@ use Adianti\Widget\Form\TEntry;
 class DadosParentes extends TPage
 {
     protected $detail_list;
+    
 
     // trait with onSave, onClear, onEdit
     use Adianti\Base\AdiantiStandardFormTrait;
@@ -183,6 +184,8 @@ class DadosParentes extends TPage
         if ($dadosparentespf) {
             TForm::sendData('form_parente', $dadosparentespf);
         }
+
+        
     }
 
     public function onVolta()
