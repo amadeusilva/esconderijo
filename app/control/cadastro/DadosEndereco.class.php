@@ -79,7 +79,7 @@ class DadosEndereco extends TPage
         $ponto_referencia->setSize('100%');
 
         //$action = new TAction(array($this, 'onCEPAction'));
-        
+
         //$action->setParameter('cep', $cep);
         //$b2 = new TActionLink('completar', $action, 'white', 10, '', 'far:check-square #FEFF00');
         //$b2->class = 'btn btn-success';
@@ -308,6 +308,11 @@ class DadosEndereco extends TPage
                         $nova_dt_nascimento = DateTime::createFromFormat('d/m/Y', $parente->dt_nascimento);
                         $parente->dt_nascimento = $nova_dt_nascimento->format('Y/m/d');
                         $pessoafisicanova->dt_nascimento = $parente->dt_nascimento;
+                        if ($pessoafisicanova->genero == 'M') {
+                            $pessoafisicanova->estado_civil_id = 801;
+                        } else {
+                            $pessoafisicanova->estado_civil_id = 802;
+                        }
                         $pessoafisicanova->store();
 
                         $parente->pessoa_parente_id = $pessoanova->id; // passando a pessoa parente id para o objeto que salvara pessoa parente
@@ -326,22 +331,7 @@ class DadosEndereco extends TPage
                 $buscarelacao1 = PessoaParentesco::where('pessoa_id', '=', $pessoa->id)->where('parentesco_id', '>=', 921)->where('parentesco_id', '<=', 926)->first();
                 $buscarelacao2 = PessoaParentesco::where('pessoa_id', '=', $buscarelacao1->pessoa_parente_id)->where('parentesco_id', '>=', 921)->where('parentesco_id', '<=', 926)->first();
 
-                $pegarfilhos1 = PessoaParentesco::where('pessoa_id', '=', $pessoa->id)->where('parentesco_id', '>=', 903)->where('parentesco_id', '<=', 904)->load();
-                if ($pegarfilhos1) {
-                    foreach ($pegarfilhos1 as $filhos1) {
-                        $filhos1->pessoa_id = $buscarelacao1->pessoa_parente_id;
-                        //Salvando Parentesco
-                        $this->onSalvaParente($filhos1);
-                    }
-                }
-                $pegarfilhos2 = PessoaParentesco::where('pessoa_id', '=', $buscarelacao1->pessoa_parente_id)->where('parentesco_id', '>=', 903)->where('parentesco_id', '<=', 904)->load();
-                if ($pegarfilhos2) {
-                    foreach ($pegarfilhos2 as $filhos2) {
-                        $filhos2->pessoa_id = $buscarelacao1->pessoa_id;
-                        //Salvando Parentesco
-                        $this->onSalvaParente($filhos2);
-                    }
-                }
+                $this->onSalvaFilhosFilhasPaiMae($buscarelacao1);
 
                 $this->onMudaEstadoCivil($buscarelacao1);
 
@@ -383,6 +373,27 @@ class DadosEndereco extends TPage
             new TMessage('info', 'Pessoa Salva com Sucesso!', $posAction);
         } catch (Exception $e) {
             new TMessage('error', $e->getMessage());
+        }
+    }
+
+    public function onSalvaFilhosFilhasPaiMae($param)
+    {
+
+        $pegarfilhos1 = PessoaParentesco::where('pessoa_id', '=', $param->pessoa_id)->where('parentesco_id', '>=', 903)->where('parentesco_id', '<=', 904)->load();
+        if ($pegarfilhos1) {
+            foreach ($pegarfilhos1 as $filhos1) {
+                $filhos1->pessoa_id = $param->pessoa_parente_id;
+                //Salvando Parentesco
+                $this->onSalvaParente($filhos1);
+            }
+        }
+        $pegarfilhos2 = PessoaParentesco::where('pessoa_id', '=', $param->pessoa_parente_id)->where('parentesco_id', '>=', 903)->where('parentesco_id', '<=', 904)->load();
+        if ($pegarfilhos2) {
+            foreach ($pegarfilhos2 as $filhos2) {
+                $filhos2->pessoa_id = $param->pessoa_id;
+                //Salvando Parentesco
+                $this->onSalvaParente($filhos2);
+            }
         }
     }
 }

@@ -382,6 +382,8 @@ class PessoaPanel extends TPage
      */
     public static function onClose($param)
     {
+        TSession::delValue('pessoa_painel');
+        TSession::delValue('pessoa_painel_vinculos');
         TScript::create("Template.closeRightPanel()");
     }
 }

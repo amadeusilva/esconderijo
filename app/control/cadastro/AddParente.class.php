@@ -235,11 +235,12 @@ class AddParente extends TWindow
 
     public function onSave($param)
     {
+
         try {
 
             TTransaction::open('adea');
 
-            $this->form->validate();
+            //$this->form->validate();
             $data = $this->form->getData();
 
             $this->form->setData($data); // put the data back to the form
@@ -270,6 +271,11 @@ class AddParente extends TWindow
                     $novadatanatpn = DateTime::createFromFormat('d/m/Y', $data->dt_nascimento);
                     $data->dt_nascimento = $novadatanatpn->format('Y/m/d');
                     $pessoa_fisica_nova->dt_nascimento = $data->dt_nascimento;
+                    if ($pessoa_fisica_nova->genero == 'M') {
+                        $pessoa_fisica_nova->estado_civil_id = 801;
+                    } else {
+                        $pessoa_fisica_nova->estado_civil_id = 802;
+                    }
                     $pessoa_fisica_nova->store();
 
                     $data->pessoa_parente_id = $pessoa_nova->id;
@@ -412,6 +418,9 @@ class AddParente extends TWindow
             TTransaction::open('adea');
             if ($param['cpf'] and $param['nome'] and $param['dt_nascimento']) {
 
+                //self::onCalculaTempo(TDate::date2br($param['dt_nascimento']));
+                self::onCalculaTempo($param['dt_nascimento']);
+
                 $novadata = DateTime::createFromFormat('d/m/Y', $param['dt_nascimento']);
                 $param['dt_nascimento'] = $novadata->format('Y/m/d');
 
@@ -422,7 +431,6 @@ class AddParente extends TWindow
                         throw new Exception('<b>Atenção:</b> Você não pode vincular<b> ' . $pf->nome . ' (' . $novadata->format('d/m/Y') . ')</b>.<br>Pessoa EXISTENTE em outro CPF. <br> Se acreditar que estes dados estão incorretos, entre em contato com o Administrador do sistema!');
                     }
                 } else {
-                    self::onCalculaTempo(TDate::date2br($param['dt_nascimento']));
                     TButton::enableField('form_PessoaParente', 'inserir');
                 }
             }

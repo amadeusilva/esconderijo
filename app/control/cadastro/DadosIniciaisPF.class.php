@@ -174,21 +174,28 @@ class DadosIniciaisPF extends TPage
             $this->form->addContent([$b2]);
         }
 
-        $label = new TLabel('<br>Contatos', '#62a8ee', 14, 'b');
-        $label->style = 'text-align:left;border-bottom:1px solid #62a8ee;width:100%';
-        $this->form->addContent([$label]);
+        if (!TSession::getValue('pessoa_painel')) {
 
-        $row = $this->form->addFields(
-            [
-                new TLabel('Fone'),
-                $fone
-            ],
-            [
-                new TLabel('Email'),
-                $email
-            ]
-        );
-        $row->layout = ['col-sm-5', 'col-sm-7'];
+            $label = new TLabel('<br>Contatos', '#62a8ee', 14, 'b');
+            $label->style = 'text-align:left;border-bottom:1px solid #62a8ee;width:100%';
+            $this->form->addContent([$label]);
+
+            $row = $this->form->addFields(
+                [
+                    new TLabel('Fone'),
+                    $fone
+                ],
+                [
+                    new TLabel('Email'),
+                    $email
+                ]
+            );
+            $row->layout = ['col-sm-5', 'col-sm-7'];
+
+            $fone->addValidation('Fone', new TRequiredValidator);
+            $email->addValidation('Email', new TEmailValidator);
+            $email->addValidation('Email', new TRequiredValidator);
+        }
 
         // validations
         $cpf_cnpj->addValidation('CPF', new TCPFValidator);
@@ -198,9 +205,7 @@ class DadosIniciaisPF extends TPage
         $estado_civil_id->addValidation('Estado Civil', new TRequiredValidator);
         $dt_nascimento->addValidation('Nascimento', new TRequiredValidator);
         //$profissao_id->addValidation('Profissão', new TRequiredValidator);
-        $fone->addValidation('Fone', new TRequiredValidator);
-        $email->addValidation('Email', new TEmailValidator);
-        $email->addValidation('Email', new TRequiredValidator);
+
         $genero->addValidation('Gênero', new TRequiredValidator);
 
         // add a form action
@@ -225,12 +230,17 @@ class DadosIniciaisPF extends TPage
 
             $pessoabanda = PessoaParentesco::where('parentesco_id', '>=', 921)->where('parentesco_id', '<=', 926)->where('pessoa_id', '=', $param)->first();
 
-            $object = PessoasRelacao::where('relacao_id', '=', $pessoabanda->id)->first();        // instantiates object City
-            $object->id_relacao = $pessoabanda->id;
-            $object->estado_civil_id = $object->PessoaParentesco->Pessoa->PessoaFisica->estado_civil_id;
-            $object->tipo_vinculo = self::onVinculo($object->estado_civil_id);
-            $object->dt_inicial =  TDate::date2br($object->dt_inicial);
-            $object->tempo = self::onCalculaTempo($object->dt_inicial);
+            $object = '';
+
+            if ($pessoabanda) {
+
+                $object = PessoasRelacao::where('relacao_id', '=', $pessoabanda->id)->first();        // instantiates object City
+                $object->id_relacao = $pessoabanda->id;
+                $object->estado_civil_id = $object->PessoaParentesco->Pessoa->PessoaFisica->estado_civil_id;
+                $object->tipo_vinculo = self::onVinculo($object->estado_civil_id);
+                $object->dt_inicial =  TDate::date2br($object->dt_inicial);
+                $object->tempo = self::onCalculaTempo($object->dt_inicial);
+            }
 
             return $object;   // fill the form with the active record data
 
@@ -271,6 +281,9 @@ class DadosIniciaisPF extends TPage
                     $pessoa_painel = TSession::getValue('pessoa_painel');
 
                     $pessoa_painel->cpf_cnpj = $pessoa_painel->cpf;
+                    //if ($pessoa_painel->cpf_cnpj) {
+                    //    TEntry::disableField('form_pf', 'cpf_cnpj');
+                    //}
                     $pessoa_painel->genero = $pessoa_painel->genero == 'Masculino' ? 'M' : 'F';
                     $pessoa_painel->dt_nascimento =  $pessoa_painel->dt_nascimento;
                     $pessoa_painel->idade = self::onCalculaIdade($pessoa_painel->dt_nascimento);
