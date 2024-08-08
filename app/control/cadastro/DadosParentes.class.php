@@ -19,7 +19,7 @@ use Adianti\Widget\Form\TEntry;
 class DadosParentes extends TPage
 {
     protected $detail_list;
-    
+
 
     // trait with onSave, onClear, onEdit
     use Adianti\Base\AdiantiStandardFormTrait;
@@ -90,19 +90,27 @@ class DadosParentes extends TPage
             return $value == 'F' ? 'Feminino' : 'Masculino';
         });
 
+        $col_dt_nascimento->setTransformer(function ($value, $object, $row) {
+            $date = new DateTime($value);
+            return $date->format('d/m/Y');
+        });
+
         // creates two datagrid actions
+        $action1 = new TDataGridAction([$this, 'onEditParente'], ['cpf' => '{cpf}']);
+        $action1->setDisplayCondition(array($this, 'displayColumnEd'));
         $action2 = new TDataGridAction([$this, 'onDelete'], ['cpf' => '{cpf}']);
-        //$action2->setDisplayCondition(array($this, 'displayColumn'));
+        $action2->setDisplayCondition(array($this, 'displayColumnDel'));
 
         // add the actions to the datagrid
-        $this->detail_list->addAction($action2, 'Delete', 'far:trash-alt red');
+        $this->detail_list->addAction($action1, 'Editar', 'far:edit blue');
+        $this->detail_list->addAction($action2, 'Deletar', 'far:trash-alt red');
 
         // create the datagrid model
         $this->detail_list->createModel();
 
         $panel = new TPanelGroup('Pessoas Vinculadas', '#f5f5f5');
         $panel->add($this->detail_list);
-        $panel->addHeaderActionLink('Vincular',  new TAction(['AddParente', 'onClear'], ['register_state' => 'false']), 'fa:plus green');
+        $panel->addHeaderActionLink('Vincular',  new TAction(['AddParente', 'onClear'], ['vinculo' => 1, 'register_state' => 'false']), 'fa:plus green');
         $panel->getBody()->style = 'overflow-x:auto';
 
         $textorodape = self::onRodapePainel();
@@ -122,6 +130,52 @@ class DadosParentes extends TPage
         $vbox->add(new TXMLBreadCrumb('menu.xml', 'PessoaFisicaDataGrid'));
         $vbox->add($this->form);
         parent::add($vbox);
+    }
+
+    /**
+     * Define when the action can be displayed
+     */
+    public function displayColumnEd($object)
+    {
+        if ($object->vinculo == 3) {
+            return TRUE;
+        }
+        return FALSE;
+    }
+
+    public function displayColumnDel($object)
+    {
+        if ($object->vinculo == 1) {
+            return TRUE;
+        }
+        return FALSE;
+    }
+
+    /**
+     * method onEdit()
+     * Executed whenever the user clicks at the edit button da datagrid
+     */
+    public function onEditParente($param)
+    {
+        echo '<pre>';
+        print_r($param);
+        echo '</pre>';
+        exit;
+        try {
+            if (isset($param['id'])) {
+                $key = $param['id'];  // get the parameter
+                TTransaction::open('samples');   // open a transaction with database 'samples'
+                $object = new City($key);        // instantiates object City
+                $this->form->setData($object);   // fill the form with the active record data
+                TTransaction::close();           // close the transaction
+            } else {
+                $this->form->clear(true);
+            }
+        } catch (Exception $e) // in case of exception
+        {
+            new TMessage('error', $e->getMessage()); // shows the exception error message
+            TTransaction::rollback(); // undo all pending operations
+        }
     }
 
     public static function onRodapePainel()
@@ -184,8 +238,6 @@ class DadosParentes extends TPage
         if ($dadosparentespf) {
             TForm::sendData('form_parente', $dadosparentespf);
         }
-
-        
     }
 
     public function onVolta()
@@ -277,7 +329,46 @@ class DadosParentes extends TPage
 
     public function onReload()
     {
-        $objects = TSession::getValue('dados_parentes_pf');
+
+        $objects = array();
+        $pessoa_painel = TSession::getValue('pessoa_painel');
+
+        if (TSession::getValue('dados_parentes_pf')) {
+            $objects = TSession::getValue('dados_parentes_pf');
+        }
+
+        if (TSession::getValue('pessoa_painel_vinculos')) {
+            try {
+                TTransaction::open('adea');
+
+                $pessoa_painel_vinculos = TSession::getValue('pessoa_painel_vinculos');
+
+                foreach ($pessoa_painel_vinculos as $objeto) {
+                    $pessoa = ViewPessoaFisica::find($objeto->pessoa_parente_id);
+
+                    $pessoa->parentesco_id = $objeto->parentesco_id;
+                    $pessoa->vinculo = 3; //vem do banco
+
+                    if ($pessoa->endereco_id == $pessoa_painel->endereco_id) {
+                        $pessoa->endereco_id = 's';
+                    } else {
+                        $pessoa->endereco_id = 'n';
+                    }
+
+                    //$objects[] = $pessoa;
+
+                    $dadosparentespf = TSession::getValue('dados_parentes_pf');
+
+                    $dadosparentespf[$pessoa->cpf] = $pessoa;
+                    TSession::setValue('dados_parentes_pf', (array) $dadosparentespf);
+                }
+
+                TTransaction::close();  // close the transaction
+
+            } catch (Exception $e) {
+                new TMessage('error', $e->getMessage());
+            }
+        }
 
         $this->detail_list->clear();
         if ($objects) {
@@ -285,6 +376,7 @@ class DadosParentes extends TPage
                 $this->detail_list->addItem($object);
             }
         }
+
     }
 
     public function onDelete($param)

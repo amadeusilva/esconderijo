@@ -212,7 +212,7 @@ class AddParente extends TWindow
         $endereco_id->addValidation('Mora comigo?', new TRequiredValidator);
 
         // define the form action
-        $this->form->addAction('Inserir', new TAction(array($this, 'onSave')), 'fa:save green');
+        $this->form->addAction('Inserir', new TAction(array($this, 'onSave'), ['vinculo' => $param['vinculo']]), 'fa:save green');
         $this->form->addAction('Limpar',  new TAction(array($this, 'onClear')), 'fa:eraser red');
 
         $this->setAfterSaveAction(new TAction([$this, 'onClose']));
@@ -245,9 +245,11 @@ class AddParente extends TWindow
 
             $this->form->setData($data); // put the data back to the form
 
-            $pessoa_painel = TSession::getValue('pessoa_painel');
 
-            if ($pessoa_painel) {
+            if ($param['vinculo'] == 2) {
+
+                $pessoa_painel = TSession::getValue('pessoa_painel');
+
                 $data->pessoa_id = $pessoa_painel->id;
                 $pessoa_parente_banco = ViewPessoaFisica::where('cpf', '=', $data->cpf)->first();
                 if ($pessoa_parente_banco) {
@@ -288,7 +290,7 @@ class AddParente extends TWindow
                 $posAction = new TDataGridAction(['PessoaPanel', 'onView'],   ['key' => $pessoa_painel->id, 'register_state' => 'false']);
 
                 new TMessage('info', 'Pessoa vinculada com sucesso!', $posAction);
-            } else {
+            } else if ($param['vinculo'] == 1) {
 
                 $dadosparentespf = TSession::getValue('dados_parentes_pf');
 
@@ -300,6 +302,7 @@ class AddParente extends TWindow
                     }
                 }
 
+                $data->vinculo = $param['vinculo'];
                 $dadosparentespf[$data->cpf] = $data;
                 TSession::setValue('dados_parentes_pf', (array) $dadosparentespf);
                 // show the message

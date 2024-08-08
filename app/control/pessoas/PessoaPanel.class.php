@@ -226,7 +226,7 @@ class PessoaPanel extends TPage
                 $panelparentes->add($labelparentes);
             }
 
-            $panelparentes->addHeaderActionLink('<b>Adicionar</b>',  new TAction(['AddParente', 'onLoad'], ['pessoa_painel_id' => $this->pessoa->id, 'pessoa_painel_cpf' => $this->pessoa->cpf, 'pessoa_genero_painel_id' => $this->pessoa->genero, 'register_state' => 'false']), 'fa:plus green');
+            $panelparentes->addHeaderActionLink('<b>Adicionar</b>',  new TAction(['AddParente', 'onLoad'], ['pessoa_painel_id' => $this->pessoa->id, 'pessoa_painel_cpf' => $this->pessoa->cpf, 'pessoa_genero_painel_id' => $this->pessoa->genero, 'vinculo' => 2, 'register_state' => 'false']), 'fa:plus green');
             $this->form->addContent([$panelparentes]);
 
             TTransaction::close();

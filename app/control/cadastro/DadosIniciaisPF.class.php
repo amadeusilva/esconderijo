@@ -51,10 +51,12 @@ class DadosIniciaisPF extends TPage
         $popular->placeholder = ' Nome pelo qual é conhecido ou gosta de ser chamado';
         $popular->forceUpperCase();
 
-        $filterEC = new TCriteria;
-        $filterEC->add(new TFilter('lista_id', '=', '17'));
-        $filterEC->add(new TFilter('id', '<', '0'));
-        $estado_civil_id = new TDBCombo('estado_civil_id', 'adea', 'ListaItens', 'id', 'item', 'id', $filterEC);
+        //$filterEC = new TCriteria;
+        //$filterEC->add(new TFilter('id', '<', '0'));
+        //$estado_civil_id = new TDBCombo('estado_civil_id', 'adea', 'ListaItens', 'id', 'item', 'id', $filterEC);
+        //$estado_civil_id->setChangeAction(new TAction(array($this, 'onEstadocivilChange')));
+
+        $estado_civil_id = new TCombo('estado_civil_id');
         $estado_civil_id->setChangeAction(new TAction(array($this, 'onEstadocivilChange')));
 
         $fone           = new TEntry('fone');
@@ -157,11 +159,17 @@ class DadosIniciaisPF extends TPage
             if (!empty($dados_relacao->doc_imagem) and !TSession::getValue('pessoa_painel')) {
                 $dados_relacao->doc_imagem = substr((json_decode(urldecode($dados_relacao->doc_imagem))->fileName), 4); // aqui foi a solução
             }
+            //else{
+            //    $dados_relacao->doc_imagem = substr('tmp/'.(json_decode(urldecode($dados_relacao->doc_imagem))->fileName), 4);
+            //}
 
             if ($dados_relacao->doc_imagem) {
                 if ($dados_relacao->doc_imagem and !TSession::getValue('pessoa_painel')) {
                     $c = new THyperLink('(Documento Anexado)', 'download.php?file=tmp/' . $dados_relacao->doc_imagem, 'blue', 12, 'biu');
                 } else if (TSession::getValue('pessoa_painel')) {
+                    if (!$dados_relacao->id) {
+                        $dados_relacao->doc_imagem = json_decode(urldecode($dados_relacao->doc_imagem))->fileName;
+                    }
                     $c = new THyperLink('(Documento Anexado)', 'download.php?file=' . $dados_relacao->doc_imagem, 'blue', 12, 'biu');
                 }
             } else {
@@ -210,7 +218,7 @@ class DadosIniciaisPF extends TPage
 
         // add a form action
         $this->form->addActionLink('Lista de Pessoas',  new TAction(array(__CLASS__, 'onDecisao')), 'fa:table blue');
-        $this->form->addActionLink('Limpar',  new TAction(array($this, 'onClear')), 'fa:eraser red');
+        //$this->form->addActionLink('Limpar',  new TAction(array($this, 'onClear')), 'fa:eraser red');
         $this->form->addAction('Avançar', new TAction(array($this, 'onAvanca')), 'far:check-circle green');
 
         // wrap the page content using vertical box
@@ -221,42 +229,14 @@ class DadosIniciaisPF extends TPage
         parent::add($vbox);
     }
 
-    public static function onDadosRelacao($param)
-    {
-
-        try {
-
-            TTransaction::open('adea');   // open a transaction with database 'samples'
-
-            $pessoabanda = PessoaParentesco::where('parentesco_id', '>=', 921)->where('parentesco_id', '<=', 926)->where('pessoa_id', '=', $param)->first();
-
-            $object = '';
-
-            if ($pessoabanda) {
-
-                $object = PessoasRelacao::where('relacao_id', '=', $pessoabanda->id)->first();        // instantiates object City
-                $object->id_relacao = $pessoabanda->id;
-                $object->estado_civil_id = $object->PessoaParentesco->Pessoa->PessoaFisica->estado_civil_id;
-                $object->tipo_vinculo = self::onVinculo($object->estado_civil_id);
-                $object->dt_inicial =  TDate::date2br($object->dt_inicial);
-                $object->tempo = self::onCalculaTempo($object->dt_inicial);
-            }
-
-            return $object;   // fill the form with the active record data
-
-            TTransaction::close();           // close the transaction
-        } catch (Exception $e) // in case of exception
-        {
-            new TMessage('error', $e->getMessage()); // shows the exception error message
-            TTransaction::rollback(); // undo all pending operations
-        }
-    }
-
     public function onDecisao()
     {
+        $pessoa_painel = TSession::getValue('pessoa_painel');
         $dadosiniciaispf = TSession::getValue('dados_iniciais_pf');
         if ($dadosiniciaispf) {
             TForm::sendData('form_pf', $dadosiniciaispf);
+        } else if ($pessoa_painel) {
+            TForm::sendData('form_pf', $pessoa_painel);
         }
 
         // create two actions
@@ -276,15 +256,20 @@ class DadosIniciaisPF extends TPage
         if ($dadosiniciaispf) {
             TForm::sendData('form_pf', $dadosiniciaispf);
         } else if (TSession::getValue('pessoa_painel')) {
+            $pessoa_painel = TSession::getValue('pessoa_painel');
             try {
-                if (isset($param['id'])) {
-                    $pessoa_painel = TSession::getValue('pessoa_painel');
+                if (isset($pessoa_painel->id)) {
 
                     $pessoa_painel->cpf_cnpj = $pessoa_painel->cpf;
                     //if ($pessoa_painel->cpf_cnpj) {
                     //    TEntry::disableField('form_pf', 'cpf_cnpj');
                     //}
-                    $pessoa_painel->genero = $pessoa_painel->genero == 'Masculino' ? 'M' : 'F';
+                    if ($pessoa_painel->genero == 'Masculino') {
+                        $pessoa_painel->genero = 'M';
+                    } else if ($pessoa_painel->genero == 'Feminino') {
+                        $pessoa_painel->genero = 'F';
+                    }
+                    //$pessoa_painel->genero = $pessoa_painel->genero == 'Masculino' ? 'M' : 'F';
                     $pessoa_painel->dt_nascimento =  $pessoa_painel->dt_nascimento;
                     $pessoa_painel->idade = self::onCalculaIdade($pessoa_painel->dt_nascimento);
 
@@ -376,7 +361,8 @@ class DadosIniciaisPF extends TPage
 
                         if (isset($tem_vinculo) and !empty($tem_vinculo)) {
                             foreach ($tem_vinculo as $pessoagenero) {
-                                if ($pessoagenero->Pessoa->PessoaFisica->genero == $dadosiniciaispf['genero']) {
+
+                                if ($pessoagenero->Pessoa->PessoaFisica->genero == $dadosiniciaispf['genero'] and $pessoagenero->pessoa_id != $dadosiniciaispf['id']) {
                                     $pessoa_vinculada[$key]['tem_vinculo'] = 1;
                                     $tem_pessoa_vinculada = 1;
                                 }

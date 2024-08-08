@@ -121,11 +121,17 @@ trait ControlePessoas
         if ($param == 805 or $param == 806) {
             $tipo_vinculo = 'Declaração de União Estável';
             TQuickForm::showField('form_dados_relacao', 'doc_imagem');
-        } else if ($param == 803 or $param == 804) {
+        } else if ($param == 803 or $param == 804 or $param == 809 or $param == 810) {
             $tipo_vinculo = 'Sem documento de registro em cartório';
             TQuickForm::hideField('form_dados_relacao', 'doc_imagem');
         } else if ($param == 807 or $param == 808) {
             $tipo_vinculo = 'Certidão de Casamento';
+            TQuickForm::showField('form_dados_relacao', 'doc_imagem');
+        } else if ($param == 811 or $param == 812) {
+            $tipo_vinculo = '(Certidão de Divórcio)';
+            TQuickForm::showField('form_dados_relacao', 'doc_imagem');
+        } else if ($param == 813 or $param == 814) {
+            $tipo_vinculo = '(Certidão de óbito do cônjuge)';
             TQuickForm::showField('form_dados_relacao', 'doc_imagem');
         }
 
@@ -144,16 +150,20 @@ trait ControlePessoas
                 $param = $novadata->format('Y/m/d');
             }
 
-            $interval = $novadata->diff(new DateTime(date('Y-m-d')));
+            if (isset($param['dt_final']) and !empty($param['dt_final'])) {
+                $interval = $novadata->diff(new DateTime($param['dt_final']));
+            } else {
+                $interval = $novadata->diff(new DateTime(date('Y-m-d')));
+            }
             $tempo_calculado = new stdClass;
             $tempo_calculado->tempo = $interval->format('%Y anos');
             $tempo_calculado->idade = $interval->format('%Y anos');
 
-            //return $tempo_calculado;
-
             TForm::sendData('form_dados_relacao', $tempo_calculado);
-            TForm::sendData('form_pf', $tempo_calculado);
+            //TForm::sendData('form_pf', $tempo_calculado);
             TForm::sendData('form_PessoaParente', $tempo_calculado);
+
+            return $tempo_calculado->tempo;
         }
     }
 
@@ -176,25 +186,36 @@ trait ControlePessoas
                         $pessoa_painel = TSession::getValue('pessoa_painel');
                         if ($pessoa_painel->estado_civil_id != $param['estado_civil_id']) {
 
-
                             AdiantiCoreApplication::loadPage('DadosRelacao', 'onEdit', ['param' => $param]);
                             $param['estado_civil_id'] = '';
                             TForm::sendData('form_pf', $param);
-
-                            //$pessoabanda = PessoaParentesco::where('parentesco_id', '>=', 921)->where('parentesco_id', '<=', 926)->where('pessoa_id', '=', $pessoa_painel->id)->first();
-
-                            //$param['id'] = $pessoabanda->id;
-
-                            //AdiantiCoreApplication::loadPage('DadosRelacao', 'onVerRelacao', ['param' => $param]);
-
-                            //TForm::sendData('form_pf', (array) $pessoa_painel->estado_civil_id);
                         }
                     } else {
                         AdiantiCoreApplication::loadPage('DadosRelacao', 'onEdit', ['param' => $param]);
                         $param['estado_civil_id'] = '';
                         TForm::sendData('form_pf', $param);
                     }
+                    // caso onde tem pessoa painel e tem dados de relação
+                } else if ($param['estado_civil_id'] >= 809 and $param['estado_civil_id'] <= 814) {
+
+                    if ($dados_relacao) {
+                        if ($dados_relacao['estado_civil_id'] != $param['estado_civil_id']) {
+                            AdiantiCoreApplication::loadPage('DadosRelacao', 'onEdit', ['param' => $param]);
+                            $param['estado_civil_id'] = '';
+                            TForm::sendData('form_pf', $param);
+                        }
+                    } else
+
+                    if (TSession::getValue('pessoa_painel')) {
+                        $pessoa_painel = TSession::getValue('pessoa_painel');
+                        if ($pessoa_painel->estado_civil_id != $param['estado_civil_id']) {
+                            AdiantiCoreApplication::loadPage('DadosRelacao', 'onEdit', ['param' => $param]);
+                            $param['estado_civil_id'] = '';
+                            TForm::sendData('form_pf', $param);
+                        }
+                    }
                 } else if ($dados_relacao) {
+
                     $posAction = new TAction(array(__CLASS__, 'onDeletarelacao'));
                     $posAction->setParameter('deleterelacao', 1);
                     $posAction->setParameter('novoparam', $param);
@@ -213,16 +234,107 @@ trait ControlePessoas
         }
     }
 
+    public static function onDadosRelacao($param)
+    {
+
+        try {
+
+            TTransaction::open('adea');   // open a transaction with database 'samples'
+
+            $pessoabanda = PessoaParentesco::where('parentesco_id', '>=', 921)->where('parentesco_id', '<=', 926)->where('pessoa_id', '=', $param)->first();
+
+            $object = '';
+
+            if ($pessoabanda) {
+
+                $object = PessoasRelacao::where('relacao_id', '=', $pessoabanda->id)->first();        // instantiates object City
+                $object->id_relacao = $pessoabanda->id;
+                $object->estado_civil_id = $object->PessoaParentesco->Pessoa->PessoaFisica->estado_civil_id;
+                $object->tipo_vinculo = self::onVinculo($object->estado_civil_id);
+                $object->dt_inicial =  TDate::date2br($object->dt_inicial);
+                $object->tempo = self::onCalculaTempo($object->dt_inicial);
+            }
+
+            return $object;   // fill the form with the active record data
+
+            TTransaction::close();           // close the transaction
+        } catch (Exception $e) // in case of exception
+        {
+            new TMessage('error', $e->getMessage()); // shows the exception error message
+            TTransaction::rollback(); // undo all pending operations
+        }
+    }
+
     public static function onGeneroChange($param)
     {
         try {
             TTransaction::open('adea');
             if (!empty($param['genero'])) {
 
+                $repo = new TRepository('ListaItens');
+                $criteria = new TCriteria;
+                if (isset($param['genero'])) {
+                    $criteria->add(new TFilter('lista_id', '=',  17));
+                    $criteria->add(new TFilter('obs', '=',  $param['genero']));
+                    if (TSession::getValue('pessoa_painel')) {
+                        $pessoa_painel = TSession::getValue('pessoa_painel');
+                        //casados
+                        if ($pessoa_painel->estado_civil_id == 807 or $pessoa_painel->estado_civil_id == 808) {
+                            $criteria->add(new TFilter('id', '!=',  801));
+                            $criteria->add(new TFilter('id', '!=',  802));
+                            $criteria->add(new TFilter('id', '!=',  803));
+                            $criteria->add(new TFilter('id', '!=',  804));
+                            $criteria->add(new TFilter('id', '!=',  805));
+                            $criteria->add(new TFilter('id', '!=',  806));
+                            $criteria->add(new TFilter('id', '!=',  809));
+                            $criteria->add(new TFilter('id', '!=',  810));
+                            //convivente
+                        } else if ($pessoa_painel->estado_civil_id >= 803 and $pessoa_painel->estado_civil_id <= 804) {
+                            $criteria->add(new TFilter('id', '!=',  801));
+                            $criteria->add(new TFilter('id', '!=',  802));
+                            $criteria->add(new TFilter('id', '!=',  811));
+                            $criteria->add(new TFilter('id', '!=',  812));
+                            $criteria->add(new TFilter('id', '!=',  813));
+                            $criteria->add(new TFilter('id', '!=',  814));
+                            //uniao estável 
+                        } else if ($pessoa_painel->estado_civil_id >= 805 and $pessoa_painel->estado_civil_id <= 806) {
+                            $criteria->add(new TFilter('id', '!=',  801));
+                            $criteria->add(new TFilter('id', '!=',  802));
+                            $criteria->add(new TFilter('id', '!=',  803));
+                            $criteria->add(new TFilter('id', '!=',  804));
+                            $criteria->add(new TFilter('id', '!=',  811));
+                            $criteria->add(new TFilter('id', '!=',  812));
+                            $criteria->add(new TFilter('id', '!=',  813));
+                            $criteria->add(new TFilter('id', '!=',  814));
+                        }
+                    } else {
+                        $criteria->add(new TFilter('id', '!=',  814));
+                        $criteria->add(new TFilter('id', '!=',  813));
+                        $criteria->add(new TFilter('id', '!=',  812));
+                        $criteria->add(new TFilter('id', '!=',  811));
+                        $criteria->add(new TFilter('id', '!=',  810));
+                        $criteria->add(new TFilter('id', '!=',  809));
+                    }
+                }
+
+                $itens = $repo->load($criteria);
+
+                $options = array();
+                $options[0] = '';
+                foreach ($itens as $item) {
+                    $options[$item->id] = $item->item . ' ' . $item->abrev;
+                }
+
+                TCombo::reload('form_pf', 'estado_civil_id', $options);
+                //TCombo::reload('form_dynamic_filter', 'customers', $options);
+                //TDBCombo::reloadFromModel('form_pf', 'estado_civil_id', 'adea', 'ListaItens', 'id', 'item', 'id', $options, TRUE);
+
+                /*
                 $criteria = TCriteria::create(['lista_id' => 17, 'abrev' => 'GP', 'obs' => $param['genero']]);
 
                 // formname, field, database, model, key, value, ordercolumn = NULL, criteria = NULL, startEmpty = FALSE
                 TDBCombo::reloadFromModel('form_pf', 'estado_civil_id', 'adea', 'ListaItens', 'id', 'item', 'id', $criteria, TRUE);
+                */
             } else {
                 TCombo::clearField('form_pf', 'estado_civil_id');
             }
@@ -301,7 +413,7 @@ trait ControlePessoas
                 $pf = ViewPessoaFisica::where('nome', '=', $param['nome'])->where('dt_nascimento', '=', $param['dt_nascimento'])->first();
 
                 if ($pf) {
-                    if ($pf->cpf != $param['cpf_cnpj']) {
+                    if ($pf->id != $param['id']) {
                         throw new Exception('<b>Atenção!</b> Encontramos a pessoa: <b>' . $pf->nome . ' (' . $novadata->format('d/m/Y') . ')</b> REGISTRADO em outro CPF. Se acreditar que estes dados estão incorretos, entre em contato com o Administrador do sistema!');
                     } else {
                         return true;
@@ -314,9 +426,11 @@ trait ControlePessoas
         } catch (Exception $e) {
             new TMessage('error', $e->getMessage());
             $pfvazia = new stdClass;
+            //$pfvazia->id = '';
             $pfvazia->nome = '';
             $pfvazia->popular = '';
             $pfvazia->dt_nascimento = '';
+            $pfvazia->idade = '';
             $pfvazia->genero = '';
             TForm::sendData('form_pf', $pfvazia);
         }

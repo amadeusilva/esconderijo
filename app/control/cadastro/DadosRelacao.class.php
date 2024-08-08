@@ -87,6 +87,25 @@ class DadosRelacao extends TWindow
         $row = $this->form->addFields([new TLabel('Data Ínicio', 'red'), $dt_inicial]);
         $row->layout = ['col-sm-12'];
 
+        /*
+        if (TSession::getValue('pessoa_painel')) {
+            if (isset($param['param']['estado_civil_id']) and !empty($param['param']['estado_civil_id'])) {
+                if ($param['param']['estado_civil_id'] >= 809 and $param['param']['estado_civil_id'] <= 814) {
+
+                    $dt_inicial->setEditable(FALSE);
+
+                    $dt_final                 = new TDate('dt_final');
+                    $dt_final->setMask('dd/mm/yyyy');
+                    $dt_final->setExitAction(new TAction(array($this, 'onCalculaTempo')));
+                    $dt_final->setSize('100%');
+                    $row = $this->form->addFields([new TLabel('Data Final', 'red'), $dt_final]);
+                    $row->layout = ['col-sm-12'];
+                    $dt_final->addValidation('Data Final', new TRequiredValidator);
+                }
+            }
+        }
+            */
+
         $row = $this->form->addFields([new TLabel('Contagem (tempo)', 'red'), $tempo]);
         $row->layout = ['col-sm-12'];
 
@@ -96,6 +115,7 @@ class DadosRelacao extends TWindow
         $estado_civil_id->addValidation('Estado Civil', new TRequiredValidator);
         $tipo_vinculo->addValidation('Tipo de vínculo', new TRequiredValidator);
         $dt_inicial->addValidation('Data Ínicio', new TRequiredValidator);
+
 
         // define the form action
         $this->form->addAction('Salvar', new TAction(array($this, 'onSave'), ['param' => $param]), 'fa:save green');
@@ -114,9 +134,19 @@ class DadosRelacao extends TWindow
     public function onVerRelacao($param)
     {
 
-        //if ($param['param']) {
-        //    $param['id'] = $param['param']['id'];
-        //}
+        /*
+        if (isset($param['atualiza_relacao']) and !empty($param['atualiza_relacao'])) {
+
+            if (TSession::getValue('dados_relacao')) {
+                $dados_relacao = (object) TSession::getValue('dados_relacao');
+                $param['id'] = $dados_relacao->id_relacao;
+            } else {
+                $pessoa_painel = TSession::getValue('pessoa_painel');
+                $dados_relacao = self::onDadosRelacao($pessoa_painel->id);
+                $param['id'] = $dados_relacao->id_relacao;
+            }
+        }
+            */
 
         try {
             if (isset($param['id']) and !empty($param['id'])) {
@@ -127,6 +157,7 @@ class DadosRelacao extends TWindow
                 $object->estado_civil_id = $object->PessoaParentesco->Pessoa->PessoaFisica->estado_civil_id;
                 $object->tipo_vinculo = self::onVinculo($object->estado_civil_id);
                 $object->dt_inicial =  TDate::date2br($object->dt_inicial);
+                $object->dt_final =  TDate::date2br($object->dt_final);
                 $object->tempo = self::onCalculaTempo($object->dt_inicial);
 
                 $this->form->setData($object);   // fill the form with the active record data
@@ -141,6 +172,7 @@ class DadosRelacao extends TWindow
                 $object->estado_civil_id = $dados_relacao['estado_civil_id'];
                 $object->tipo_vinculo = self::onVinculo($dados_relacao['estado_civil_id']);
                 $object->dt_inicial = $dados_relacao['dt_inicial'];
+                //$object->dt_final = $dados_relacao['dt_final'];
                 $object->tempo = $dados_relacao['tempo'];
                 if ($dados_relacao['doc_imagem']) {
                     $object->doc_imagem = $dados_relacao['doc_imagem'];
@@ -158,6 +190,7 @@ class DadosRelacao extends TWindow
 
     public function onEdit($param)
     {
+
         $param['estado_civil_id'] = $param['param']['estado_civil_id'];
         $param['tipo_vinculo'] = self::onVinculo($param['estado_civil_id']);
 
@@ -172,6 +205,7 @@ class DadosRelacao extends TWindow
 
         $this->form->clear(TRUE);
         $param['dt_inicial'] = '';
+        $param['dt_final'] = '';
         $param['tempo'] = '';
         TForm::sendData('form_dados_relacao', $param);
     }
@@ -201,37 +235,49 @@ class DadosRelacao extends TWindow
                 }
             }
 
+            $pessoa_painel = TSession::getValue('pessoa_painel');
+
             if (isset($param['id']) and !empty($param['id'])) {
-                TTransaction::open('adea');
-                $object = new PessoasRelacao();  // create an empty object
 
-                $novadatanapr = DateTime::createFromFormat('d/m/Y', $data->dt_inicial);
-                $data->dt_inicial = $novadatanapr->format('Y/m/d');
+                if (isset($param['param']['atualiza_cadastro']) and !empty($param['param']['atualiza_cadastro'])) {
+                    TSession::setValue('dados_relacao', (array) $data);
 
-                $object->fromArray((array) $data); // load the object with data
-                $object->store(); // save the object
+                    // fill the form with the active record data
+                    $this->form->setData($data);
 
-                // copy file to target folder
-                $this->saveFile($object, $data, 'doc_imagem', 'app/images/dadosderelacao');
+                    self::onClose();
 
-                // send id back to the form
-                $data->id = $object->id;
-                $this->form->setData($data);
-
-                TTransaction::close();
-
-                // fill the form with the active record data
-                $this->form->setData($object);
-
-                self::onClose();
-
-                $pessoa_painel = TSession::getValue('pessoa_painel');
-
-                if ($param['param']['atualiza_cadastro'] == true) {
                     $posAction = new TDataGridAction(['DadosIniciaisPF', 'onEdit'],   ['id' => $pessoa_painel->id, 'register_state' => 'false']);
                     // shows the success message
                     new TMessage('info', 'Registro Salvo!', $posAction);
                 } else {
+
+                    TTransaction::open('adea');
+                    $object = new PessoasRelacao();  // create an empty object
+
+                    $novadatanaprdt_inicial = DateTime::createFromFormat('d/m/Y', $data->dt_inicial);
+                    $data->dt_inicial = $novadatanaprdt_inicial->format('Y/m/d');
+
+                    //$novadatanaprdt_final = DateTime::createFromFormat('d/m/Y', $data->dt_final);
+                    //$data->dt_final = $novadatanaprdt_final->format('Y/m/d');
+
+                    $object->fromArray((array) $data); // load the object with data
+                    $object->store(); // save the object
+
+                    // copy file to target folder
+                    $this->saveFile($object, $data, 'doc_imagem', 'app/images/dadosderelacao');
+
+                    // send id back to the form
+                    $data->id = $object->id;
+                    $this->form->setData($data);
+
+                    TTransaction::close();
+
+                    // fill the form with the active record data
+                    $this->form->setData($object);
+
+                    self::onClose();
+
                     $posAction = new TDataGridAction(['PessoaPanel', 'onView'],   ['key' => $pessoa_painel->id, 'register_state' => 'false']);
                     // shows the success message
                     new TMessage('info', 'Registro Salvo!', $posAction);
