@@ -18,6 +18,8 @@ use Adianti\Widget\Form\TEntry;
  */
 class DadosParentes extends TPage
 {
+
+    use ControlePessoas;
     protected $detail_list;
 
 
@@ -45,19 +47,21 @@ class DadosParentes extends TPage
         $this->detail_list->disableDefaultClick();
         //$this->detail_list->setMutationAction(new TAction([$this, 'onRodapePainel']));
 
+        $col_id  = new TDataGridColumn('id', 'Cod.', 'center');
         $col_parentesco_id  = new TDataGridColumn('parentesco_id', 'Grau', 'left');
-        $col_cpf            = new TDataGridColumn('cpf', 'CPF', 'left');
+        $col_cpf            = new TDataGridColumn('cpf', 'CPF', 'center');
         $col_nome           = new TDataGridColumn('popular', 'Nome', 'left');
         $col_genero         = new TDataGridColumn('genero', 'Gênero', 'center');
         $col_dt_nascimento  = new TDataGridColumn('dt_nascimento', 'Nascimento', 'center');
-        $col_endereco_id       = new TDataGridColumn('endereco_id', 'Mora comigo?', 'center');
+        $col_moracomigo       = new TDataGridColumn('moracomigo', 'Mora comigo?', 'center');
 
+        $this->detail_list->addColumn($col_id);
         $this->detail_list->addColumn($col_parentesco_id);
         $this->detail_list->addColumn($col_cpf);
         $this->detail_list->addColumn($col_nome);
         $this->detail_list->addColumn($col_genero);
         $this->detail_list->addColumn($col_dt_nascimento);
-        $this->detail_list->addColumn($col_endereco_id);
+        $this->detail_list->addColumn($col_moracomigo);
 
         $col_parentesco_id->setTransformer(function ($value) {
             try {
@@ -70,7 +74,20 @@ class DadosParentes extends TPage
             }
         });
 
-        $col_endereco_id->setTransformer(function ($value) {
+        $col_cpf->setTransformer(function ($value) {
+            $parte_string = substr($value, 0, 5);
+            if ($parte_string == 'CPFde') {
+                $div = new TElement('span');
+                $div->class = "label label-danger";
+                $div->style = "text-shadow:none; font-size:12px";
+                $div->add('Atualize o CPF !');
+                return $div;
+            } else {
+                return $value;
+            }
+        });
+
+        $col_moracomigo->setTransformer(function ($value) {
             if ($value == 's') {
                 $div = new TElement('span');
                 $div->class = "label label-success";
@@ -90,13 +107,15 @@ class DadosParentes extends TPage
             return $value == 'F' ? 'Feminino' : 'Masculino';
         });
 
+        /*
         $col_dt_nascimento->setTransformer(function ($value, $object, $row) {
             $date = new DateTime($value);
             return $date->format('d/m/Y');
         });
+        */
 
         // creates two datagrid actions
-        $action1 = new TDataGridAction([$this, 'onEditParente'], ['cpf' => '{cpf}']);
+        $action1 = new TDataGridAction(['AddParente', 'onEditParente'], ['id' => '{id}', 'parentesco_id' => '{parentesco_id}', 'moracomigo' => '{moracomigo}', 'atualizacao' => '{atualizacao}', 'vinculo' => 3]);
         $action1->setDisplayCondition(array($this, 'displayColumnEd'));
         $action2 = new TDataGridAction([$this, 'onDelete'], ['cpf' => '{cpf}']);
         $action2->setDisplayCondition(array($this, 'displayColumnDel'));
@@ -110,7 +129,7 @@ class DadosParentes extends TPage
 
         $panel = new TPanelGroup('Pessoas Vinculadas', '#f5f5f5');
         $panel->add($this->detail_list);
-        $panel->addHeaderActionLink('Vincular',  new TAction(['AddParente', 'onClear'], ['vinculo' => 1, 'register_state' => 'false']), 'fa:plus green');
+        $panel->addHeaderActionLink('Vincular',  new TAction(['AddParente', 'onEditParente'], ['vinculo' => 1, 'register_state' => 'false']), 'fa:plus green');
         $panel->getBody()->style = 'overflow-x:auto';
 
         $textorodape = self::onRodapePainel();
@@ -149,33 +168,6 @@ class DadosParentes extends TPage
             return TRUE;
         }
         return FALSE;
-    }
-
-    /**
-     * method onEdit()
-     * Executed whenever the user clicks at the edit button da datagrid
-     */
-    public function onEditParente($param)
-    {
-        echo '<pre>';
-        print_r($param);
-        echo '</pre>';
-        exit;
-        try {
-            if (isset($param['id'])) {
-                $key = $param['id'];  // get the parameter
-                TTransaction::open('samples');   // open a transaction with database 'samples'
-                $object = new City($key);        // instantiates object City
-                $this->form->setData($object);   // fill the form with the active record data
-                TTransaction::close();           // close the transaction
-            } else {
-                $this->form->clear(true);
-            }
-        } catch (Exception $e) // in case of exception
-        {
-            new TMessage('error', $e->getMessage()); // shows the exception error message
-            TTransaction::rollback(); // undo all pending operations
-        }
     }
 
     public static function onRodapePainel()
@@ -263,65 +255,106 @@ class DadosParentes extends TPage
             $dados_iniciais_pf = TSession::getValue('dados_iniciais_pf');
             $data = TSession::getValue('dados_parentes_pf');
 
-            if ($dados_iniciais_pf) {
-                $tem_esposa_esposo = 0;
-                $tem_companheira_companheiro = 0;
-                $tem_convivente = 0;
-                if ($data) {
-                    foreach ($data as $d) {
-                        if ($d->parentesco_id == 921 or $d->parentesco_id == 922) {
-                            $tem_esposa_esposo = 1;
-                        }
-                        if ($d->parentesco_id == 923 or $d->parentesco_id == 924) {
-                            $tem_companheira_companheiro = 1;
-                        }
-                        if ($d->parentesco_id == 925 or $d->parentesco_id == 926) {
-                            $tem_convivente = 1;
-                        }
-                    }
-                }
+            //inicio do bloco pra ver se tem alguem pra add cpf
 
-                if ($dados_iniciais_pf['estado_civil_id'] == 803 or $dados_iniciais_pf['estado_civil_id'] == 804) {
-                    if ($tem_convivente == 0) {
-                        if ($dados_iniciais_pf['genero'] == 'M') {
-                            $this->form->add(new TAlert('danger', 'Estado Civil: <b>Convivente</b>. Você precisa vincular uma <b>Convivente</b>!'));
-                        } else {
-                            $this->form->add(new TAlert('danger', 'Estado Civil: <b>Convivente</b>. Você precisa vincular um <b>Convivente</b>!'));
-                        }
-                        AdiantiCoreApplication::loadPage('AddParente', 'onLoad');
-                    } else {
-                        TSession::setValue('dados_parentes_pf', (array) $data);
-                        AdiantiCoreApplication::loadPage('DadosEndereco', 'onEdit');
+            $atualiza_parente = 0;
+            $id = 0;
+            $parentesco_id = 0;
+            $moracomigo = 0;
+            $atualizacao = 0;
+            $vinculo = 0;
+
+            if ($data) {
+
+                foreach ($data as $d) {
+
+                    $parte_string = substr($d->cpf, 0, 5);
+
+                    if ($parte_string == 'CPFde') {
+                        $atualiza_parente = 1;
+                        $id = $d->id;
+                        $parentesco_id = $d->parentesco_id;
+                        $moracomigo = $d->moracomigo;
+                        $atualizacao = $d->atualizacao;
+                        $vinculo = 3;
                     }
-                } else if ($dados_iniciais_pf['estado_civil_id'] == 805 or $dados_iniciais_pf['estado_civil_id'] == 806) {
-                    if ($tem_companheira_companheiro == 0) {
-                        if ($dados_iniciais_pf['genero'] == 'M') {
-                            $this->form->add(new TAlert('danger', 'Estado Civil: <b>União Estável</b>. Você precisa vincular uma <b>Companheira</b>!'));
-                        } else {
-                            $this->form->add(new TAlert('danger', 'Estado Civil: <b>União Estável</b>. Você precisa vincular um <b>Companheiro</b>!'));
-                        }
-                        AdiantiCoreApplication::loadPage('AddParente', 'onLoad');
-                    } else {
-                        TSession::setValue('dados_parentes_pf', (array) $data);
-                        AdiantiCoreApplication::loadPage('DadosEndereco', 'onEdit');
-                    }
-                } else if ($dados_iniciais_pf['estado_civil_id'] == 807 or $dados_iniciais_pf['estado_civil_id'] == 808) {
-                    if ($tem_esposa_esposo == 0) {
-                        if ($dados_iniciais_pf['genero'] == 'M') {
-                            $this->form->add(new TAlert('danger', 'Estado Civil: <b>Casado</b>. Você precisa vincular uma <b>Esposa</b>!'));
-                        } else {
-                            $this->form->add(new TAlert('danger', 'Estado Civil: <b>Casada</b>. Você precisa vincular um <b>Esposo</b>!'));
-                        }
-                        AdiantiCoreApplication::loadPage('AddParente', 'onLoad');
-                    } else {
-                        TSession::setValue('dados_parentes_pf', (array) $data);
-                        AdiantiCoreApplication::loadPage('DadosEndereco', 'onEdit');
-                    }
-                } else {
-                    TSession::setValue('dados_parentes_pf', (array) $data);
-                    AdiantiCoreApplication::loadPage('DadosEndereco', 'onEdit');
                 }
             }
+
+            if ($atualiza_parente != 0) {
+                $this->form->add(new TAlert('danger', '<b>Atenção!</b>. Você precisa revisar <b>Dados de Pessoas Vinculadas</b> !'));
+
+                AdiantiCoreApplication::loadPage('AddParente', 'onEditParente', [
+                    'id' => $id,
+                    'parentesco_id' => $parentesco_id,
+                    'moracomigo' => $moracomigo,
+                    'atualizacao' => $atualizacao,
+                    'vinculo' => $vinculo
+                ]);
+            } else
+
+                //fim do bloco pra ver se tem alguem pra add cpf
+
+                if ($dados_iniciais_pf) {
+                    $tem_esposa_esposo = 0;
+                    $tem_companheira_companheiro = 0;
+                    $tem_convivente = 0;
+                    if ($data) {
+                        foreach ($data as $d) {
+                            if ($d->parentesco_id == 921 or $d->parentesco_id == 922) {
+                                $tem_esposa_esposo = 1;
+                            }
+                            if ($d->parentesco_id == 923 or $d->parentesco_id == 924) {
+                                $tem_companheira_companheiro = 1;
+                            }
+                            if ($d->parentesco_id == 925 or $d->parentesco_id == 926) {
+                                $tem_convivente = 1;
+                            }
+                        }
+                    }
+
+                    if ($dados_iniciais_pf['estado_civil_id'] == 803 or $dados_iniciais_pf['estado_civil_id'] == 804) {
+                        if ($tem_convivente == 0) {
+                            if ($dados_iniciais_pf['genero'] == 'M') {
+                                $this->form->add(new TAlert('danger', 'Estado Civil: <b>Convivente</b>. Você precisa vincular uma <b>Convivente</b>!'));
+                            } else {
+                                $this->form->add(new TAlert('danger', 'Estado Civil: <b>Convivente</b>. Você precisa vincular um <b>Convivente</b>!'));
+                            }
+                            AdiantiCoreApplication::loadPage('AddParente', 'onLoad', ['vinculo' => 1]);
+                        } else {
+                            TSession::setValue('dados_parentes_pf', (array) $data);
+                            AdiantiCoreApplication::loadPage('DadosEndereco', 'onEdit');
+                        }
+                    } else if ($dados_iniciais_pf['estado_civil_id'] == 805 or $dados_iniciais_pf['estado_civil_id'] == 806) {
+                        if ($tem_companheira_companheiro == 0) {
+                            if ($dados_iniciais_pf['genero'] == 'M') {
+                                $this->form->add(new TAlert('danger', 'Estado Civil: <b>União Estável</b>. Você precisa vincular uma <b>Companheira</b>!'));
+                            } else {
+                                $this->form->add(new TAlert('danger', 'Estado Civil: <b>União Estável</b>. Você precisa vincular um <b>Companheiro</b>!'));
+                            }
+                            AdiantiCoreApplication::loadPage('AddParente', 'onLoad', ['vinculo' => 1]);
+                        } else {
+                            TSession::setValue('dados_parentes_pf', (array) $data);
+                            AdiantiCoreApplication::loadPage('DadosEndereco', 'onEdit');
+                        }
+                    } else if ($dados_iniciais_pf['estado_civil_id'] == 807 or $dados_iniciais_pf['estado_civil_id'] == 808) {
+                        if ($tem_esposa_esposo == 0) {
+                            if ($dados_iniciais_pf['genero'] == 'M') {
+                                $this->form->add(new TAlert('danger', 'Estado Civil: <b>Casado</b>. Você precisa vincular uma <b>Esposa</b>!'));
+                            } else {
+                                $this->form->add(new TAlert('danger', 'Estado Civil: <b>Casada</b>. Você precisa vincular um <b>Esposo</b>!'));
+                            }
+                            AdiantiCoreApplication::loadPage('AddParente', 'onLoad', ['vinculo' => 1]);
+                        } else {
+                            TSession::setValue('dados_parentes_pf', (array) $data);
+                            AdiantiCoreApplication::loadPage('DadosEndereco', 'onEdit');
+                        }
+                    } else {
+
+                        TSession::setValue('dados_parentes_pf', (array) $data);
+                        AdiantiCoreApplication::loadPage('DadosEndereco', 'onEdit');
+                    }
+                }
         } catch (Exception $e) {
             new TMessage('error', $e->getMessage());
         }
@@ -331,43 +364,9 @@ class DadosParentes extends TPage
     {
 
         $objects = array();
-        $pessoa_painel = TSession::getValue('pessoa_painel');
 
         if (TSession::getValue('dados_parentes_pf')) {
             $objects = TSession::getValue('dados_parentes_pf');
-        }
-
-        if (TSession::getValue('pessoa_painel_vinculos')) {
-            try {
-                TTransaction::open('adea');
-
-                $pessoa_painel_vinculos = TSession::getValue('pessoa_painel_vinculos');
-
-                foreach ($pessoa_painel_vinculos as $objeto) {
-                    $pessoa = ViewPessoaFisica::find($objeto->pessoa_parente_id);
-
-                    $pessoa->parentesco_id = $objeto->parentesco_id;
-                    $pessoa->vinculo = 3; //vem do banco
-
-                    if ($pessoa->endereco_id == $pessoa_painel->endereco_id) {
-                        $pessoa->endereco_id = 's';
-                    } else {
-                        $pessoa->endereco_id = 'n';
-                    }
-
-                    //$objects[] = $pessoa;
-
-                    $dadosparentespf = TSession::getValue('dados_parentes_pf');
-
-                    $dadosparentespf[$pessoa->cpf] = $pessoa;
-                    TSession::setValue('dados_parentes_pf', (array) $dadosparentespf);
-                }
-
-                TTransaction::close();  // close the transaction
-
-            } catch (Exception $e) {
-                new TMessage('error', $e->getMessage());
-            }
         }
 
         $this->detail_list->clear();
@@ -376,7 +375,6 @@ class DadosParentes extends TPage
                 $this->detail_list->addItem($object);
             }
         }
-
     }
 
     public function onDelete($param)

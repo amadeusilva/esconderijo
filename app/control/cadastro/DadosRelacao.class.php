@@ -77,6 +77,15 @@ class DadosRelacao extends TWindow
         $tempo->setSize('100%');
         $doc_imagem->setSize('100%');
 
+        $options = ['s' => 'Sim', 'n' => 'Não'];
+        $atualizacao = new TRadioGroup('atualizacao');
+        $atualizacao->setUseButton();
+        $atualizacao->addItems($options);
+        $atualizacao->setLayout('horizontal');
+        $atualizacao->setValue('s');
+        $atualizacao->setEditable(FALSE);
+        $atualizacao->setSize('100%');
+
         // create the form fields
         $row = $this->form->addFields([new TLabel('Estado Civil', 'red'), $estado_civil_id]);
         $row->layout = ['col-sm-12'];
@@ -87,39 +96,24 @@ class DadosRelacao extends TWindow
         $row = $this->form->addFields([new TLabel('Data Ínicio', 'red'), $dt_inicial]);
         $row->layout = ['col-sm-12'];
 
-        /*
-        if (TSession::getValue('pessoa_painel')) {
-            if (isset($param['param']['estado_civil_id']) and !empty($param['param']['estado_civil_id'])) {
-                if ($param['param']['estado_civil_id'] >= 809 and $param['param']['estado_civil_id'] <= 814) {
-
-                    $dt_inicial->setEditable(FALSE);
-
-                    $dt_final                 = new TDate('dt_final');
-                    $dt_final->setMask('dd/mm/yyyy');
-                    $dt_final->setExitAction(new TAction(array($this, 'onCalculaTempo')));
-                    $dt_final->setSize('100%');
-                    $row = $this->form->addFields([new TLabel('Data Final', 'red'), $dt_final]);
-                    $row->layout = ['col-sm-12'];
-                    $dt_final->addValidation('Data Final', new TRequiredValidator);
-                }
-            }
-        }
-            */
-
         $row = $this->form->addFields([new TLabel('Contagem (tempo)', 'red'), $tempo]);
         $row->layout = ['col-sm-12'];
 
         $row = $this->form->addFields([new TLabel('Documento (Certidão ou declaração)', 'red'), $doc_imagem]);
         $row->layout = ['col-sm-12'];
 
+        $row = $this->form->addFields([new TLabel('Verificado?', 'red')], [$atualizacao]);
+        $row->layout = ['col-sm-5', 'col-sm-7'];
+
         $estado_civil_id->addValidation('Estado Civil', new TRequiredValidator);
         $tipo_vinculo->addValidation('Tipo de vínculo', new TRequiredValidator);
         $dt_inicial->addValidation('Data Ínicio', new TRequiredValidator);
+        $atualizacao->addValidation('Dados Verificados?', new TRequiredValidator);
 
 
         // define the form action
         $this->form->addAction('Salvar', new TAction(array($this, 'onSave'), ['param' => $param]), 'fa:save green');
-        $this->form->addAction('Limpar',  new TAction(array($this, 'onClear')), 'fa:eraser red');
+        //$this->form->addAction('Limpar',  new TAction(array($this, 'onClear')), 'fa:eraser red');
 
         $this->setAfterSaveAction(new TAction([$this, 'onClose']));
         $this->setUseMessages(false);
@@ -133,20 +127,6 @@ class DadosRelacao extends TWindow
      */
     public function onVerRelacao($param)
     {
-
-        /*
-        if (isset($param['atualiza_relacao']) and !empty($param['atualiza_relacao'])) {
-
-            if (TSession::getValue('dados_relacao')) {
-                $dados_relacao = (object) TSession::getValue('dados_relacao');
-                $param['id'] = $dados_relacao->id_relacao;
-            } else {
-                $pessoa_painel = TSession::getValue('pessoa_painel');
-                $dados_relacao = self::onDadosRelacao($pessoa_painel->id);
-                $param['id'] = $dados_relacao->id_relacao;
-            }
-        }
-            */
 
         try {
             if (isset($param['id']) and !empty($param['id'])) {

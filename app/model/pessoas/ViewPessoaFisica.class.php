@@ -37,7 +37,8 @@ SELECT
                )
          FROM bairro WHERE bairro.id = endereco.bairro_id), 
         ', ', endereco.ponto_referencia) FROM endereco WHERE endereco.id = pessoa.endereco_id) AS endereco,
-    (SELECT item FROM lista_itens WHERE lista_itens.id = pessoa.status_pessoa) AS status_pessoa
+    (SELECT item FROM lista_itens WHERE lista_itens.id = pessoa.status_pessoa) AS status_pessoa,
+    pessoa.ck_pessoa
 FROM pessoa, pessoa_fisica WHERE pessoa.id = pessoa_fisica.pessoa_id
 AND pessoa.tipo_pessoa = 1
      */
@@ -58,6 +59,7 @@ AND pessoa.tipo_pessoa = 1
         parent::addAttribute('endereco_id');
         parent::addAttribute('endereco');
         parent::addAttribute('status_pessoa');
+        parent::addAttribute('ck_pessoa');
     }
 
     public function delete($id = null)

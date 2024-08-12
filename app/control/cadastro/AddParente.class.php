@@ -47,9 +47,14 @@ class AddParente extends TWindow
         // create the form fields
         $filter = new TCriteria;
         $filter->add(new TFilter('lista_id', '=', 12));
-        $filter->add(new TFilter('ck', '=', 1));
 
-        if (isset($pessoa_painel->id) and !empty($pessoa_painel->id)) {
+        if (isset($param['vinculo']) and $param['vinculo'] == 3) {
+            $filter->add(new TFilter('id', '=', $param['parentesco_id']));
+        } else {
+            $filter->add(new TFilter('ck', '=', 1));
+        }
+
+        if (isset($pessoa_painel->id) and !empty($pessoa_painel->id) and isset($param['vinculo']) and $param['vinculo'] != 3) {
             try {
                 TTransaction::open('adea');
 
@@ -82,7 +87,7 @@ class AddParente extends TWindow
         }
         //estado civil: 803-804: convivent / 805-806: ue / 807-808: casad
         //parentesco: 921-922: espos / 923-924: companheir / 925-926: convivente
-        if (TSession::getValue('dados_iniciais_pf')) {
+        if (TSession::getValue('dados_iniciais_pf') and isset($param['vinculo']) and $param['vinculo'] != 3) {
             $filtroini = TSession::getValue('dados_iniciais_pf');
             if ($filtroini['genero'] == 'M') {
                 if ($filtroini['estado_civil_id'] == 807) {
@@ -122,7 +127,7 @@ class AddParente extends TWindow
                 $filter->add(new TFilter('id', '!=', 926));
             }
         }
-        if (TSession::getValue('dados_parentes_pf')) {
+        if (TSession::getValue('dados_parentes_pf') and isset($param['vinculo']) and $param['vinculo'] != 3) {
             $filtropar = TSession::getValue('dados_parentes_pf');
             foreach ($filtropar as $filtro) {
                 if ($filtro->parentesco_id == 901 or $filtro->parentesco_id == 902) {
@@ -133,6 +138,17 @@ class AddParente extends TWindow
                 }
             }
         }
+
+        // create the form fields
+        $id       = new TEntry('id');
+        $id->setEditable(FALSE);
+        $id->setSize('100%');
+        $vinculo       = new TEntry('vinculo');
+        $vinculo->setEditable(FALSE);
+        $vinculo->setSize('100%');
+        $row = $this->form->addFields([new TLabel('Cod.:', 'red'), $id], [new TLabel('Ref.:', 'red'), $vinculo]);
+        $row->layout = ['col-sm-6', 'col-sm-6'];
+
         $parentesco_id = new TDBCombo('parentesco_id', 'adea', 'ListaItens', 'id', '{item} {abrev}', 'id', $filter);
         $parentesco_id->enableSearch();
 
@@ -157,11 +173,22 @@ class AddParente extends TWindow
         $idade = new TEntry('idade');
 
         $options = ['s' => 'Sim', 'n' => 'Não'];
-        $endereco_id = new TRadioGroup('endereco_id');
-        $endereco_id->setUseButton();
-        $endereco_id->addItems($options);
-        $endereco_id->setLayout('horizontal');
-        $endereco_id->setValue('s');
+
+        $moracomigo = new TRadioGroup('moracomigo');
+        $moracomigo->setUseButton();
+        $moracomigo->addItems($options);
+        $moracomigo->setLayout('horizontal');
+        $moracomigo->setValue('s');
+        $moracomigo->setEditable(FALSE);
+        $moracomigo->setSize('100%');
+
+        $atualizacao = new TRadioGroup('atualizacao');
+        $atualizacao->setUseButton();
+        $atualizacao->addItems($options);
+        $atualizacao->setLayout('horizontal');
+        $atualizacao->setValue('s');
+        $atualizacao->setEditable(FALSE);
+        $atualizacao->setSize('100%');
 
         $cpf->setEditable(FALSE);
         $nome->setEditable(FALSE);
@@ -169,7 +196,6 @@ class AddParente extends TWindow
         $genero->setEditable(FALSE);
         $dt_nascimento->setEditable(FALSE);
         $idade->setEditable(FALSE);
-        $endereco_id->setEditable(FALSE);
         $parentesco_id->setSize('100%');
         $cpf->setSize('100%');
         $nome->setSize('100%');
@@ -177,7 +203,6 @@ class AddParente extends TWindow
         $genero->setSize('100%');
         $dt_nascimento->setSize('100%');
         $idade->setSize('100%');
-        $endereco_id->setSize('100%');
 
         // add the form fields
         $row = $this->form->addFields([new TLabel('Grau', 'red'), $parentesco_id]);
@@ -194,7 +219,9 @@ class AddParente extends TWindow
         $row->layout = ['col-sm-12'];
         $row = $this->form->addFields([new TLabel('Idade', 'red'), $idade]);
         $row->layout = ['col-sm-12'];
-        $row = $this->form->addFields([new TLabel('Mora comigo?', 'red')], [$endereco_id]);
+        $row = $this->form->addFields([new TLabel('Mora comigo?', 'red')], [$moracomigo]);
+        $row->layout = ['col-sm-5', 'col-sm-7'];
+        $row = $this->form->addFields([new TLabel('Verificado?', 'red')], [$atualizacao]);
         $row->layout = ['col-sm-5', 'col-sm-7'];
 
         // set exit action for input_exit
@@ -209,7 +236,8 @@ class AddParente extends TWindow
         $genero->addValidation('Gênero', new TRequiredValidator);
         $dt_nascimento->addValidation('Nascimento', new TRequiredValidator);
         $idade->addValidation('Idade', new TRequiredValidator);
-        $endereco_id->addValidation('Mora comigo?', new TRequiredValidator);
+        $moracomigo->addValidation('Mora comigo?', new TRequiredValidator);
+        $atualizacao->addValidation('Dados Verificados?', new TRequiredValidator);
 
         // define the form action
         $this->form->addAction('Inserir', new TAction(array($this, 'onSave'), ['vinculo' => $param['vinculo']]), 'fa:save green');
@@ -219,6 +247,59 @@ class AddParente extends TWindow
         $this->setUseMessages(false);
 
         parent::add($this->form);
+    }
+
+    /**
+     * method onEdit()
+     * Executed whenever the user clicks at the edit button da datagrid
+     */
+    public function onEditParente($param)
+    {
+
+        try {
+            if (isset($param['id'])) {
+                $key = $param['id'];  // get the parameter
+                TTransaction::open('adea');   // open a transaction with database 'samples'
+
+                $pessoa_painel = TSession::getValue('pessoa_painel');
+
+                if ($param['atualizacao'] == 'n') {
+                    $object = new ViewPessoaFisica($key);        // instantiates object City
+                    $object->dt_nascimento =  TDate::date2br($object->dt_nascimento);
+                    $object->idade = self::onCalculaTempo($object->dt_nascimento);
+                    $object->moracomigo = ($object->endereco_id == $pessoa_painel->endereco_id) ? 's' : 'n';
+                } else {
+                    $dados_parentes_pf = TSession::getValue('dados_parentes_pf');
+                    foreach ($dados_parentes_pf as $pessoa_procurada) {
+                        if ($pessoa_procurada->id == $param['id']) {
+                            $object = $pessoa_procurada;
+                        }
+                    }
+                }
+
+
+                if (isset($object->cpf) and !empty($object->cpf)) {
+                    $object->parentesco_id = $param['parentesco_id'];
+                    TButton::enableField('form_PessoaParente', 'inserir');
+                } else {
+                    $object->dt_nascimento =  '';
+                    TEntry::enableField('form_PessoaParente', 'cpf');
+                }
+
+                $object->vinculo = $param['vinculo'];
+
+
+                $this->form->setData($object);   // fill the form with the active record data
+                TTransaction::close();           // close the transaction
+            } else {
+                $this->form->clear(true);
+                $this->onLoad($param);
+            }
+        } catch (Exception $e) // in case of exception
+        {
+            new TMessage('error', $e->getMessage()); // shows the exception error message
+            TTransaction::rollback(); // undo all pending operations
+        }
     }
 
     /**
@@ -245,6 +326,17 @@ class AddParente extends TWindow
 
             $this->form->setData($data); // put the data back to the form
 
+            //verificar mudança de nome e dn do banco
+            if (isset($data->id) and !empty($data->id)) {
+                $pessoa = ViewPessoaFisica::find($data->id);
+                $pessoa->dt_nascimento =  TDate::date2br($pessoa->dt_nascimento);
+                if ($pessoa->ck_pessoa != 0) {
+                    if ($pessoa->nome != $data->nome or $pessoa->popular != $data->popular or $pessoa->dt_nascimento != $data->dt_nascimento) {
+                        throw new Exception('<b>Atenção!</b> Encontramos a pessoa: <b>' . $pessoa->nome . ' (' . $pessoa->dt_nascimento . ')</b> REGISTRADO com o código <b>' . $pessoa->id .  '</b>. Se acreditar que estes dados estão incorretos, entre em contato com o Administrador do sistema!');
+                    }
+                }
+            }
+
 
             if ($param['vinculo'] == 2) {
 
@@ -261,7 +353,7 @@ class AddParente extends TWindow
                     $pessoa_nova->cpf_cnpj = $data->cpf;
                     $pessoa_nova->nome = $data->nome;
                     $pessoa_nova->popular = $data->popular;
-                    if ($data->endereco_id == 's') {
+                    if ($data->moracomigo == 's') {
                         $pessoa_nova->endereco_id = Pessoa::find($pessoa_painel->id)->endereco_id;
                     }
                     $pessoa_nova->store();
@@ -290,23 +382,67 @@ class AddParente extends TWindow
                 $posAction = new TDataGridAction(['PessoaPanel', 'onView'],   ['key' => $pessoa_painel->id, 'register_state' => 'false']);
 
                 new TMessage('info', 'Pessoa vinculada com sucesso!', $posAction);
-            } else if ($param['vinculo'] == 1) {
+            } else if ($param['vinculo'] == 1 or $param['vinculo'] == 3) {
+
+                $dados_iniciais_pf = TSession::getValue('dados_iniciais_pf');
+                //verificar se tem outro conjugue
+                if ($data->parentesco_id >= 921 and $data->parentesco_id <= 926) {
+                    $conjugue_vinculado = PessoaParentesco::where('pessoa_id', '=', $dados_iniciais_pf['id'])->where('parentesco_id', '>=', 921)->where('parentesco_id', '<=', 926)->first();
+                    if ($conjugue_vinculado) {
+                        if ($data->id != $conjugue_vinculado->pessoa_parente_id) {
+                            if ($conjugue_vinculado->PessoaParente->cpf_cnpj) {
+                                if ($data->cpf != $conjugue_vinculado->PessoaParente->cpf_cnpj) {
+                                    throw new Exception('<b>Atenção!</b> Você já possui este vínculo com <b>' . $conjugue_vinculado->PessoaParente->nome . '</b>!');
+                                }
+                            }
+                            throw new Exception('<b>Atenção!</b> Você já possui este vínculo com <b>' . $conjugue_vinculado->PessoaParente->nome . '</b>!');
+                        }
+                    }
+                }
 
                 $dadosparentespf = TSession::getValue('dados_parentes_pf');
 
                 if (isset($dadosparentespf)) {
+
                     foreach ($dadosparentespf as $pps) {
-                        if ($data->cpf == $pps->cpf) {
+
+                        if ($pps->parentesco_id >= 921 and $pps->parentesco_id <= 926 and $data->parentesco_id >= 921 and $data->parentesco_id <= 926 and $param['vinculo'] != 3) {
+                            throw new Exception('<b>Atenção!</b> Você já possui este vínculo com <b>' . $pps->nome . '</b>!');
+                        }
+
+                        if ($data->cpf == $pps->cpf and $param['vinculo'] != 3) {
                             throw new Exception('<b>Atenção!</b> Você já vinculou <b>' . $pps->nome . '</b> à sua lista!');
                         }
                     }
                 }
 
                 $data->vinculo = $param['vinculo'];
+
+                $num = 0;
+
+                if (isset($data->id) and !empty($data->id) and $param['vinculo'] == 3) {
+                    foreach ($dadosparentespf as $pessoa_datagrid) {
+                        if ($data->id == $pessoa_datagrid->id) {
+                            //$parte_string = substr($pessoa_datagrid->cpf, 0, 5);
+                            //if ($parte_string == 'CPFde') {
+                            if ($pessoa_datagrid->cpf != $data->cpf) {
+                                $num = $pessoa_datagrid->cpf;
+                            }
+                        }
+                    }
+                }
+
                 $dadosparentespf[$data->cpf] = $data;
+
                 TSession::setValue('dados_parentes_pf', (array) $dadosparentespf);
-                // show the message
-                new TMessage('info', 'Pessoa vinculada com sucesso!', new TAction(array('DadosParentes', 'onReload')));
+
+                if ($num != 0) {
+                    $posAction = new TDataGridAction(['DadosParentes', 'onDelete'],   ['cpf' => $num, 'register_state' => 'false']);
+                    new TMessage('info', 'Pessoa vinculada com sucesso!', $posAction);
+                } else {
+                    // show the message
+                    new TMessage('info', 'Pessoa vinculada com sucesso!', new TAction(array('DadosParentes', 'onReload')));
+                }
             }
 
             TTransaction::close();  // close the transaction
@@ -321,8 +457,13 @@ class AddParente extends TWindow
         }
     }
 
-    public static function verificaParentescoCpfGenero($parentesco_id, $cpf, $genero)
+    public static function verificaParentescoCpfGenero($param)
     {
+
+        $parentesco_id = $param['parentesco_id'];
+        $cpf = $param['cpf'];
+        $genero = $param['genero'];
+
         if ($parentesco_id and $cpf and $genero) {
             $pessoa_painel = TSession::getValue('pessoa_painel');
             $pessoa_painel_vinculos = TSession::getValue('pessoa_painel_vinculos');
@@ -339,9 +480,10 @@ class AddParente extends TWindow
                     throw new Exception('<b>Atenção!</b> Você não pode vincular-se à sua própria lista!');
                 }
             }
+
             if (isset($pessoa_painel_vinculos)) {
                 foreach ($pessoa_painel_vinculos as $ppv) {
-                    if ($cpf == $ppv->PessoaParente->cpf_cnpj) {
+                    if ($cpf == $ppv->PessoaParente->cpf_cnpj and $param['vinculo'] != 3) {
                         throw new Exception('<b>Atenção!</b> Você já vinculou <b>' . $ppv->PessoaParente->nome . '</b> à sua lista!');
                     }
                 }
@@ -360,6 +502,7 @@ class AddParente extends TWindow
                         throw new Exception('Você não pode vincular <b>' . $pp->PessoaParente->nome . '</b> como <b>' . $buscagrau->item . '</b>!<br>Vínculo EXISTENTE: <b>' . $pp->Parentesco->item . '</b> de <b>' . $pp->Pessoa->nome . '</b>. <br> Se acreditar que este vínculo está incorreto, entre em contato com o Administrador do sistema!');
                     } else {
                         $pf->dt_nascimento =  TDate::date2br($pf->dt_nascimento);
+                        $pf->vinculo = 1;
                         TForm::sendData('form_PessoaParente', $pf);
                         TButton::enableField('form_PessoaParente', 'inserir');
                     }
@@ -394,16 +537,19 @@ class AddParente extends TWindow
                             throw new Exception('Você não pode vincular <b>' . $nome1 . '</b> como <b>' . $grau . '</b>!<br>Vínculo EXISTENTE: <b>' . $item . '</b> de <b>' . $nome2 . '</b>. <br> Use o vínculo de <b>Enteado(a)</b>, mas se acreditar que este vínculo está incorreto, entre em contato com o Administrador do sistema!');
                         } else {
                             $pf->dt_nascimento =  TDate::date2br($pf->dt_nascimento);
+                            $pf->vinculo = 1;
                             TForm::sendData('form_PessoaParente', $pf);
                             TButton::enableField('form_PessoaParente', 'inserir');
                         }
                     } else {
                         $pf->dt_nascimento =  TDate::date2br($pf->dt_nascimento);
+                        $pf->vinculo = 1;
                         TForm::sendData('form_PessoaParente', $pf);
                         TButton::enableField('form_PessoaParente', 'inserir');
                     }
                 } else {
                     $pf->dt_nascimento =  TDate::date2br($pf->dt_nascimento);
+                    $pf->vinculo = 1;
                     TForm::sendData('form_PessoaParente', $pf);
                     TButton::enableField('form_PessoaParente', 'inserir');
                 }
@@ -430,8 +576,10 @@ class AddParente extends TWindow
                 $pf = ViewPessoaFisica::where('nome', '=', $param['nome'])->where('dt_nascimento', '=', $param['dt_nascimento'])->first();
 
                 if ($pf) {
-                    if ($pf->cpf != $param['cpf']) {
+                    if (!empty($pf->cpf) and $pf->cpf != $param['cpf']) {
                         throw new Exception('<b>Atenção:</b> Você não pode vincular<b> ' . $pf->nome . ' (' . $novadata->format('d/m/Y') . ')</b>.<br>Pessoa EXISTENTE em outro CPF. <br> Se acreditar que estes dados estão incorretos, entre em contato com o Administrador do sistema!');
+                    } else {
+                        TButton::enableField('form_PessoaParente', 'inserir');
                     }
                 } else {
                     TButton::enableField('form_PessoaParente', 'inserir');
@@ -451,12 +599,13 @@ class AddParente extends TWindow
 
     public static function onConsultaCPF($param)
     {
+
         try {
             TTransaction::open('adea');
             if (!empty($param['parentesco_id'])) {
                 self::onChangeAction($param);
                 if (!empty($param['cpf']) and !empty($param['genero'])) {
-                    self::verificaParentescoCpfGenero($param['parentesco_id'], $param['cpf'], $param['genero']);
+                    self::verificaParentescoCpfGenero($param);
                 }
             }
 
@@ -476,6 +625,7 @@ class AddParente extends TWindow
 
     public static function onChangeAction($param)
     {
+
         try {
             TTransaction::open('adea');
             if (isset($param['parentesco_id']) and !empty($param['parentesco_id'])) {
@@ -484,11 +634,12 @@ class AddParente extends TWindow
                 $generoparente->genero = $buscagenero->obs;
                 // formname, field, database, model, key, value, ordercolumn = NULL, criteria = NULL, startEmpty = FALSE
                 TEntry::enableField('form_PessoaParente', 'cpf');
+
                 if ($param['parentesco_id'] >= 921 and $param['parentesco_id'] <= 926) {
-                    TRadioGroup::disableField('form_PessoaParente', 'endereco_id');
-                    $generoparente->endereco_id = 's';
+                    TRadioGroup::disableField('form_PessoaParente', 'moracomigo');
+                    $generoparente->moracomigo = 's';
                 } else {
-                    TRadioGroup::enableField('form_PessoaParente', 'endereco_id');
+                    TRadioGroup::enableField('form_PessoaParente', 'moracomigo');
                 }
                 //TEntry::enableField('form_PessoaParente', 'nome');
                 //TDate::enableField('form_PessoaParente', 'dt_nascimento');
@@ -502,7 +653,7 @@ class AddParente extends TWindow
                 TEntry::disableField('form_PessoaParente', 'nome');
                 TEntry::disableField('form_PessoaParente', 'popular');
                 TDate::disableField('form_PessoaParente', 'dt_nascimento');
-                TRadioGroup::disableField('form_PessoaParente', 'endereco_id');
+                TRadioGroup::disableField('form_PessoaParente', 'moracomigo');
             }
             TButton::disableField('form_PessoaParente', 'inserir');
 
@@ -510,6 +661,17 @@ class AddParente extends TWindow
         } catch (Exception $e) {
             new TMessage('error', $e->getMessage());
         }
+    }
+
+    /**
+     * Clear form
+     */
+    public function onClear($param)
+    {
+        $this->form->clear(true);
+        $pfvazia = new stdClass;
+        $pfvazia->vinculo = 1;
+        TForm::sendData('form_PessoaParente', $pfvazia);
     }
 
 

@@ -71,6 +71,12 @@ trait ControlePessoas
             $novoparentesco_id = $generodapessoa == 'M' ? 923 : 924;
         } else if ($pessoaparente->parentesco_id == 925 or $pessoaparente->parentesco_id == 926) { // 926 - CONVIVENTE - F / 925 - CONVIVENTE - M
             $novoparentesco_id = $generodapessoa == 'M' ? 925 : 926;
+        } else if ($pessoaparente->parentesco_id == 927 or $pessoaparente->parentesco_id == 928) { // 
+            $novoparentesco_id = $generodapessoa == 'M' ? 927 : 928;
+        } else if ($pessoaparente->parentesco_id == 929 or $pessoaparente->parentesco_id == 930) { // 
+            $novoparentesco_id = $generodapessoa == 'M' ? 929 : 930;
+        } else if ($pessoaparente->parentesco_id == 931 or $pessoaparente->parentesco_id == 932) { // 
+            $novoparentesco_id = $generodapessoa == 'M' ? 931 : 932;
         }
 
         PessoaParentesco::where('pessoa_id', '=', $pessoaparente->pessoa_parente_id)->where('parentesco_id', '=', $novoparentesco_id)->where('pessoa_parente_id', '=', $pessoaparente->pessoa_id)->delete();
@@ -335,6 +341,7 @@ trait ControlePessoas
                 // formname, field, database, model, key, value, ordercolumn = NULL, criteria = NULL, startEmpty = FALSE
                 TDBCombo::reloadFromModel('form_pf', 'estado_civil_id', 'adea', 'ListaItens', 'id', 'item', 'id', $criteria, TRUE);
                 */
+                TButton::enableField('form_pf', 'avançar');
             } else {
                 TCombo::clearField('form_pf', 'estado_civil_id');
             }
@@ -370,14 +377,27 @@ trait ControlePessoas
         }
     }
 
+    public static function CPFCadastrado($param)
+    {
+
+        if (isset($param) and !empty($param)) {
+            $pessoaexistente = Pessoa::where('cpf_cnpj', '=', $param)->first();
+            if ($pessoaexistente) {
+                return $pessoaexistente;
+            } else {
+                return false;
+            }
+        }
+    }
+
     public static function onConsultaCPF($param)
     {
         try {
             TTransaction::open('adea');
 
             if (isset($param['cpf_cnpj']) and !empty($param['cpf_cnpj'])) {
-                $pessoaexistente = Pessoa::where('cpf_cnpj', '=', $param['cpf_cnpj'])->first();
-                if ($pessoaexistente) {
+                $cpfsimnao = self::CPFCadastrado($param['cpf_cnpj']);
+                if ($cpfsimnao) {
                     if (TSession::getValue('pessoa_painel')) {
                         $pessoa_painel = TSession::getValue('pessoa_painel');
                         if ($pessoa_painel->cpf == $param['cpf_cnpj']) {
@@ -385,12 +405,12 @@ trait ControlePessoas
                         } else {
                             $posAction = new TAction(array('DadosIniciaisPF', 'onEdit'));
                             // show the message dialog
-                            new TMessage('error', 'CPF já cadastrado para: <b>' . $pessoaexistente->nome . '</b>', $posAction);
+                            new TMessage('error', 'CPF já cadastrado para: <b>' . $cpfsimnao->nome . '</b>', $posAction);
                         }
                     } else {
                         $posAction = new TAction(array('DadosIniciaisPF', 'onEdit'));
                         // show the message dialog
-                        new TMessage('error', 'CPF já cadastrado para: <b>' . $pessoaexistente->nome . '</b>', $posAction);
+                        new TMessage('error', 'CPF já cadastrado para: <b>' . $cpfsimnao->nome . '</b>', $posAction);
                     }
                 }
             }

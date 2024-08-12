@@ -171,10 +171,40 @@ class DadosEndereco extends TPage
 
     public function onEdit()
     {
+
         $enderecopessoa = TSession::getValue('endereco_pessoa');
 
         if ($enderecopessoa) {
             TForm::sendData('form_endereco', $enderecopessoa);
+        } else if (TSession::getValue('pessoa_painel')) {
+            $pessoa_painel = TSession::getValue('pessoa_painel');
+            try {
+
+                TTransaction::open('adea');
+                $object = Endereco::where('id', '=', $pessoa_painel->endereco_id)->first();        // instantiates object City
+
+                if (isset($object)) {
+                    $this->form->setData($object);   // fill the form with the active record data
+
+                    // force fire events
+                    $data = new stdClass;
+                    $data->estado_id            = $object->Bairro->Cidade->Estado->id;
+                    $data->cidade_id            = $object->Bairro->Cidade->id;
+                    $data->tipo_id              = $object->Logradouro->Tipo->id;
+                    $data->logradouro_id        = $object->logradouro_id;
+                    $data->bairro_id            = $object->bairro_id;
+                    //TDBCombo::disableField('form_endereco', 'tipo_id');
+                    TForm::sendData('form_endereco', $data);
+                } else {
+                    $this->form->clear(true);
+                }
+
+                TTransaction::close();
+            } catch (Exception $e) // in case of exception
+            {
+                new TMessage('error', $e->getMessage()); // shows the exception error message
+                TTransaction::rollback(); // undo all pending operations
+            }
         }
     }
 
@@ -223,11 +253,24 @@ class DadosEndereco extends TPage
             $enderecopessoa = TSession::getValue('endereco_pessoa');
             $dadosrelacao = TSession::getValue('dados_relacao');
 
+
+            /*
+            echo '<pre>';
+            print_r($dadosiniciaispf);
+            print_r($dadosparentespf);
+            print_r($enderecopessoa);
+            print_r($dadosrelacao);
+            echo '</pre>';
+            exit;
+            */
+
+
             //converte a data static BR para Americana
             $novadata = DateTime::createFromFormat('d/m/Y', $dadosiniciaispf['dt_nascimento']);
             $dadosiniciaispf['dt_nascimento'] = $novadata->format('Y/m/d');
             $dadosiniciaispf['tipo_pessoa'] = 1;
             $dadosiniciaispf['status_pessoa'] = 21;
+            $dadosiniciaispf['ck_pessoa'] = 2;
 
             if (isset($enderecopessoa['logradouro_id'])) {
                 $consultaendereco = Endereco::where('logradouro_id', '=', $enderecopessoa['logradouro_id'])->where('n', '=', $enderecopessoa['n'])->where('bairro_id', '=', $enderecopessoa['bairro_id'])->first();
@@ -283,7 +326,7 @@ class DadosEndereco extends TPage
                     $buscapessoaparente = Pessoa::where('cpf_cnpj', '=', $key)->first();
 
                     if ($buscapessoaparente) {
-                        if ($parente->endereco_id == 's') {
+                        if ($parente->moracomigo == 's') {
                             $buscapessoaparente->endereco_id = $dadosiniciaispf['endereco_id'];
                             $buscapessoaparente->store();
                         }
@@ -295,10 +338,11 @@ class DadosEndereco extends TPage
                         $pessoanova->cpf_cnpj = $parente->cpf;
                         $pessoanova->nome = $parente->nome;
                         $pessoanova->popular = $parente->popular;
-                        if ($parente->endereco_id == 's') {
+                        if ($parente->moracomigo == 's') {
                             $pessoanova->endereco_id = $dadosiniciaispf['endereco_id'];
                         }
                         $pessoanova->status_pessoa = 21;
+                        $pessoanova->ck_pessoa = 2;
                         $pessoanova->store();
 
                         PessoaFisica::where('pessoa_id', '=', $pessoanova->id)->delete();
@@ -326,45 +370,82 @@ class DadosEndereco extends TPage
             //estado civil: 803-804: convivent / 805-806: ue / 807-808: casad
             //parentesco: 921-922: espos / 923-924: companheir / 925-926: convivente
 
-            if (isset($dadosrelacao['tipo_vinculo']) and !empty($dadosrelacao['tipo_vinculo'])) {
+            if (isset($dadosrelacao['estado_civil_id']) and !empty($dadosrelacao['estado_civil_id'])) {
 
-                $buscarelacao1 = PessoaParentesco::where('pessoa_id', '=', $pessoa->id)->where('parentesco_id', '>=', 921)->where('parentesco_id', '<=', 926)->first();
-                $buscarelacao2 = PessoaParentesco::where('pessoa_id', '=', $buscarelacao1->pessoa_parente_id)->where('parentesco_id', '>=', 921)->where('parentesco_id', '<=', 926)->first();
+                if ($dadosrelacao['estado_civil_id'] >= 803 and $dadosrelacao['estado_civil_id'] <= 808) {
 
-                $this->onSalvaFilhosFilhasPaiMae($buscarelacao1);
+                    $buscarelacao1 = PessoaParentesco::where('pessoa_id', '=', $pessoa->id)->where('parentesco_id', '>=', 921)->where('parentesco_id', '<=', 926)->first();
+                    $buscarelacao2 = PessoaParentesco::where('pessoa_id', '=', $buscarelacao1->pessoa_parente_id)->where('parentesco_id', '>=', 921)->where('parentesco_id', '<=', 926)->first();
 
-                $this->onMudaEstadoCivil($buscarelacao1);
+                    $this->onSalvaFilhosFilhasPaiMae($buscarelacao1);
 
-                PessoasRelacao::where('relacao_id', '=', $buscarelacao1->id)->delete();
-                PessoasRelacao::where('relacao_id', '=', $buscarelacao2->id)->delete();
+                    $this->onMudaEstadoCivil($buscarelacao1);
 
-                $pessoarelacao = new PessoasRelacao();
-                $pessoarelacao->relacao_id = $buscarelacao1->id;
-                $novadatanapr = DateTime::createFromFormat('d/m/Y', $dadosrelacao['dt_inicial']);
-                $dadosrelacao['dt_inicial'] = $novadatanapr->format('Y/m/d');
-                $pessoarelacao->dt_inicial = $dadosrelacao['dt_inicial'];
-                if (!empty($dadosrelacao['doc_imagem'])) {
-                    $pessoarelacao->doc_imagem = $dadosrelacao['doc_imagem'];
+                    PessoasRelacao::where('relacao_id', '=', $buscarelacao1->id)->delete();
+                    PessoasRelacao::where('relacao_id', '=', $buscarelacao2->id)->delete();
+
+                    $pessoarelacao = new PessoasRelacao();
+                    $pessoarelacao->relacao_id = $buscarelacao1->id;
+                    $novadatanapr = DateTime::createFromFormat('d/m/Y', $dadosrelacao['dt_inicial']);
+                    $dadosrelacao['dt_inicial'] = $novadatanapr->format('Y/m/d');
+                    $pessoarelacao->dt_inicial = $dadosrelacao['dt_inicial'];
+                    if (!empty($dadosrelacao['doc_imagem'])) {
+                        $pessoarelacao->doc_imagem = $dadosrelacao['doc_imagem'];
+                    }
+                    $pessoarelacao->status_relacao_id = 1;
+                    $pessoarelacao->store();
+
+                    // copy file to target folder
+                    if (!empty($dadosrelacao['doc_imagem'])) {
+                        $this->saveFile($pessoarelacao, (object) $dadosrelacao, 'doc_imagem', 'app/images/dadosderelacao');
+                    }
+
+                    $pessoarelacao2 = new PessoasRelacao();
+                    $pessoarelacao2->relacao_id = $buscarelacao2->id;
+                    $pessoarelacao2->dt_inicial = $pessoarelacao->dt_inicial;
+                    if (!empty($pessoarelacao->doc_imagem)) {
+                        $pessoarelacao2->doc_imagem = $pessoarelacao->doc_imagem;
+                    }
+                    $pessoarelacao2->status_relacao_id = 1;
+                    $pessoarelacao2->store();
+                } else if ($dadosrelacao['estado_civil_id'] >= 809 and $dadosrelacao['estado_civil_id'] <= 814) {
+
+                    $buscarelacao3 = PessoaParentesco::where('pessoa_id', '=', $pessoa->id)->where('parentesco_id', '>=', 927)->where('parentesco_id', '<=', 932)->orderBy('id', 'desc')->first();
+                    $buscarelacao4 = PessoaParentesco::where('pessoa_id', '=', $buscarelacao3->pessoa_parente_id)->where('parentesco_id', '>=', 927)->where('parentesco_id', '<=', 932)->orderBy('id', 'desc')->first();
+
+                    $this->onMudaEstadoCivil($buscarelacao3);
+
+                    $nd1 = DateTime::createFromFormat('d/m/Y', $dadosrelacao['dt_inicial']);
+                    $dadosrelacao['dt_inicial'] = $nd1->format('Y/m/d');
+
+                    //relação ja foi deletada
+
+                    $pessoarelacao = new PessoasRelacao();
+                    $pessoarelacao->relacao_id = $buscarelacao3->id;
+                    $pessoarelacao->dt_inicial = $dadosrelacao['dt_inicial'];
+                    if (!empty($dadosrelacao['doc_imagem'])) {
+                        $pessoarelacao->doc_imagem = $dadosrelacao['doc_imagem'];
+                    }
+                    $pessoarelacao->status_relacao_id = 1;
+                    $pessoarelacao->store();
+
+                    // copy file to target folder
+                    if (!empty($dadosrelacao['doc_imagem'])) {
+                        $this->saveFile($pessoarelacao, (object) $dadosrelacao, 'doc_imagem', 'app/images/dadosderelacao');
+                    }
+
+                    $pessoarelacao2 = new PessoasRelacao();
+                    $pessoarelacao2->relacao_id = $buscarelacao4->id;
+                    $pessoarelacao2->dt_inicial = $pessoarelacao->dt_inicial;
+                    if (!empty($pessoarelacao->doc_imagem)) {
+                        $pessoarelacao2->doc_imagem = $pessoarelacao->doc_imagem;
+                    }
+                    $pessoarelacao2->status_relacao_id = 1;
+                    $pessoarelacao2->store();
                 }
-                $pessoarelacao->status_relacao_id = 1;
-                $pessoarelacao->store();
 
-                // copy file to target folder
-                if (!empty($dadosrelacao['doc_imagem'])) {
-                    $this->saveFile($pessoarelacao, (object) $dadosrelacao, 'doc_imagem', 'app/images/dadosderelacao');
-                }
-
-                $pessoarelacao2 = new PessoasRelacao();
-                $pessoarelacao2->relacao_id = $buscarelacao2->id;
-                $pessoarelacao2->dt_inicial = $pessoarelacao->dt_inicial;
-                if (!empty($pessoarelacao->doc_imagem)) {
-                    $pessoarelacao2->doc_imagem = $pessoarelacao->doc_imagem;
-                }
-                $pessoarelacao2->status_relacao_id = 1;
-                $pessoarelacao2->store();
+                TTransaction::close();  // close the transaction
             }
-
-            TTransaction::close();  // close the transaction
 
             // fill the form with the active record data
             $posAction = new TAction(array('PessoaFisicaDataGrid', 'onReload'));
