@@ -313,8 +313,9 @@ class DadosEndereco extends TPage
                 $pessoacontatoemail->store();
             }
 
-            PessoaParentesco::where('pessoa_id', '=', $pessoa->id)->delete();
-            PessoaParentesco::where('pessoa_parente_id', '=', $pessoa->id)->delete();
+            //não deletar relações de parentesco
+            //PessoaParentesco::where('pessoa_id', '=', $pessoa->id)->delete();
+            //PessoaParentesco::where('pessoa_parente_id', '=', $pessoa->id)->delete();
 
             if (isset($dadosparentespf) and !empty($dadosparentespf)) {
 
@@ -323,44 +324,58 @@ class DadosEndereco extends TPage
                     $parente->pessoa_id = $pessoa->id; // passando a pessoa id para o objeto que salvara pessoa parente
                     // parentesco ja eta nno parente
 
-                    $buscapessoaparente = Pessoa::where('cpf_cnpj', '=', $key)->first();
+                    if ($parente->id) {
+                        $buscapessoaparente = Pessoa::where('id', '=', $parente->id)->first();
+                    } else {
+                        $buscapessoaparente = Pessoa::where('cpf_cnpj', '=', $key)->first();
+                    }
 
                     if ($buscapessoaparente) {
-                        if ($parente->moracomigo == 's') {
-                            $buscapessoaparente->endereco_id = $dadosiniciaispf['endereco_id'];
-                            $buscapessoaparente->store();
-                        }
 
-                        $parente->pessoa_parente_id = $buscapessoaparente->id; // passando a pessoa parente id para o objeto que salvara pessoa parente
+                        $pessoanova = $buscapessoaparente;
+
+                        //if ($parente->moracomigo == 's') {
+                        //    $buscapessoaparente->endereco_id = $dadosiniciaispf['endereco_id'];
+                        //    $buscapessoaparente->store();
+                        //}
+
+                        //$parente->pessoa_parente_id = $buscapessoaparente->id; // passando a pessoa parente id para o objeto que salvara pessoa parente
                     } else {
                         $pessoanova = new Pessoa();
-                        $pessoanova->tipo_pessoa = 1;
-                        $pessoanova->cpf_cnpj = $parente->cpf;
-                        $pessoanova->nome = $parente->nome;
-                        $pessoanova->popular = $parente->popular;
-                        if ($parente->moracomigo == 's') {
-                            $pessoanova->endereco_id = $dadosiniciaispf['endereco_id'];
-                        }
-                        $pessoanova->status_pessoa = 21;
-                        $pessoanova->ck_pessoa = 2;
-                        $pessoanova->store();
+                    }
 
-                        PessoaFisica::where('pessoa_id', '=', $pessoanova->id)->delete();
-                        $pessoafisicanova = new PessoaFisica();
-                        $pessoafisicanova->pessoa_id = $pessoanova->id;
-                        $pessoafisicanova->genero = $parente->genero;
-                        $nova_dt_nascimento = DateTime::createFromFormat('d/m/Y', $parente->dt_nascimento);
-                        $parente->dt_nascimento = $nova_dt_nascimento->format('Y/m/d');
-                        $pessoafisicanova->dt_nascimento = $parente->dt_nascimento;
+                    $pessoanova->tipo_pessoa = 1;
+                    $pessoanova->cpf_cnpj = $parente->cpf;
+                    $pessoanova->nome = $parente->nome;
+                    $pessoanova->popular = $parente->popular;
+                    if ($parente->moracomigo == 's') {
+                        $pessoanova->endereco_id = $dadosiniciaispf['endereco_id'];
+                    }
+                    $pessoanova->status_pessoa = 21;
+                    $pessoanova->ck_pessoa = 2;
+                    $pessoanova->store();
+
+                    PessoaFisica::where('pessoa_id', '=', $pessoanova->id)->delete();
+                    $pessoafisicanova = new PessoaFisica();
+                    $pessoafisicanova->pessoa_id = $pessoanova->id;
+                    $pessoafisicanova->genero = $parente->genero;
+
+                    $nova_dt_nascimento = DateTime::createFromFormat('d/m/Y', $parente->dt_nascimento);
+                    $parente->dt_nascimento = $nova_dt_nascimento->format('Y/m/d');
+
+                    $pessoafisicanova->dt_nascimento = $parente->dt_nascimento;
+
+                    if (!$pessoanova->estado_civil_id) {
                         if ($pessoafisicanova->genero == 'M') {
                             $pessoafisicanova->estado_civil_id = 801;
                         } else {
                             $pessoafisicanova->estado_civil_id = 802;
                         }
-                        $pessoafisicanova->store();
-
-                        $parente->pessoa_parente_id = $pessoanova->id; // passando a pessoa parente id para o objeto que salvara pessoa parente
                     }
+
+                    $pessoafisicanova->store();
+
+                    $parente->pessoa_parente_id = $pessoanova->id; // passando a pessoa parente id para o objeto que salvara pessoa parente
 
                     //Salvando Parentesco
                     $this->onSalvaParente($parente);
@@ -418,15 +433,15 @@ class DadosEndereco extends TPage
                     $nd1 = DateTime::createFromFormat('d/m/Y', $dadosrelacao['dt_inicial']);
                     $dadosrelacao['dt_inicial'] = $nd1->format('Y/m/d');
 
-                    //relação ja foi deletada
+                    //relação ja foi atualizada
 
-                    $pessoarelacao = new PessoasRelacao();
-                    $pessoarelacao->relacao_id = $buscarelacao3->id;
-                    $pessoarelacao->dt_inicial = $dadosrelacao['dt_inicial'];
+                    $pessoarelacao = PessoasRelacao::where('relacao_id', '=', $buscarelacao3->id)->first();
+
+                    $pessoarelacao->dt_final = $dadosrelacao['dt_inicial'];
                     if (!empty($dadosrelacao['doc_imagem'])) {
                         $pessoarelacao->doc_imagem = $dadosrelacao['doc_imagem'];
                     }
-                    $pessoarelacao->status_relacao_id = 1;
+                    $pessoarelacao->status_relacao_id = 2;
                     $pessoarelacao->store();
 
                     // copy file to target folder
@@ -434,18 +449,17 @@ class DadosEndereco extends TPage
                         $this->saveFile($pessoarelacao, (object) $dadosrelacao, 'doc_imagem', 'app/images/dadosderelacao');
                     }
 
-                    $pessoarelacao2 = new PessoasRelacao();
-                    $pessoarelacao2->relacao_id = $buscarelacao4->id;
-                    $pessoarelacao2->dt_inicial = $pessoarelacao->dt_inicial;
+                    $pessoarelacao2 = PessoasRelacao::where('relacao_id', '=', $buscarelacao4->id)->first();
+                    $pessoarelacao2->dt_final = $pessoarelacao->dt_final;
                     if (!empty($pessoarelacao->doc_imagem)) {
                         $pessoarelacao2->doc_imagem = $pessoarelacao->doc_imagem;
                     }
-                    $pessoarelacao2->status_relacao_id = 1;
+                    $pessoarelacao2->status_relacao_id = 2;
                     $pessoarelacao2->store();
                 }
-
-                TTransaction::close();  // close the transaction
             }
+
+            TTransaction::close();  // close the transaction
 
             // fill the form with the active record data
             $posAction = new TAction(array('PessoaFisicaDataGrid', 'onReload'));

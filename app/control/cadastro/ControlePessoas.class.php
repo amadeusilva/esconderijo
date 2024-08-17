@@ -9,46 +9,51 @@ trait ControlePessoas
 
         $relacaoexistente = PessoaParentesco::where('pessoa_id', '=', $pessoaparente->pessoa_id)->where('pessoa_parente_id', '=', $pessoaparente->pessoa_parente_id)->first();
 
-        if (!$relacaoexistente) {
-            $novoparente = new PessoaParentesco();
-            $novoparente->pessoa_id = $pessoaparente->pessoa_id;
+        $novoparente = new PessoaParentesco();
+        $novoparente->pessoa_id = $pessoaparente->pessoa_id;
 
-            if ($pessoaparente->parentesco_id == 903 or $pessoaparente->parentesco_id == 904) { // 904 - FILHA - F / 903 - FILHO - M // entra como meu filho ou filha
-                $verificapaimae = PessoaParentesco::where('parentesco_id', '=', $pessoaparente->parentesco_id)->where('pessoa_parente_id', '=', $pessoaparente->pessoa_parente_id)->load();
-                if ($verificapaimae) {
-                    $tem_pai_mae = 0;
-                    $genero_filho_filha = 'M';
-                    foreach ($verificapaimae as $paimae) {
-                        if ($novoparente->Pessoa->PessoaFisica->genero == $paimae->Pessoa->PessoaFisica->genero) {
-                            $tem_pai_mae = 1;
-                            $genero_filho_filha = $paimae->PessoaParente->PessoaFisica->genero;
-                        }
+        if ($pessoaparente->parentesco_id == 903 or $pessoaparente->parentesco_id == 904) { // 904 - FILHA - F / 903 - FILHO - M // entra como meu filho ou filha
+            $verificapaimae = PessoaParentesco::where('parentesco_id', '=', $pessoaparente->parentesco_id)->where('pessoa_parente_id', '=', $pessoaparente->pessoa_parente_id)->load();
+            if ($verificapaimae) {
+                $tem_pai_mae = 0;
+                $genero_filho_filha = 'M';
+                foreach ($verificapaimae as $paimae) {
+                    if ($novoparente->Pessoa->genero == $paimae->Pessoa->genero) {
+                        $tem_pai_mae = 1;
+                        $genero_filho_filha = $paimae->PessoaParente->genero;
                     }
+                }
 
-                    if ($tem_pai_mae == 1) {
+                if ($tem_pai_mae == 1) {
 
-                        $novoparente->parentesco_id = $genero_filho_filha == 'M' ? 933 : 934; // 934 - ENTEADA - F / 933 - ENTEADO - M // saio como enteado ou enteada deles
+                    $novoparente->parentesco_id = $genero_filho_filha == 'M' ? 933 : 934; // 934 - ENTEADA - F / 933 - ENTEADO - M // saio como enteado ou enteada deles
 
-                    } else {
-                        $novoparente->parentesco_id = $pessoaparente->parentesco_id;
-                    }
                 } else {
                     $novoparente->parentesco_id = $pessoaparente->parentesco_id;
                 }
             } else {
                 $novoparente->parentesco_id = $pessoaparente->parentesco_id;
             }
+        } else {
+            $novoparente->parentesco_id = $pessoaparente->parentesco_id;
+        }
 
+        if (!$relacaoexistente) {
             $novoparente->pessoa_parente_id = $pessoaparente->pessoa_parente_id;
             $novoparente->store();
             $this->onSalvaParenteInversoTeste($novoparente);
+        } else if ($pessoaparente->parentesco_id >= 927 and $pessoaparente->parentesco_id <= 932) {
+            $relacaoexistente->parentesco_id = $novoparente->parentesco_id;
+            $relacaoexistente->store();
+            $this->onSalvaParenteInversoTeste($relacaoexistente);
         }
     }
 
     public function onSalvaParenteInversoTeste(object $pessoaparente)
     {
-        $pessoa = Pessoa::find($pessoaparente->pessoa_id);
-        $generodapessoa = $pessoa->PessoaFIsica->genero;
+
+        $pessoa = ViewPessoaFisica::find($pessoaparente->pessoa_id);
+        $generodapessoa = $pessoa->genero;
 
         $novoparentesco_id = 0;
 
@@ -71,20 +76,26 @@ trait ControlePessoas
             $novoparentesco_id = $generodapessoa == 'M' ? 923 : 924;
         } else if ($pessoaparente->parentesco_id == 925 or $pessoaparente->parentesco_id == 926) { // 926 - CONVIVENTE - F / 925 - CONVIVENTE - M
             $novoparentesco_id = $generodapessoa == 'M' ? 925 : 926;
-        } else if ($pessoaparente->parentesco_id == 927 or $pessoaparente->parentesco_id == 928) { // 
+        } else if ($pessoaparente->parentesco_id == 927 or $pessoaparente->parentesco_id == 928) { // 927 - EX-ESPOSO - M / 928 - EX-ESPOSA - F
             $novoparentesco_id = $generodapessoa == 'M' ? 927 : 928;
-        } else if ($pessoaparente->parentesco_id == 929 or $pessoaparente->parentesco_id == 930) { // 
+        } else if ($pessoaparente->parentesco_id == 929 or $pessoaparente->parentesco_id == 930) { // 929 - EX-COMPANHEIRO - M / 930 - EX-COMPANHEIRA - F
             $novoparentesco_id = $generodapessoa == 'M' ? 929 : 930;
-        } else if ($pessoaparente->parentesco_id == 931 or $pessoaparente->parentesco_id == 932) { // 
+        } else if ($pessoaparente->parentesco_id == 931 or $pessoaparente->parentesco_id == 932) { // 931 - EX-CONVIVENTE - M / 932 - EX-CONVIVENTE - F
             $novoparentesco_id = $generodapessoa == 'M' ? 931 : 932;
         }
 
-        PessoaParentesco::where('pessoa_id', '=', $pessoaparente->pessoa_parente_id)->where('parentesco_id', '=', $novoparentesco_id)->where('pessoa_parente_id', '=', $pessoaparente->pessoa_id)->delete();
-        $novoparente = new PessoaParentesco();
-        $novoparente->pessoa_id = $pessoaparente->pessoa_parente_id;
-        $novoparente->parentesco_id = $novoparentesco_id;
-        $novoparente->pessoa_parente_id = $pessoaparente->pessoa_id;
-        $novoparente->store();
+        $relacaoexistente = PessoaParentesco::where('pessoa_id', '=', $pessoaparente->pessoa_parente_id)->where('pessoa_parente_id', '=', $pessoaparente->pessoa_id)->first();
+
+        if (!$relacaoexistente) {
+            $novoparente = new PessoaParentesco();
+            $novoparente->pessoa_id = $pessoaparente->pessoa_parente_id;
+            $novoparente->parentesco_id = $novoparentesco_id;
+            $novoparente->pessoa_parente_id = $pessoaparente->pessoa_id;
+            $novoparente->store();
+        } else if ($pessoaparente->parentesco_id >= 927 and $pessoaparente->parentesco_id <= 932) {
+            $relacaoexistente->parentesco_id = $novoparentesco_id;
+            $relacaoexistente->store();
+        }
     }
 
     public function onMudaEstadoCivil(object $pessoaparente)
@@ -142,35 +153,6 @@ trait ControlePessoas
         }
 
         return $tipo_vinculo;
-    }
-
-    public static function onCalculaTempo($param)
-    {
-
-        if (isset($param) and !empty($param)) {
-            if (isset($param['dt_inicial']) and !empty($param['dt_inicial'])) {
-                $novadata = DateTime::createFromFormat('d/m/Y', $param['dt_inicial']);
-                $param['dt_inicial'] = $novadata->format('Y/m/d');
-            } else {
-                $novadata = DateTime::createFromFormat('d/m/Y', $param);
-                $param = $novadata->format('Y/m/d');
-            }
-
-            if (isset($param['dt_final']) and !empty($param['dt_final'])) {
-                $interval = $novadata->diff(new DateTime($param['dt_final']));
-            } else {
-                $interval = $novadata->diff(new DateTime(date('Y-m-d')));
-            }
-            $tempo_calculado = new stdClass;
-            $tempo_calculado->tempo = $interval->format('%Y anos');
-            $tempo_calculado->idade = $interval->format('%Y anos');
-
-            TForm::sendData('form_dados_relacao', $tempo_calculado);
-            //TForm::sendData('form_pf', $tempo_calculado);
-            TForm::sendData('form_PessoaParente', $tempo_calculado);
-
-            return $tempo_calculado->tempo;
-        }
     }
 
     public static function onEstadocivilChange($param)
@@ -255,10 +237,13 @@ trait ControlePessoas
 
                 $object = PessoasRelacao::where('relacao_id', '=', $pessoabanda->id)->first();        // instantiates object City
                 $object->id_relacao = $pessoabanda->id;
-                $object->estado_civil_id = $object->PessoaParentesco->Pessoa->PessoaFisica->estado_civil_id;
+                $object->estado_civil_id = $object->PessoaParentesco->Pessoa->estado_civil_id;
                 $object->tipo_vinculo = self::onVinculo($object->estado_civil_id);
                 $object->dt_inicial =  TDate::date2br($object->dt_inicial);
-                $object->tempo = self::onCalculaTempo($object->dt_inicial);
+                if (!$object->dt_final or $object->dt_final = '0000-00-00') {
+                    $object->dt_final = date('d/m/Y');
+                }
+                $object->tempo = self::onCalculaDieferencaTempo($object);
             }
 
             return $object;   // fill the form with the active record data
@@ -268,6 +253,32 @@ trait ControlePessoas
         {
             new TMessage('error', $e->getMessage()); // shows the exception error message
             TTransaction::rollback(); // undo all pending operations
+        }
+    }
+
+    public static function onCalculaDieferencaTempo($object)
+    {
+
+        $object = (object) $object;
+
+        if (isset($object) and !empty($object)) {
+
+            if (!$object->dt_final or $object->dt_final = '0000-00-00') {
+                $object->dt_final = date('d/m/Y');
+            }
+
+            $dt_inicial = DateTime::createFromFormat('d/m/Y', $object->dt_inicial);
+            $dt_final = DateTime::createFromFormat('d/m/Y', $object->dt_final);
+
+            $intervalo = $dt_inicial->diff($dt_final);
+
+            $tempo_cauculado = new stdClass;
+            $tempo_cauculado->dt_final = $object->dt_final;
+            $tempo_cauculado->tempo = $intervalo->y . " ano(s), " . $intervalo->m . " mese(s) e " . $intervalo->d . " dia(s) ";
+
+            TForm::sendData('form_dados_relacao', $tempo_cauculado);
+
+            return $intervalo->y . " ano(s), " . $intervalo->m . " mese(s) e " . $intervalo->d . " dia(s) ";
         }
     }
 
@@ -312,6 +323,37 @@ trait ControlePessoas
                             $criteria->add(new TFilter('id', '!=',  812));
                             $criteria->add(new TFilter('id', '!=',  813));
                             $criteria->add(new TFilter('id', '!=',  814));
+                            //separados
+                        } else if ($pessoa_painel->estado_civil_id >= 809 and $pessoa_painel->estado_civil_id <= 810) {
+                            $criteria->add(new TFilter('id', '!=',  801));
+                            $criteria->add(new TFilter('id', '!=',  802));
+                            $criteria->add(new TFilter('id', '!=',  811));
+                            $criteria->add(new TFilter('id', '!=',  812));
+                            $criteria->add(new TFilter('id', '!=',  813));
+                            $criteria->add(new TFilter('id', '!=',  814));
+                            //Divorciado
+                        } else if ($pessoa_painel->estado_civil_id >= 811 and $pessoa_painel->estado_civil_id <= 812) {
+                            $criteria->add(new TFilter('id', '!=',  801));
+                            $criteria->add(new TFilter('id', '!=',  802));
+                            $criteria->add(new TFilter('id', '!=',  809));
+                            $criteria->add(new TFilter('id', '!=',  810));
+                            $criteria->add(new TFilter('id', '!=',  813));
+                            $criteria->add(new TFilter('id', '!=',  814));
+                            //viuvo
+                        } else if ($pessoa_painel->estado_civil_id >= 813 and $pessoa_painel->estado_civil_id <= 814) {
+                            $criteria->add(new TFilter('id', '!=',  801));
+                            $criteria->add(new TFilter('id', '!=',  802));
+                            $criteria->add(new TFilter('id', '!=',  809));
+                            $criteria->add(new TFilter('id', '!=',  810));
+                            $criteria->add(new TFilter('id', '!=',  811));
+                            $criteria->add(new TFilter('id', '!=',  812));
+                        } else {
+                            $criteria->add(new TFilter('id', '!=',  814));
+                            $criteria->add(new TFilter('id', '!=',  813));
+                            $criteria->add(new TFilter('id', '!=',  812));
+                            $criteria->add(new TFilter('id', '!=',  811));
+                            $criteria->add(new TFilter('id', '!=',  810));
+                            $criteria->add(new TFilter('id', '!=',  809));
                         }
                     } else {
                         $criteria->add(new TFilter('id', '!=',  814));

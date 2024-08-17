@@ -152,9 +152,6 @@ class DadosIniciaisPF extends TPage
 
         if (TSession::getValue('dados_relacao') or TSession::getValue('pessoa_painel')) {
 
-            $label = new TLabel('<br>Dados da Relação', '#62a8ee', 14, 'b');
-            $label->style = 'text-align:left;border-bottom:1px solid #62a8ee;width:100%';
-
             if (TSession::getValue('dados_relacao')) {
                 $dados_relacao = (object) TSession::getValue('dados_relacao');
             } else {
@@ -162,44 +159,49 @@ class DadosIniciaisPF extends TPage
                 $dados_relacao = self::onDadosRelacao($pessoa_painel->id);
             }
 
-            $action = new TAction(['DadosRelacao', 'onVerRelacao']);
-            if (isset($dados_relacao->id_relacao) and !empty($dados_relacao->id_relacao)) {
-                $action->setParameter('id', $dados_relacao->id_relacao);
-                $action->setParameter('atualiza_cadastro', true);
-            }
+            if ($dados_relacao) {
+                $label = new TLabel('<br>Dados da Relação', '#62a8ee', 14, 'b');
+                $label->style = 'text-align:left;border-bottom:1px solid #62a8ee;width:100%';
 
-            if ($dados_relacao->atualizacao == 's') {
-                $b2 = new TActionLink('Editar Relação', $action, 'white', 10, '', 'far:edit white');
-                $b2->class = 'btn btn-info';
-            } else {
-                $b2 = new TActionLink('Atualizar Relação', $action, 'white', 10, '', 'far:edit white');
-                $b2->class = 'btn btn-danger';
-            }
-
-            if (!empty($dados_relacao->doc_imagem) and !TSession::getValue('pessoa_painel')) {
-                $dados_relacao->doc_imagem = substr((json_decode(urldecode($dados_relacao->doc_imagem))->fileName), 4); // aqui foi a solução
-            }
-            //else{
-            //    $dados_relacao->doc_imagem = substr('tmp/'.(json_decode(urldecode($dados_relacao->doc_imagem))->fileName), 4);
-            //}
-
-            if ($dados_relacao->doc_imagem) {
-                if ($dados_relacao->doc_imagem and !TSession::getValue('pessoa_painel')) {
-                    $c = new THyperLink('(Documento Anexado)', 'download.php?file=tmp/' . $dados_relacao->doc_imagem, 'blue', 12, 'biu');
-                } else if (TSession::getValue('pessoa_painel')) {
-                    if (preg_match('/\b%\b/', $dados_relacao->doc_imagem)) { // verifica se o caracter '%' contém na string
-                        $dados_relacao->doc_imagem = json_decode(urldecode($dados_relacao->doc_imagem))->fileName;
-                    }
-                    $c = new THyperLink('(Documento Anexado)', 'download.php?file=' . $dados_relacao->doc_imagem, 'blue', 12, 'biu');
+                $action = new TAction(['DadosRelacao', 'onVerRelacao']);
+                if (isset($dados_relacao->id_relacao) and !empty($dados_relacao->id_relacao)) {
+                    $action->setParameter('id', $dados_relacao->id_relacao);
+                    $action->setParameter('atualiza_cadastro', true);
                 }
-            } else {
-                $c = '';
-            }
 
-            $labeldadosrelacao = new TLabel('Tipo de Vínculo: ' . $dados_relacao->tipo_vinculo . ' - (' . $dados_relacao->dt_inicial . ') - Há ' . $dados_relacao->tempo . '. ' . $c, '#555555', 12, 'b');
-            $this->form->addContent([$label]);
-            $this->form->addContent([$labeldadosrelacao]);
-            $this->form->addContent([$b2]);
+                if ($dados_relacao->atualizacao == 's') {
+                    $b2 = new TActionLink('Editar Relação', $action, 'white', 10, '', 'far:edit white');
+                    $b2->class = 'btn btn-info';
+                } else {
+                    $b2 = new TActionLink('Atualizar Relação', $action, 'white', 10, '', 'far:edit white');
+                    $b2->class = 'btn btn-danger';
+                }
+
+                if (!empty($dados_relacao->doc_imagem) and !TSession::getValue('pessoa_painel')) {
+                    $dados_relacao->doc_imagem = substr((json_decode(urldecode($dados_relacao->doc_imagem))->fileName), 4); // aqui foi a solução
+                }
+                //else{
+                //    $dados_relacao->doc_imagem = substr('tmp/'.(json_decode(urldecode($dados_relacao->doc_imagem))->fileName), 4);
+                //}
+
+                if ($dados_relacao->doc_imagem) {
+                    if ($dados_relacao->doc_imagem and !TSession::getValue('pessoa_painel')) {
+                        $c = new THyperLink('(Documento Anexado)', 'download.php?file=tmp/' . $dados_relacao->doc_imagem, 'blue', 12, 'biu');
+                    } else if (TSession::getValue('pessoa_painel')) {
+                        if (preg_match('/\b%\b/', $dados_relacao->doc_imagem)) { // verifica se o caracter '%' contém na string
+                            $dados_relacao->doc_imagem = json_decode(urldecode($dados_relacao->doc_imagem))->fileName;
+                        }
+                        $c = new THyperLink('(Documento Anexado)', 'download.php?file=' . $dados_relacao->doc_imagem, 'blue', 12, 'biu');
+                    }
+                } else {
+                    $c = '';
+                }
+
+                $labeldadosrelacao = new TLabel('Tipo de Vínculo: ' . $dados_relacao->tipo_vinculo . ' - (' . $dados_relacao->dt_inicial . ') - Há ' . $dados_relacao->tempo . '. ' . $c, '#555555', 12, 'b');
+                $this->form->addContent([$label]);
+                $this->form->addContent([$labeldadosrelacao]);
+                $this->form->addContent([$b2]);
+            }
         }
 
         if (!TSession::getValue('pessoa_painel')) {
@@ -384,7 +386,7 @@ class DadosIniciaisPF extends TPage
                         if (isset($tem_vinculo) and !empty($tem_vinculo)) {
                             foreach ($tem_vinculo as $pessoagenero) {
 
-                                if ($pessoagenero->Pessoa->PessoaFisica->genero == $dadosiniciaispf['genero'] and $pessoagenero->pessoa_id != $dadosiniciaispf['id']) {
+                                if ($pessoagenero->Pessoa->genero == $dadosiniciaispf['genero'] and $pessoagenero->pessoa_id != $dadosiniciaispf['id']) {
                                     $pessoa_vinculada[$key]['tem_vinculo'] = 1;
                                     $tem_pessoa_vinculada = 1;
                                 }
@@ -584,10 +586,13 @@ class DadosIniciaisPF extends TPage
                                 $pessoa_painel = TSession::getValue('pessoa_painel');
                                 $dados_relacao = self::onDadosRelacao($pessoa_painel->id);
                             }
-                            if ($dados_relacao->atualizacao == 's') {
-                                $atualiza_relacao = 0;
-                            } else {
-                                $atualiza_relacao = 1;
+
+                            if ($dados_relacao) {
+                                if ($dados_relacao->atualizacao == 's') {
+                                    $atualiza_relacao = 0;
+                                } else {
+                                    $atualiza_relacao = 1;
+                                }
                             }
                         }
 
@@ -603,11 +608,9 @@ class DadosIniciaisPF extends TPage
                             $pf->estado_civil_id = $data->estado_civil_id;
                             TForm::sendData('form_pf', $pf);
                         } else {
-
                             if ($this->num != 0) {
                                 AdiantiCoreApplication::loadPage('DadosParentes', 'onDelete', ['cpf' => $this->num]);
                             } else {
-
                                 AdiantiCoreApplication::loadPage('DadosParentes', 'onReload');
                             }
                         }
@@ -625,7 +628,10 @@ class DadosIniciaisPF extends TPage
                 TForm::sendData('form_pf', $pfvazia);
             }
         } else {
-            $this->onEdit($param = null);
+            //$posAction = new TDataGridAction(['DadosIniciaisPF', 'onEdit'],   ['param' => '', 'register_state' => 'false']);
+            //new TMessage('danger', '<b>Atenção!</b> Preencha o campo <b>Estado Civil</b>!', $posAction);
+            $this->form->add(new TAlert('danger', '<b>Atenção!</b> Preencha o campo <b>Estado Civil</b>!'));
+            $this->onEdit($param);
         }
     }
 

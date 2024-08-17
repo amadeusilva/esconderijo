@@ -57,7 +57,9 @@ class DadosRelacao extends TWindow
         $tipo_vinculo = new TEntry('tipo_vinculo');
         $dt_inicial                 = new TDate('dt_inicial');
         $dt_inicial->setMask('dd/mm/yyyy');
-        $dt_inicial->setExitAction(new TAction(array($this, 'onCalculaTempo')));
+        $dt_inicial->setExitAction(new TAction(array($this, 'onCalculaDieferencaTempo')));
+        $dt_final                 = new TDate('dt_final');
+        $dt_final->setMask('dd/mm/yyyy');
         $tempo = new TEntry('tempo');
         $doc_imagem  = new TFile('doc_imagem');
         // allow just these extensions
@@ -70,10 +72,12 @@ class DadosRelacao extends TWindow
         // define some properties for the form fields
         $estado_civil_id->setEditable(FALSE);
         $tipo_vinculo->setEditable(FALSE);
+        $dt_final->setEditable(FALSE);
         $tempo->setEditable(FALSE);
         $estado_civil_id->setSize('100%');
         $tipo_vinculo->setSize('100%');
         $dt_inicial->setSize('100%');
+        $dt_final->setSize('100%');
         $tempo->setSize('100%');
         $doc_imagem->setSize('100%');
 
@@ -96,6 +100,9 @@ class DadosRelacao extends TWindow
         $row = $this->form->addFields([new TLabel('Data Ínicio', 'red'), $dt_inicial]);
         $row->layout = ['col-sm-12'];
 
+        $row = $this->form->addFields([new TLabel('Data Final (Contagem)', 'red'), $dt_final]);
+        $row->layout = ['col-sm-12'];
+
         $row = $this->form->addFields([new TLabel('Contagem (tempo)', 'red'), $tempo]);
         $row->layout = ['col-sm-12'];
 
@@ -108,6 +115,7 @@ class DadosRelacao extends TWindow
         $estado_civil_id->addValidation('Estado Civil', new TRequiredValidator);
         $tipo_vinculo->addValidation('Tipo de vínculo', new TRequiredValidator);
         $dt_inicial->addValidation('Data Ínicio', new TRequiredValidator);
+        $dt_final->addValidation('Data Ínicio', new TRequiredValidator);
         $atualizacao->addValidation('Dados Verificados?', new TRequiredValidator);
 
 
@@ -134,11 +142,15 @@ class DadosRelacao extends TWindow
 
                 $key = $param['id'];  // get the parameter
                 $object = PessoasRelacao::where('relacao_id', '=', $key)->first();        // instantiates object City
-                $object->estado_civil_id = $object->PessoaParentesco->Pessoa->PessoaFisica->estado_civil_id;
+                $object->estado_civil_id = $object->PessoaParentesco->Pessoa->estado_civil_id;
                 $object->tipo_vinculo = self::onVinculo($object->estado_civil_id);
                 $object->dt_inicial =  TDate::date2br($object->dt_inicial);
-                $object->dt_final =  TDate::date2br($object->dt_final);
-                $object->tempo = self::onCalculaTempo($object->dt_inicial);
+                if ($object->dt_final != '0000-00-00') {
+                    $object->dt_final =  TDate::date2br($object->dt_final);
+                } else {
+                    $object->dt_final = date('d/m/Y');
+                }
+                $object->tempo = self::onCalculaDieferencaTempo($object);
 
                 $this->form->setData($object);   // fill the form with the active record data
 
@@ -152,7 +164,11 @@ class DadosRelacao extends TWindow
                 $object->estado_civil_id = $dados_relacao['estado_civil_id'];
                 $object->tipo_vinculo = self::onVinculo($dados_relacao['estado_civil_id']);
                 $object->dt_inicial = $dados_relacao['dt_inicial'];
-                //$object->dt_final = $dados_relacao['dt_final'];
+                if (isset($dados_relacao['dt_final']) and !empty($dados_relacao['dt_final'])) {
+                    $object->dt_final =  $dados_relacao['dt_final'];
+                } else {
+                    $object->dt_final = date('d/m/Y');
+                }
                 $object->tempo = $dados_relacao['tempo'];
                 if ($dados_relacao['doc_imagem']) {
                     $object->doc_imagem = $dados_relacao['doc_imagem'];

@@ -55,17 +55,22 @@ class AddParente extends TWindow
         }
 
         if (isset($pessoa_painel->id) and !empty($pessoa_painel->id) and isset($param['vinculo']) and $param['vinculo'] != 3) {
+
             try {
                 TTransaction::open('adea');
 
+                //verifica parentes no banco
                 $pessoa_parente_painel = PessoaParentesco::where('pessoa_id', '=', $pessoa_painel->id)->load();
 
-                $filter->add(new TFilter('id', '!=', 921));
-                $filter->add(new TFilter('id', '!=', 923));
-                $filter->add(new TFilter('id', '!=', 925));
-                $filter->add(new TFilter('id', '!=', 922));
-                $filter->add(new TFilter('id', '!=', 924));
-                $filter->add(new TFilter('id', '!=', 926));
+                //bloco comentado porque nao aparecia esposa para o separado
+                if ($param['vinculo'] == 2) {
+                    $filter->add(new TFilter('id', '!=', 921));
+                    $filter->add(new TFilter('id', '!=', 923));
+                    $filter->add(new TFilter('id', '!=', 925));
+                    $filter->add(new TFilter('id', '!=', 922));
+                    $filter->add(new TFilter('id', '!=', 924));
+                    $filter->add(new TFilter('id', '!=', 926));
+                }
 
                 foreach ($pessoa_parente_painel as $pes_par_pai) {
                     if ($pes_par_pai->parentesco_id == 901 or $pes_par_pai->parentesco_id == 902) {
@@ -88,6 +93,7 @@ class AddParente extends TWindow
         //estado civil: 803-804: convivent / 805-806: ue / 807-808: casad
         //parentesco: 921-922: espos / 923-924: companheir / 925-926: convivente
         if (TSession::getValue('dados_iniciais_pf') and isset($param['vinculo']) and $param['vinculo'] != 3) {
+
             $filtroini = TSession::getValue('dados_iniciais_pf');
             if ($filtroini['genero'] == 'M') {
                 if ($filtroini['estado_civil_id'] == 807) {
@@ -266,7 +272,7 @@ class AddParente extends TWindow
                 if ($param['atualizacao'] == 'n') {
                     $object = new ViewPessoaFisica($key);        // instantiates object City
                     $object->dt_nascimento =  TDate::date2br($object->dt_nascimento);
-                    $object->idade = self::onCalculaTempo($object->dt_nascimento);
+                    $object->idade = self::onCalculaIdadeParente($object->dt_nascimento);
                     $object->moracomigo = ($object->endereco_id == $pessoa_painel->endereco_id) ? 's' : 'n';
                 } else {
                     $dados_parentes_pf = TSession::getValue('dados_parentes_pf');
@@ -299,6 +305,59 @@ class AddParente extends TWindow
         {
             new TMessage('error', $e->getMessage()); // shows the exception error message
             TTransaction::rollback(); // undo all pending operations
+        }
+    }
+
+    public static function onCalculaIdadeParente($param)
+    {
+        if (isset($param) and !empty($param)) {
+
+
+            //converte a data static BR para Americana
+            $novadata = DateTime::createFromFormat('d/m/Y', $param);
+            $param = $novadata->format('Y/m/d');
+            $interval = $novadata->diff(new DateTime(date('Y-m-d')));
+
+            $idade_cauculada = new stdClass;
+            $idade_cauculada->idade = $interval->format('%Y anos');
+
+            TForm::sendData('form_PessoaParente', $idade_cauculada);
+        }
+    }
+
+    public static function verificaNomeDtnascimento($param)
+    {
+        try {
+            TTransaction::open('adea');
+            if ($param['cpf'] and $param['nome'] and $param['dt_nascimento']) {
+
+                //self::onCalculaTempo(TDate::date2br($param['dt_nascimento']));
+                self::onCalculaIdadeParente($param['dt_nascimento']);
+
+                $novadata = DateTime::createFromFormat('d/m/Y', $param['dt_nascimento']);
+                $param['dt_nascimento'] = $novadata->format('Y/m/d');
+
+                $pf = ViewPessoaFisica::where('nome', '=', $param['nome'])->where('dt_nascimento', '=', $param['dt_nascimento'])->first();
+
+                if ($pf) {
+                    if (!empty($pf->cpf) and $pf->cpf != $param['cpf']) {
+                        throw new Exception('<b>Atenção:</b> Você não pode vincular<b> ' . $pf->nome . ' (' . $novadata->format('d/m/Y') . ')</b>.<br>Pessoa EXISTENTE em outro CPF. <br> Se acreditar que estes dados estão incorretos, entre em contato com o Administrador do sistema!');
+                    } else {
+                        TButton::enableField('form_PessoaParente', 'inserir');
+                    }
+                } else {
+                    TButton::enableField('form_PessoaParente', 'inserir');
+                }
+            }
+            TTransaction::close();
+        } catch (Exception $e) {
+            new TMessage('error', $e->getMessage());
+            $pfvazia = new stdClass;
+            $pfvazia->cpf = '';
+            $pfvazia->nome = '';
+            $pfvazia->popular = '';
+            $pfvazia->dt_nascimento = '';
+            TForm::sendData('form_PessoaParente', $pfvazia);
         }
     }
 
@@ -502,7 +561,9 @@ class AddParente extends TWindow
                         throw new Exception('Você não pode vincular <b>' . $pp->PessoaParente->nome . '</b> como <b>' . $buscagrau->item . '</b>!<br>Vínculo EXISTENTE: <b>' . $pp->Parentesco->item . '</b> de <b>' . $pp->Pessoa->nome . '</b>. <br> Se acreditar que este vínculo está incorreto, entre em contato com o Administrador do sistema!');
                     } else {
                         $pf->dt_nascimento =  TDate::date2br($pf->dt_nascimento);
-                        $pf->vinculo = 1;
+                        if ($param['vinculo'] != 2) {
+                            $pf->vinculo = 1;
+                        }
                         TForm::sendData('form_PessoaParente', $pf);
                         TButton::enableField('form_PessoaParente', 'inserir');
                     }
@@ -537,19 +598,25 @@ class AddParente extends TWindow
                             throw new Exception('Você não pode vincular <b>' . $nome1 . '</b> como <b>' . $grau . '</b>!<br>Vínculo EXISTENTE: <b>' . $item . '</b> de <b>' . $nome2 . '</b>. <br> Use o vínculo de <b>Enteado(a)</b>, mas se acreditar que este vínculo está incorreto, entre em contato com o Administrador do sistema!');
                         } else {
                             $pf->dt_nascimento =  TDate::date2br($pf->dt_nascimento);
-                            $pf->vinculo = 1;
+                            if ($param['vinculo'] != 2) {
+                                $pf->vinculo = 1;
+                            }
                             TForm::sendData('form_PessoaParente', $pf);
                             TButton::enableField('form_PessoaParente', 'inserir');
                         }
                     } else {
                         $pf->dt_nascimento =  TDate::date2br($pf->dt_nascimento);
-                        $pf->vinculo = 1;
+                        if ($param['vinculo'] != 2) {
+                            $pf->vinculo = 1;
+                        }
                         TForm::sendData('form_PessoaParente', $pf);
                         TButton::enableField('form_PessoaParente', 'inserir');
                     }
                 } else {
                     $pf->dt_nascimento =  TDate::date2br($pf->dt_nascimento);
-                    $pf->vinculo = 1;
+                    if ($param['vinculo'] != 2) {
+                        $pf->vinculo = 1;
+                    }
                     TForm::sendData('form_PessoaParente', $pf);
                     TButton::enableField('form_PessoaParente', 'inserir');
                 }
@@ -558,42 +625,6 @@ class AddParente extends TWindow
                 TEntry::enableField('form_PessoaParente', 'popular');
                 TDate::enableField('form_PessoaParente', 'dt_nascimento');
             }
-        }
-    }
-
-    public static function verificaNomeDtnascimento($param)
-    {
-        try {
-            TTransaction::open('adea');
-            if ($param['cpf'] and $param['nome'] and $param['dt_nascimento']) {
-
-                //self::onCalculaTempo(TDate::date2br($param['dt_nascimento']));
-                self::onCalculaTempo($param['dt_nascimento']);
-
-                $novadata = DateTime::createFromFormat('d/m/Y', $param['dt_nascimento']);
-                $param['dt_nascimento'] = $novadata->format('Y/m/d');
-
-                $pf = ViewPessoaFisica::where('nome', '=', $param['nome'])->where('dt_nascimento', '=', $param['dt_nascimento'])->first();
-
-                if ($pf) {
-                    if (!empty($pf->cpf) and $pf->cpf != $param['cpf']) {
-                        throw new Exception('<b>Atenção:</b> Você não pode vincular<b> ' . $pf->nome . ' (' . $novadata->format('d/m/Y') . ')</b>.<br>Pessoa EXISTENTE em outro CPF. <br> Se acreditar que estes dados estão incorretos, entre em contato com o Administrador do sistema!');
-                    } else {
-                        TButton::enableField('form_PessoaParente', 'inserir');
-                    }
-                } else {
-                    TButton::enableField('form_PessoaParente', 'inserir');
-                }
-            }
-            TTransaction::close();
-        } catch (Exception $e) {
-            new TMessage('error', $e->getMessage());
-            $pfvazia = new stdClass;
-            $pfvazia->cpf = '';
-            $pfvazia->nome = '';
-            $pfvazia->popular = '';
-            $pfvazia->dt_nascimento = '';
-            TForm::sendData('form_PessoaParente', $pfvazia);
         }
     }
 

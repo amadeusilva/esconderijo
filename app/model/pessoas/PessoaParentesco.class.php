@@ -24,7 +24,7 @@ class PessoaParentesco extends TRecord
 
     public function get_Pessoa()
     {
-        return Pessoa::find($this->pessoa_id);
+        return ViewPessoaFisica::find($this->pessoa_id);
     }
 
     public function get_Parentesco()
@@ -34,10 +34,10 @@ class PessoaParentesco extends TRecord
 
     public function get_PessoaParente()
     {
-        return Pessoa::find($this->pessoa_parente_id);
+        return ViewPessoaFisica::find($this->pessoa_parente_id);
     }
 
-    public function delete($id = null)
+    public function delete2($id = null)
     {
         $id = isset($id) ? $id : $this->id;
 
