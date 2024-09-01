@@ -11,7 +11,7 @@
  */
 class SystemProgramMethodRole extends TRecord
 {
-    const TABLENAME = 'system_program_method_role';
+    const TABLENAME = 'permission.system_program_method_role';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     

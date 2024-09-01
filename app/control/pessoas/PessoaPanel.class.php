@@ -202,8 +202,8 @@ class PessoaPanel extends TPage
                 return $value;
             });
 
-            $actionverrelacao = new TDataGridAction(['DadosRelacao', 'onVerRelacao'],   ['id' => '{id}']);
-            $actionverpdfrelacao = new TDataGridAction([$this, 'onViewDocImagem'],   ['id' => '{id}']);
+            $actionverrelacao = new TDataGridAction(['DadosRelacao', 'onVerRelacao'],   ['pessoa_parentesco_id' => '{id}', 'relacao_id' => '{relacao_id}']);
+            $actionverpdfrelacao = new TDataGridAction([$this, 'onViewDocImagem'],   ['relacao_id' => '{relacao_id}']);
 
             $this->lista_parentes->addAction($actionverrelacao, 'Ver dados da relação', 'fas:eye fa-fw green');
             $this->lista_parentes->addAction($actionverpdfrelacao, 'Ver documento', 'far:fa-sharp fa-solid fa-file-pdf red');
@@ -244,12 +244,12 @@ class PessoaPanel extends TPage
     {
 
         try {
-            if ($param['id']) {
+            if ($param['relacao_id']) {
 
                 TTransaction::open('adea');   // open a transaction with database 'samples'
 
-                $key = $param['id'];  // get the parameter
-                $object = PessoasRelacao::where('relacao_id', '=', $key)->first();
+                // get the parameter
+                $object = new PessoasRelacao($param['relacao_id']);
 
                 $win = TWindow::create('Documento da Relação', 0.8, 0.6);
                 if ($object->doc_imagem) {
@@ -302,9 +302,7 @@ class PessoaPanel extends TPage
         return FALSE;
     }
 
-    public static function onMudaGrauParente($param)
-    {
-    }
+    public static function onMudaGrauParente($param) {}
 
     /**
      * Ask before deletion

@@ -5,7 +5,7 @@
  */
 class Hinario extends TRecord
 {
-    const TABLENAME = 'hinario_partes';
+    const TABLENAME = 'globais.hinario';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     
@@ -15,9 +15,8 @@ class Hinario extends TRecord
     public function __construct($id = NULL, $callObjectLoad = TRUE)
     {
         parent::__construct($id, $callObjectLoad);
-        parent::addAttribute('hinario_id');
-        parent::addAttribute('tipo_parte');
-        parent::addAttribute('parte');
+        parent::addAttribute('ordem');
+        parent::addAttribute('titulo');
     }
 
 }

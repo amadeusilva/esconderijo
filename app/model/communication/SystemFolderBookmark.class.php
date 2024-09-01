@@ -11,7 +11,7 @@
  */
 class SystemFolderBookmark extends TRecord
 {
-    const TABLENAME = 'system_folder_bookmark';
+    const TABLENAME = 'communication.system_folder_bookmark';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     

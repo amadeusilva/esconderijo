@@ -150,6 +150,29 @@ class DadosIniciaisPF extends TPage
         );
         $row->layout = ['col-sm-4', 'col-sm-4', 'col-sm-4'];
 
+        //if (!TSession::getValue('pessoa_painel')) {
+
+        $label = new TLabel('<br>Contatos', '#62a8ee', 14, 'b');
+        $label->style = 'text-align:left;border-bottom:1px solid #62a8ee;width:100%';
+        $this->form->addContent([$label]);
+
+        $row = $this->form->addFields(
+            [
+                new TLabel('Fone'),
+                $fone
+            ],
+            [
+                new TLabel('Email'),
+                $email
+            ]
+        );
+        $row->layout = ['col-sm-5', 'col-sm-7'];
+
+        $fone->addValidation('Fone', new TRequiredValidator);
+        $email->addValidation('Email', new TEmailValidator);
+        $email->addValidation('Email', new TRequiredValidator);
+        //}
+
         if (TSession::getValue('dados_relacao') or TSession::getValue('pessoa_painel')) {
 
             if (TSession::getValue('dados_relacao')) {
@@ -164,8 +187,11 @@ class DadosIniciaisPF extends TPage
                 $label->style = 'text-align:left;border-bottom:1px solid #62a8ee;width:100%';
 
                 $action = new TAction(['DadosRelacao', 'onVerRelacao']);
-                if (isset($dados_relacao->id_relacao) and !empty($dados_relacao->id_relacao)) {
-                    $action->setParameter('id', $dados_relacao->id_relacao);
+                if (isset($dados_relacao->id) and !empty($dados_relacao->id)) {
+                    $action->setParameter('id', $dados_relacao->id);
+                    if (isset($dados_relacao->pessoa_parentesco_id) and !empty($dados_relacao->pessoa_parentesco_id)) {
+                        $action->setParameter('pessoa_parentesco_id', $dados_relacao->pessoa_parentesco_id);
+                    }
                     $action->setParameter('atualiza_cadastro', true);
                 }
 
@@ -202,29 +228,6 @@ class DadosIniciaisPF extends TPage
                 $this->form->addContent([$labeldadosrelacao]);
                 $this->form->addContent([$b2]);
             }
-        }
-
-        if (!TSession::getValue('pessoa_painel')) {
-
-            $label = new TLabel('<br>Contatos', '#62a8ee', 14, 'b');
-            $label->style = 'text-align:left;border-bottom:1px solid #62a8ee;width:100%';
-            $this->form->addContent([$label]);
-
-            $row = $this->form->addFields(
-                [
-                    new TLabel('Fone'),
-                    $fone
-                ],
-                [
-                    new TLabel('Email'),
-                    $email
-                ]
-            );
-            $row->layout = ['col-sm-5', 'col-sm-7'];
-
-            $fone->addValidation('Fone', new TRequiredValidator);
-            $email->addValidation('Email', new TEmailValidator);
-            $email->addValidation('Email', new TRequiredValidator);
         }
 
         // validations
@@ -297,11 +300,26 @@ class DadosIniciaisPF extends TPage
                     $pessoa_painel->dt_nascimento =  $pessoa_painel->dt_nascimento;
                     $pessoa_painel->idade = self::onCalculaIdade($pessoa_painel->dt_nascimento);
 
+                    TTransaction::open('adea');
+
+                    $fone = PessoaContato::where('pessoa_id', '=', $pessoa_painel->id)->where('tipo_contato_id', '=', 101)->first();
+                    if ($fone) {
+                        $pessoa_painel->fone = $fone->contato;
+                    }
+                    $email = PessoaContato::where('pessoa_id', '=', $pessoa_painel->id)->where('tipo_contato_id', '=', 102)->first();
+                    if ($email) {
+                        $pessoa_painel->email = $email->contato;
+                    }
+
+                    TTransaction::close();
+
+
                     $this->form->setData($pessoa_painel);   // fill the form with the active record data.
 
                     $param['dt_nascimento'] = $pessoa_painel->dt_nascimento;
                     $param['genero'] = $pessoa_painel->genero;
                     $param['estado_civil_id'] = $pessoa_painel->estado_civil_id;
+
                     TForm::sendData('form_pf', $param);
                 } else {
                     $this->form->clear(true);
@@ -598,8 +616,8 @@ class DadosIniciaisPF extends TPage
 
                         if ($atualiza_relacao != 0) {
                             $this->form->add(new TAlert('danger', '<b>Atenção!</b>. Você precisa verificar se seus <b>Dados de Relação</b> estão atualizados e depois <b>Salvar</b>!'));
-                            if (isset($dados_relacao->id_relacao) and !empty($dados_relacao->id_relacao)) {
-                                AdiantiCoreApplication::loadPage('DadosRelacao', 'onVerRelacao', ['id' => $dados_relacao->id_relacao, 'atualiza_cadastro' => true]);
+                            if (isset($dados_relacao->id) and !empty($dados_relacao->id)) {
+                                AdiantiCoreApplication::loadPage('DadosRelacao', 'onVerRelacao', ['pessoa_parentesco_id' => $dados_relacao->pessoa_parentesco_id, 'atualiza_cadastro' => true]);
                             } else {
                                 AdiantiCoreApplication::loadPage('DadosRelacao', 'onVerRelacao');
                             }

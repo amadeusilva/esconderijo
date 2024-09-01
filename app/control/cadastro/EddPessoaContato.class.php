@@ -110,18 +110,17 @@ class EddPessoaContato extends TWindow
     function onEdite($param)
     {
         try {
+            TTransaction::open('adea');   // open a transaction with database 'samples'
             if ($param['pessoa_id']) {
-
-                TTransaction::open('adea');   // open a transaction with database 'samples'
 
                 $key = $param['id'];  // get the parameter
                 $object = new PessoaContato($key);        // instantiates object City
                 $this->form->setData($object);   // fill the form with the active record data
 
-                TTransaction::close();           // close the transaction
             } else {
                 $this->form->clear(true);
             }
+            TTransaction::close();           // close the transaction
         } catch (Exception $e) // in case of exception
         {
             new TMessage('error', $e->getMessage()); // shows the exception error message
@@ -145,8 +144,17 @@ class EddPessoaContato extends TWindow
             $data = $this->form->getData(); // get form data as array
             $data->pessoa_id = $pessoa_painel->id;
 
-            $object = new PessoaContato();  // create an empty object
-            $object->fromArray((array) $data); // load the object with data
+            $object = PessoaContato::where('pessoa_id', '=', $data->pessoa_id)->where('tipo_contato_id', '=', $data->tipo_contato_id)->first();
+
+            if (!isset($object) or empty($object)) {
+                $object = new PessoaContato();  // create an empty object
+                $object->fromArray((array) $data); // load the object with data
+            } else {
+                //$object->pessoa_id = $data->pessoa_id;
+                //$object->tipo_contato_id = $data->pessoa_id;
+                $object->contato = $data->contato;
+                $object->status_contato_id = $data->status_contato_id;
+            }
             $object->store(); // save the object
 
             // fill the form with the active record data

@@ -40,10 +40,12 @@ trait ControlePessoas
 
         if (!$relacaoexistente) {
             $novoparente->pessoa_parente_id = $pessoaparente->pessoa_parente_id;
+            $novoparente->relacao_id = 0;
             $novoparente->store();
             $this->onSalvaParenteInversoTeste($novoparente);
         } else if ($pessoaparente->parentesco_id >= 927 and $pessoaparente->parentesco_id <= 932) {
             $relacaoexistente->parentesco_id = $novoparente->parentesco_id;
+            //$relacaoexistente->relacao_id = 0;
             $relacaoexistente->store();
             $this->onSalvaParenteInversoTeste($relacaoexistente);
         }
@@ -91,9 +93,11 @@ trait ControlePessoas
             $novoparente->pessoa_id = $pessoaparente->pessoa_parente_id;
             $novoparente->parentesco_id = $novoparentesco_id;
             $novoparente->pessoa_parente_id = $pessoaparente->pessoa_id;
+            $novoparente->relacao_id = 0;
             $novoparente->store();
         } else if ($pessoaparente->parentesco_id >= 927 and $pessoaparente->parentesco_id <= 932) {
             $relacaoexistente->parentesco_id = $novoparentesco_id;
+            //$relacaoexistente->relacao_id = 0;
             $relacaoexistente->store();
         }
     }
@@ -135,21 +139,27 @@ trait ControlePessoas
     {
         $tipo_vinculo = '';
 
-        if ($param == 805 or $param == 806) {
-            $tipo_vinculo = 'Declaração de União Estável';
-            TQuickForm::showField('form_dados_relacao', 'doc_imagem');
-        } else if ($param == 803 or $param == 804 or $param == 809 or $param == 810) {
-            $tipo_vinculo = 'Sem documento de registro em cartório';
-            TQuickForm::hideField('form_dados_relacao', 'doc_imagem');
-        } else if ($param == 807 or $param == 808) {
-            $tipo_vinculo = 'Certidão de Casamento';
-            TQuickForm::showField('form_dados_relacao', 'doc_imagem');
-        } else if ($param == 811 or $param == 812) {
-            $tipo_vinculo = '(Certidão de Divórcio)';
-            TQuickForm::showField('form_dados_relacao', 'doc_imagem');
-        } else if ($param == 813 or $param == 814) {
-            $tipo_vinculo = '(Certidão de óbito do cônjuge)';
-            TQuickForm::showField('form_dados_relacao', 'doc_imagem');
+        if (isset($param) and !empty($param)) {
+
+            if ($param == 805 or $param == 806) {
+                $tipo_vinculo = 'Declaração de União Estável';
+                TQuickForm::showField('form_dados_relacao', 'doc_imagem');
+            } else if ($param == 803 or $param == 804) {
+                $tipo_vinculo = 'Sem documento de registro em cartório';
+                TQuickForm::hideField('form_dados_relacao', 'doc_imagem');
+            } else if ($param == 807 or $param == 808) {
+                $tipo_vinculo = 'Certidão de Casamento';
+                TQuickForm::showField('form_dados_relacao', 'doc_imagem');
+            } else if ($param == 809 or $param == 810) {
+                $tipo_vinculo = 'Sem documento de registro em cartório';
+                TQuickForm::hideField('form_dados_relacao', 'doc_imagem');
+            } else if ($param == 811 or $param == 812) {
+                $tipo_vinculo = 'Certidão de Divórcio';
+                TQuickForm::showField('form_dados_relacao', 'doc_imagem');
+            } else if ($param == 813 or $param == 814) {
+                $tipo_vinculo = 'Certidão de óbito do cônjuge';
+                TQuickForm::showField('form_dados_relacao', 'doc_imagem');
+            }
         }
 
         return $tipo_vinculo;
@@ -234,10 +244,9 @@ trait ControlePessoas
             $object = '';
 
             if ($pessoabanda) {
-
-                $object = PessoasRelacao::where('relacao_id', '=', $pessoabanda->id)->first();        // instantiates object City
-                $object->id_relacao = $pessoabanda->id;
-                $object->estado_civil_id = $object->PessoaParentesco->Pessoa->estado_civil_id;
+                $object = PessoasRelacao::find($pessoabanda->relacao_id)->first();        // instantiates object City
+                $object->pessoa_parentesco_id = $pessoabanda->id;
+                $object->estado_civil_id = $pessoabanda->Pessoa->estado_civil_id;
                 $object->tipo_vinculo = self::onVinculo($object->estado_civil_id);
                 $object->dt_inicial =  TDate::date2br($object->dt_inicial);
                 if (!$object->dt_final or $object->dt_final = '0000-00-00') {
@@ -258,12 +267,13 @@ trait ControlePessoas
 
     public static function onCalculaDieferencaTempo($object)
     {
-
         $object = (object) $object;
 
         if (isset($object) and !empty($object)) {
 
-            if (!$object->dt_final or $object->dt_final = '0000-00-00') {
+            if (isset($object->dt_final) and !empty($object->dt_final) and $object->dt_final != '0000-00-00') {
+                $object->dt_final = $object->dt_final;
+            } else {
                 $object->dt_final = date('d/m/Y');
             }
 

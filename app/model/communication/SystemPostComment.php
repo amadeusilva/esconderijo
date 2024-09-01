@@ -12,7 +12,7 @@
  */
 class SystemPostComment extends TRecord
 {
-    const TABLENAME = 'system_post_comment';
+    const TABLENAME = 'communication.system_post_comment';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     const CREATEDAT = 'created_at';

@@ -11,7 +11,7 @@
  */
 class SystemGroup extends TRecord
 {
-    const TABLENAME  = 'system_group';
+    const TABLENAME  = 'permission.system_group';
     const PRIMARYKEY = 'id';
     const IDPOLICY   = 'max'; // {max, serial}
     

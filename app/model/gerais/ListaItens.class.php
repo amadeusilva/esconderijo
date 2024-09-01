@@ -5,7 +5,7 @@
  */
 class ListaItens extends TRecord
 {
-    const TABLENAME = 'lista_itens';
+    const TABLENAME = 'globais.lista_itens';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     

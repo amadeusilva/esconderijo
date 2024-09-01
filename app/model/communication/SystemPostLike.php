@@ -12,7 +12,7 @@
  */
 class SystemPostLike extends TRecord
 {
-    const TABLENAME = 'system_post_like';
+    const TABLENAME = 'communication.system_post_like';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     const CREATEDAT = 'created_at';

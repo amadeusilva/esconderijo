@@ -208,11 +208,12 @@ class DadosParentes extends TPage
                 $texto_filhos = $n_filhos > 1 ? ', <b>' . $n_filhos . '</b> Filhos' : ', <b>' . $n_filhos . '</b> Filho(a)';
 
                 if ($dadosrelacao) {
-                    $buscaestadocivil = ListaItens::where('id', '=', $dadosiniciaispf['estado_civil_id'])->first()->item;
-                    $tempo_relacao = ', <b>' . $buscaestadocivil . '</b> há <b>' . $dadosrelacao['tempo'] . '</b>';
+                    $tempo_relacao = 'há <b>' . $dadosrelacao['tempo'] . '</b>';
                 }
 
-                $textorodape = $pessoa . $tempo_relacao . $banda_ele_ela . $texto_filhos . '.';
+                $buscaestadocivil = ListaItens::where('id', '=', $dadosiniciaispf['estado_civil_id'])->first()->item;
+
+                $textorodape = $pessoa . ', <b>' . $buscaestadocivil . '</b> ' . $tempo_relacao . $banda_ele_ela . $texto_filhos . '.';
 
                 TTransaction::close();  // close the transaction
             }

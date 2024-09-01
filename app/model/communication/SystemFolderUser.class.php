@@ -11,7 +11,7 @@
  */
 class SystemFolderUser extends TRecord
 {
-    const TABLENAME = 'system_folder_user';
+    const TABLENAME = 'communication.system_folder_user';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     

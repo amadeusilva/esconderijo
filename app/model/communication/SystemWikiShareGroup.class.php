@@ -12,7 +12,7 @@
  */
 class SystemWikiShareGroup extends TRecord
 {
-    const TABLENAME = 'system_wiki_share_group';
+    const TABLENAME = 'communication.system_wiki_share_group';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
 

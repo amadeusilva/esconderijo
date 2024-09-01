@@ -6,7 +6,7 @@
  */
 class Pessoa extends TRecord
 {
-    const TABLENAME = 'pessoa';
+    const TABLENAME = 'pessoas.pessoa';
     const PRIMARYKEY = 'id';
     const IDPOLICY =  'max'; // {max, serial}
 
@@ -53,23 +53,12 @@ class Pessoa extends TRecord
         return ListaItens::find($this->status_pessoa);
     }
 
-    public function get_EnderecoCompleto()
-    {
-        $tipo = self::get_Endereco()->Logradouro->Tipo->item;
-        $logradouro = self::get_Endereco()->Logradouro->logradouro;
-        $n = self::get_Endereco()->n;
-        $bairro = self::get_Endereco()->Bairro->bairro;
-        $cidade = self::get_Endereco()->Bairro->Cidade->cidade;
-        $estado = self::get_Endereco()->Bairro->Cidade->Estado->sigla;
-
-        return $tipo . ' ' . $logradouro . ', Nº ' . $n . ', ' . $bairro . ', ' . $cidade . '-' . $estado;
-    }
-
     public function delete($id = null)
     {
         $id = isset($id) ? $id : $this->id;
 
         PessoaFisica::where('pessoa_id', '=', $this->id)->delete();
+        PessoaContato::where('pessoa_id', '=', $this->id)->delete();
         parent::delete($id);
     }
 }

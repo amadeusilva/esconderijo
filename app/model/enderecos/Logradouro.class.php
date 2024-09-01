@@ -5,7 +5,7 @@
  */
 class Logradouro extends TRecord
 {
-    const TABLENAME = 'logradouro';
+    const TABLENAME = 'enderecos.logradouro';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     

@@ -11,7 +11,7 @@
  */
 class SystemFolderGroup extends TRecord
 {
-    const TABLENAME = 'system_folder_group';
+    const TABLENAME = 'communication.system_folder_group';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     

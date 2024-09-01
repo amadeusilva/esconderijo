@@ -5,7 +5,7 @@
  */
 class ConducaoPropria extends TRecord
 {
-    const TABLENAME = 'conducao_propria';
+    const TABLENAME = 'globais.conducao_propria';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     

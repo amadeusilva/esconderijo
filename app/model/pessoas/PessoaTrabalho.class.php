@@ -6,7 +6,7 @@
  */
 class PessoaTrabalho extends TRecord
 {
-    const TABLENAME = 'pessoa_trabalho';
+    const TABLENAME = 'pessoas.pessoa_trabalho';
     const PRIMARYKEY = 'id';
     const IDPOLICY =  'max'; // {max, serial}
 

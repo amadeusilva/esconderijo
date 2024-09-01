@@ -5,7 +5,7 @@
  */
 class Cidade extends TRecord
 {
-    const TABLENAME = 'cidade';
+    const TABLENAME = 'enderecos.cidade';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     

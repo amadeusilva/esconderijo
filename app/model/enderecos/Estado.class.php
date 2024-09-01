@@ -5,7 +5,7 @@
  */
 class Estado extends TRecord
 {
-    const TABLENAME = 'estado';
+    const TABLENAME = 'enderecos.estado';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     

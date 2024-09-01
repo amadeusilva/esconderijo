@@ -11,7 +11,7 @@
  */
 class SystemDocument extends TRecord
 {
-    const TABLENAME = 'system_document';
+    const TABLENAME = 'communication.system_document';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     

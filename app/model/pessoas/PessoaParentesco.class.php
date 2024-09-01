@@ -6,7 +6,7 @@
  */
 class PessoaParentesco extends TRecord
 {
-    const TABLENAME = 'pessoa_parentesco';
+    const TABLENAME = 'pessoas.pessoa_parentesco';
     const PRIMARYKEY = 'id';
     const IDPOLICY =  'max'; // {max, serial}
 
@@ -19,6 +19,7 @@ class PessoaParentesco extends TRecord
         parent::addAttribute('pessoa_id');
         parent::addAttribute('parentesco_id'); // tabela de lista
         parent::addAttribute('pessoa_parente_id');
+        parent::addAttribute('relacao_id');
         parent::addAttribute('obs_parentesco');
     }
 
@@ -41,7 +42,7 @@ class PessoaParentesco extends TRecord
     {
         $id = isset($id) ? $id : $this->id;
 
-        PessoasRelacao::where('relacao_id', '=', $this->id)->delete();
+        PessoasRelacao::where('id', '=', $this->relacao_id)->delete();
         parent::delete($id);
     }
 }

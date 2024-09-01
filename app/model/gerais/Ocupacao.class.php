@@ -5,7 +5,7 @@
  */
 class Ocupacao extends TRecord
 {
-    const TABLENAME = 'ocupacao';
+    const TABLENAME = 'globais.ocupacao';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     

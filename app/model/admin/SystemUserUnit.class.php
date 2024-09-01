@@ -11,7 +11,7 @@
  */
 class SystemUserUnit extends TRecord
 {
-    const TABLENAME = 'system_user_unit';
+    const TABLENAME = 'permission.system_user_unit';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     

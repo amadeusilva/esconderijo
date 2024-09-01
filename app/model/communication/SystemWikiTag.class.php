@@ -12,7 +12,7 @@
  */
 class SystemWikiTag extends TRecord
 {
-    const TABLENAME = 'system_wiki_tag';
+    const TABLENAME = 'communication.system_wiki_tag';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
 

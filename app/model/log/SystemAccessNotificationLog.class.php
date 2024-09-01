@@ -11,7 +11,7 @@
  */
 class SystemAccessNotificationLog extends TRecord
 {
-    const TABLENAME = 'system_access_notification_log';
+    const TABLENAME = 'log.system_access_notification_log';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     

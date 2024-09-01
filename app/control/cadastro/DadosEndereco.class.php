@@ -160,15 +160,6 @@ class DadosEndereco extends TPage
         parent::add($vbox);
     }
 
-    public static function onCompletaCEPclick($data)
-    {
-        if (isset($data['cep']) and !empty($data['cep'])) {
-            TButton::enableField('form_endereco', 'completar');
-        } else {
-            TButton::disableField('form_endereco', 'completar');
-        }
-    }
-
     public function onEdit()
     {
 
@@ -279,6 +270,9 @@ class DadosEndereco extends TPage
                 } else {
                     $endereco = new Endereco();
                     $endereco->fromArray($enderecopessoa);
+                    if (!$enderecopessoa['ponto_referencia']) {
+                        $endereco->ponto_referencia = 'SEM REFERÊNCIA';
+                    }
                     $endereco->store();
                     $dadosiniciaispf['endereco_id'] = $endereco->id;
                 }
@@ -355,8 +349,14 @@ class DadosEndereco extends TPage
                     $pessoanova->ck_pessoa = 2;
                     $pessoanova->store();
 
-                    PessoaFisica::where('pessoa_id', '=', $pessoanova->id)->delete();
-                    $pessoafisicanova = new PessoaFisica();
+                    $pessoafisicanova = PessoaFisica::where('pessoa_id', '=', $pessoanova->id)->first();
+
+                    if (!$pessoafisicanova) {
+                        $pessoafisicanova = new PessoaFisica();
+                    } else {
+                    }
+
+                    //$pessoafisicanova = new PessoaFisica($pessoanova->id);
                     $pessoafisicanova->pessoa_id = $pessoanova->id;
                     $pessoafisicanova->genero = $parente->genero;
 
@@ -365,7 +365,7 @@ class DadosEndereco extends TPage
 
                     $pessoafisicanova->dt_nascimento = $parente->dt_nascimento;
 
-                    if (!$pessoanova->estado_civil_id) {
+                    if (!$pessoafisicanova->estado_civil_id) {
                         if ($pessoafisicanova->genero == 'M') {
                             $pessoafisicanova->estado_civil_id = 801;
                         } else {
@@ -396,52 +396,59 @@ class DadosEndereco extends TPage
 
                     $this->onMudaEstadoCivil($buscarelacao1);
 
-                    PessoasRelacao::where('relacao_id', '=', $buscarelacao1->id)->delete();
-                    PessoasRelacao::where('relacao_id', '=', $buscarelacao2->id)->delete();
+                    PessoasRelacao::where('id', '=', $buscarelacao1->relacao_id)->delete();
+                    PessoasRelacao::where('id', '=', $buscarelacao2->relacao_id)->delete();
 
                     $pessoarelacao = new PessoasRelacao();
-                    $pessoarelacao->relacao_id = $buscarelacao1->id;
                     $novadatanapr = DateTime::createFromFormat('d/m/Y', $dadosrelacao['dt_inicial']);
                     $dadosrelacao['dt_inicial'] = $novadatanapr->format('Y/m/d');
                     $pessoarelacao->dt_inicial = $dadosrelacao['dt_inicial'];
                     if (!empty($dadosrelacao['doc_imagem'])) {
                         $pessoarelacao->doc_imagem = $dadosrelacao['doc_imagem'];
                     }
+                    $pessoarelacao->estado_civil_id = $dadosrelacao['estado_civil_id'];
+                    $pessoarelacao->tipo_vinculo = $dadosrelacao['tipo_vinculo'];
                     $pessoarelacao->status_relacao_id = 1;
                     $pessoarelacao->store();
+
+                    $buscarelacao1->relacao_id = $pessoarelacao->id;
+                    $buscarelacao1->store();
+                    $buscarelacao2->relacao_id = $pessoarelacao->id;
+                    $buscarelacao2->store();
 
                     // copy file to target folder
                     if (!empty($dadosrelacao['doc_imagem'])) {
                         $this->saveFile($pessoarelacao, (object) $dadosrelacao, 'doc_imagem', 'app/images/dadosderelacao');
                     }
-
-                    $pessoarelacao2 = new PessoasRelacao();
-                    $pessoarelacao2->relacao_id = $buscarelacao2->id;
-                    $pessoarelacao2->dt_inicial = $pessoarelacao->dt_inicial;
-                    if (!empty($pessoarelacao->doc_imagem)) {
-                        $pessoarelacao2->doc_imagem = $pessoarelacao->doc_imagem;
-                    }
-                    $pessoarelacao2->status_relacao_id = 1;
-                    $pessoarelacao2->store();
                 } else if ($dadosrelacao['estado_civil_id'] >= 809 and $dadosrelacao['estado_civil_id'] <= 814) {
 
                     $buscarelacao3 = PessoaParentesco::where('pessoa_id', '=', $pessoa->id)->where('parentesco_id', '>=', 927)->where('parentesco_id', '<=', 932)->orderBy('id', 'desc')->first();
-                    $buscarelacao4 = PessoaParentesco::where('pessoa_id', '=', $buscarelacao3->pessoa_parente_id)->where('parentesco_id', '>=', 927)->where('parentesco_id', '<=', 932)->orderBy('id', 'desc')->first();
+                    //$buscarelacao4 = PessoaParentesco::where('pessoa_id', '=', $buscarelacao3->pessoa_parente_id)->where('parentesco_id', '>=', 927)->where('parentesco_id', '<=', 932)->orderBy('id', 'desc')->first();
 
                     $this->onMudaEstadoCivil($buscarelacao3);
 
-                    $nd1 = DateTime::createFromFormat('d/m/Y', $dadosrelacao['dt_inicial']);
-                    $dadosrelacao['dt_inicial'] = $nd1->format('Y/m/d');
+                    if ($dadosrelacao['estado_civil_id'] == 813 or $dadosrelacao['estado_civil_id'] == 814) {
+
+                        $falecido = new Pessoa($buscarelacao3->pessoa_parente_id);
+                        $falecido->status_pessoa = 29; // falecido(a)
+                        $falecido->store();
+                    }
+
+                    $novadatanapr = DateTime::createFromFormat('d/m/Y', $dadosrelacao['dt_inicial']);
+                    $dadosrelacao['dt_inicial'] = $novadatanapr->format('Y-m-d');
 
                     //relação ja foi atualizada
 
-                    $pessoarelacao = PessoasRelacao::where('relacao_id', '=', $buscarelacao3->id)->first();
+                    $pessoarelacao = new PessoasRelacao($buscarelacao3->relacao_id);
 
                     $pessoarelacao->dt_final = $dadosrelacao['dt_inicial'];
                     if (!empty($dadosrelacao['doc_imagem'])) {
                         $pessoarelacao->doc_imagem = $dadosrelacao['doc_imagem'];
                     }
+                    $pessoarelacao->estado_civil_id = $dadosrelacao['estado_civil_id'];
+                    $pessoarelacao->tipo_vinculo = $dadosrelacao['tipo_vinculo'];
                     $pessoarelacao->status_relacao_id = 2;
+
                     $pessoarelacao->store();
 
                     // copy file to target folder
@@ -449,6 +456,7 @@ class DadosEndereco extends TPage
                         $this->saveFile($pessoarelacao, (object) $dadosrelacao, 'doc_imagem', 'app/images/dadosderelacao');
                     }
 
+                    /*
                     $pessoarelacao2 = PessoasRelacao::where('relacao_id', '=', $buscarelacao4->id)->first();
                     $pessoarelacao2->dt_final = $pessoarelacao->dt_final;
                     if (!empty($pessoarelacao->doc_imagem)) {
@@ -456,6 +464,7 @@ class DadosEndereco extends TPage
                     }
                     $pessoarelacao2->status_relacao_id = 2;
                     $pessoarelacao2->store();
+                    */
                 }
             }
 

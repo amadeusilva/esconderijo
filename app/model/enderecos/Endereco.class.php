@@ -5,7 +5,7 @@
  */
 class Endereco extends TRecord
 {
-    const TABLENAME = 'endereco';
+    const TABLENAME = 'enderecos.endereco';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     

@@ -11,7 +11,7 @@
  */
 class SystemPreference extends TRecord
 {
-    const TABLENAME  = 'system_preference';
+    const TABLENAME  = 'permission.system_preference';
     const PRIMARYKEY = 'id';
     const IDPOLICY   = 'max'; // {max, serial}
     

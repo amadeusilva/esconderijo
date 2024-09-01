@@ -11,7 +11,7 @@
  */
 class SystemProgram extends TRecord
 {
-    const TABLENAME  = 'system_program';
+    const TABLENAME  = 'permission.system_program';
     const PRIMARYKEY = 'id';
     const IDPOLICY   = 'max'; // {max, serial}
     

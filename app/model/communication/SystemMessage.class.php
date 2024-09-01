@@ -11,7 +11,7 @@
  */
 class SystemMessage extends TRecord
 {
-    const TABLENAME = 'system_message';
+    const TABLENAME = 'communication.system_message';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     

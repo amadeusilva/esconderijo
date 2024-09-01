@@ -11,7 +11,7 @@
  */
 class SystemChangeLog extends TRecord
 {
-    const TABLENAME    = 'system_change_log';
+    const TABLENAME    = 'log.system_change_log';
     const PRIMARYKEY   = 'id';
     const IDPOLICY     = 'max'; // {max, serial}
     

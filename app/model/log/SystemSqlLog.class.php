@@ -11,7 +11,7 @@
  */
 class SystemSqlLog extends TRecord
 {
-    const TABLENAME = 'system_sql_log';
+    const TABLENAME = 'log.system_sql_log';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     

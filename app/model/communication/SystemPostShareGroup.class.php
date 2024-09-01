@@ -13,7 +13,7 @@
  */
 class SystemPostShareGroup extends TRecord
 {
-    const TABLENAME = 'system_post_share_group';
+    const TABLENAME = 'communication.system_post_share_group';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     

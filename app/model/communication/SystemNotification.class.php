@@ -11,7 +11,7 @@
  */
 class SystemNotification extends TRecord
 {
-    const TABLENAME = 'system_notification';
+    const TABLENAME = 'communication.system_notification';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     

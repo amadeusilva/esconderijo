@@ -12,7 +12,7 @@
  */
 class SystemPostTag extends TRecord
 {
-    const TABLENAME = 'system_post_tag';
+    const TABLENAME = 'communication.system_post_tag';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     

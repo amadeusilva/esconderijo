@@ -11,7 +11,7 @@
  */
 class SystemUserRole extends TRecord
 {
-    const TABLENAME = 'system_user_role';
+    const TABLENAME = 'permission.system_user_role';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     

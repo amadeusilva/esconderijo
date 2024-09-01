@@ -3,6 +3,7 @@
 use Adianti\Widget\Form\TCombo;
 use Adianti\Widget\Form\TDate;
 use Adianti\Widget\Form\TEntry;
+use Adianti\Widget\Form\TFile;
 use Adianti\Widget\Form\THidden;
 
 /**
@@ -50,8 +51,11 @@ class DadosRelacao extends TWindow
         $id       = new TEntry('id');
         $id->setEditable(FALSE);
         $id->setSize('100%');
-        $row = $this->form->addFields([new TLabel('Cod.:', 'red'), $id]);
-        $row->layout = ['col-sm-12'];
+        $pessoa_parentesco_id       = new TEntry('pessoa_parentesco_id');
+        $pessoa_parentesco_id->setEditable(FALSE);
+        $pessoa_parentesco_id->setSize('100%');
+        $row = $this->form->addFields([new TLabel('Cod.:', 'red'), $id], [new TLabel('Ref.:', 'red'), $pessoa_parentesco_id]);
+        $row->layout = ['col-sm-6', 'col-sm-6'];
 
         $estado_civil_id = new TDBCombo('estado_civil_id', 'adea', 'ListaItens', 'id', 'item', 'id');
         $tipo_vinculo = new TEntry('tipo_vinculo');
@@ -135,32 +139,13 @@ class DadosRelacao extends TWindow
      */
     public function onVerRelacao($param)
     {
-
         try {
-            if (isset($param['id']) and !empty($param['id'])) {
-                TTransaction::open('adea');   // open a transaction with database 'samples'
-
-                $key = $param['id'];  // get the parameter
-                $object = PessoasRelacao::where('relacao_id', '=', $key)->first();        // instantiates object City
-                $object->estado_civil_id = $object->PessoaParentesco->Pessoa->estado_civil_id;
-                $object->tipo_vinculo = self::onVinculo($object->estado_civil_id);
-                $object->dt_inicial =  TDate::date2br($object->dt_inicial);
-                if ($object->dt_final != '0000-00-00') {
-                    $object->dt_final =  TDate::date2br($object->dt_final);
-                } else {
-                    $object->dt_final = date('d/m/Y');
-                }
-                $object->tempo = self::onCalculaDieferencaTempo($object);
-
-                $this->form->setData($object);   // fill the form with the active record data
-
-                TTransaction::close();           // close the transaction
-
-            } else if (TSession::getValue('dados_relacao')) {
+            if (TSession::getValue('dados_relacao')) {
 
                 $dados_relacao =   TSession::getValue('dados_relacao');
 
                 $object = new stdClass;  // create an empty object
+                //$object->id = $dados_relacao['id'];
                 $object->estado_civil_id = $dados_relacao['estado_civil_id'];
                 $object->tipo_vinculo = self::onVinculo($dados_relacao['estado_civil_id']);
                 $object->dt_inicial = $dados_relacao['dt_inicial'];
@@ -174,6 +159,43 @@ class DadosRelacao extends TWindow
                     $object->doc_imagem = $dados_relacao['doc_imagem'];
                 }
                 $this->form->setData($object);
+            } else
+            if (isset($param['pessoa_parentesco_id']) and !empty($param['pessoa_parentesco_id'])) {
+                TTransaction::open('adea');   // open a transaction with database 'samples'
+
+                $pessoa_parente = new PessoaParentesco($param['pessoa_parentesco_id']);
+                $object = new PessoasRelacao($pessoa_parente->relacao_id);        // instantiates object City
+
+                $object->pessoa_parentesco_id = $pessoa_parente->id;
+
+                $object->estado_civil_id = $pessoa_parente->Pessoa->estado_civil_id;
+
+                $object->tipo_vinculo = $object->tipo_vinculo;
+
+                if ($object->status_relacao_id == 2) {
+                    TQuickForm::hideField('form_dados_relacao', 'estado_civil_id');
+                    TDate::disableField('form_dados_relacao', 'dt_inicial');
+                    TFile::disableField('form_dados_relacao', 'doc_imagem');
+                    TButton::disableField('form_dados_relacao', 'salvar');
+                }
+
+                if ($object->tipo_vinculo == 'Sem documento de registro em cartório') {
+                    TQuickForm::hideField('form_dados_relacao', 'doc_imagem');
+                }
+                //$object->tipo_vinculo = self::onVinculo($object->tipo_vinculo);
+                $object->dt_inicial =  TDate::date2br($object->dt_inicial);
+                if ($object->dt_final != '0000-00-00') {
+                    $object->dt_final = TDate::date2br($object->dt_final);
+                } else {
+                    $object->dt_final = date('d/m/Y');
+                }
+
+                $object->tempo = self::onCalculaDieferencaTempo($object);
+
+                $this->form->setData($object);   // fill the form with the active record data
+
+                TTransaction::close();           // close the transaction
+
             } else {
                 $this->form->clear(true);
             }

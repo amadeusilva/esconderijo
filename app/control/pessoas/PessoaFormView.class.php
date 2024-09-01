@@ -14,8 +14,9 @@ use Adianti\Validator\TCNPJValidator;
  */
 class PessoaFormView extends TPage
 {
-    
+
     use ControleEndereco;
+    use ControlePessoas;
 
     private $form; // form
     private $embedded;
@@ -44,7 +45,7 @@ class PessoaFormView extends TPage
         //dados da pessoa fisica
         $id             = new TEntry('id');
         $filterTipo = new TCriteria;
-        $filterTipo->add(new TFilter('id', '!=', '77'));
+        $filterTipo->add(new TFilter('id', '!=', 1));
         $filterTipo->add(new TFilter('lista_id', '=', '15'));
         $tipo_pessoa   = new TDBCombo('tipo_pessoa', 'adea', 'ListaItens', 'id', 'item', 'id', $filterTipo);
 
@@ -56,14 +57,25 @@ class PessoaFormView extends TPage
         $fone->setMask('(99) 99999-9999');
         $email          = new TEntry('email');
 
-        $filterStatusPessoa = new TCriteria;
-        $filterStatusPessoa->add(new TFilter('lista_id', '=', '5'));
-        $status_pessoa   = new TDBCombo('status_pessoa', 'adea', 'ListaItens', 'id', 'item', 'id', $filterStatusPessoa);
+        //$filterStatusPessoa = new TCriteria;
+        //$filterStatusPessoa->add(new TFilter('lista_id', '=', '5'));
+        //$status_pessoa   = new TDBCombo('status_pessoa', 'adea', 'ListaItens', 'id', 'item', 'id', $filterStatusPessoa);
 
-        //endereço da pessoa
-        //`cep`, `logradouro_id`, `n`, `bairro_id`, `ponto_referencia`
-        $cep                 = new TEntry('cep');
+        // define some properties for the form fields
+        $id->setEditable(FALSE);
+        $id->setSize('100%');
+        $cpf_cnpj->setSize('100%');
+        $nome->setSize('100%');
+        $popular->setSize('100%');
+        $fone->setSize('100%');
+        $email->setSize('100%');
+        //$status_pessoa->setSize('100%');
+        $tipo_pessoa->setSize('100%');
+
+        //dados de endereço
+        $cep  = new TDBEntry('cep', 'adea', 'Endereco', 'cep');
         $cep->setMask('99.999-999');
+
         $estado_id       = new TDBCombo('estado_id', 'adea', 'Estado', 'id', 'estado', 'estado');
         $estado_id->enableSearch();
 
@@ -72,9 +84,7 @@ class PessoaFormView extends TPage
         $cidade_id = new TDBCombo('cidade_id', 'adea', 'Cidade', 'id', 'cidade', 'cidade', $filter);
         $cidade_id->enableSearch();
 
-        $filterItem = new TCriteria;
-        $filterItem->add(new TFilter('lista_id', '=', '1'));
-        $tipo_id       = new TDBCombo('tipo_id', 'adea', 'ListaItens', 'id', 'item', 'item', $filterItem);
+        $tipo_id       = new TDBCombo('tipo_id', 'adea', 'TipoLogradouro', 'id', 'tipo', 'tipo');
         $tipo_id->enableSearch();
 
         $logradouro_id = new TDBCombo('logradouro_id', 'adea', 'Logradouro', 'id', 'logradouro', 'logradouro', $filter);
@@ -84,21 +94,13 @@ class PessoaFormView extends TPage
         $bairro_id->enableSearch();
 
         $n                  = new TEntry('n');
-        $ponto_referencia   = new TEntry('ponto_referencia');
+        $ponto_referencia  = new TDBEntry('ponto_referencia', 'adea', 'ENDERECO', 'ponto_referencia');
+        $ponto_referencia->placeholder = 'PRÓXIMO A PRAÇAS, HOSPITAIS, EMPRESAS...';
+        $ponto_referencia->forceUpperCase();
+
+        $cep->setExitAction(new TAction(array($this, 'onCEPAction')));
 
         // define some properties for the form fields
-        //id`, `tipo_pessoa`, `cpf_cnpj`, `nome`, `popular`, `fone`, `email`, `status_pessoa`, `ck_pessoa`
-        //id`, `pessoa_id`, `genero`, `dt_nascimento`, `profissao_id`, `tm_camisa`
-        $id->setEditable(FALSE);
-        $id->setSize('100%');
-        $cpf_cnpj->setSize('100%');
-        $nome->setSize('100%');
-        $popular->setSize('100%');
-        $fone->setSize('100%');
-        $email->setSize('100%');
-        $status_pessoa->setSize('100%');
-        $tipo_pessoa->setSize('100%');
-
         $cep->setSize('100%');
         $estado_id->setSize('100%');
         $cidade_id->setSize('100%');
@@ -109,99 +111,112 @@ class PessoaFormView extends TPage
         $ponto_referencia->setSize('100%');
 
         //Dados
-        //id`, `tipo_pessoa`, `cpf_cnpj`, `nome`, `popular`, `fone`, `email`, `cep`,
-        //`logradouro_id`, `n`, `bairro_id`, `ponto_referencia`, `status_pessoa`, `ck_pessoa`
         $this->form->appendPage('Dados');
-        $this->form->addFields(
-            [new TLabel('Cod.')],
-            [$id],
-            [new TLabel('CNPJ')],
-            [$cpf_cnpj]
+        $row = $this->form->addFields(
+            [
+                new TLabel('Cod.'),
+                $id
+            ],
+            [
+                new TLabel('CNPJ'),
+                $cpf_cnpj
+            ],
+            [
+                new TLabel('Tipo'),
+                $tipo_pessoa
+            ]
         );
+        $row->layout = ['col-sm-2', 'col-sm-6', 'col-sm-4'];
 
-        $this->form->addFields(
-            [new TLabel('Razão Social')],
-            [$nome],
-            [new TLabel('Tipo')],
-            [$tipo_pessoa]
+        $row = $this->form->addFields(
+            [
+                new TLabel('Razão Social'),
+                $nome
+            ]
         );
+        $row->layout = ['col-sm-12'];
 
-        $this->form->addFields(
-            [new TLabel('Nome Fantasia')],
-            [$popular],
-            [new TLabel('Fone')],
-            [$fone]
+        $row = $this->form->addFields(
+            [
+                new TLabel('Nome Fantasia'),
+                $popular
+            ]
         );
+        $row->layout = ['col-sm-12'];
 
-        $this->form->addFields(
-            [new TLabel('Email')],
-            [$email],
-            [new TLabel('Status')],
-            [$status_pessoa]
+        $row = $this->form->addFields(
+            [
+                new TLabel('Fone'),
+                $fone
+            ],
+            [
+                new TLabel('Email'),
+                $email
+            ]
         );
+        $row->layout = ['col-sm-5', 'col-sm-7'];
 
         //Endereço
-        //id`, `tipo_pessoa`, `cpf_cnpj`, `nome`, `popular`, `fone`, `email`, `cep`,
-        //`logradouro_id`, `n`, `bairro_id`, `ponto_referencia`, `status_pessoa`, `ck_pessoa`
-
         $this->form->appendPage('Endereço');
-        $this->form->addFields([new TLabel('CEP')],    [$cep]);
-
-        $this->form->addFields(
-            [new TLabel('Estado')],
-            [$estado_id],
-            [new TLabel('Cidade')],
-            [$cidade_id]
+        $row = $this->form->addFields(
+            [new TLabel('CEP'),    $cep],
+            [
+                new TLabel('Estado'),
+                $estado_id
+            ]
         );
+        $row->layout = ['col-sm-6', 'col-sm-6'];
 
-        $this->form->addFields(
-            [new TLabel('Tipo')],
-            [$tipo_id],
-            [new TLabel('Endereço')],
-            [$logradouro_id]
+        $row = $this->form->addFields(
+            [
+                new TLabel('Cidade'),
+                $cidade_id
+            ],
+            [
+                new TLabel('Tipo'),
+                $tipo_id
+            ]
         );
+        $row->layout = ['col-sm-6', 'col-sm-6'];
 
-        $this->form->addFields(
-            [new TLabel('Nº')],
-            [$n],
-            [new TLabel('Bairro')],
-            [$bairro_id]
+        $row = $this->form->addFields(
+            [
+                new TLabel('Endereço'),
+                $logradouro_id
+            ],
+            [
+                new TLabel('Nº'),
+                $n
+            ]
         );
+        $row->layout = ['col-sm-9', 'col-sm-3'];
 
-        $this->form->addFields([new TLabel('Ponto de Referência')],    [$ponto_referencia]);
+        $row = $this->form->addFields(
+            [
+                new TLabel('Bairro'),
+                $bairro_id
+            ],
+            [
+                new TLabel('Ponto de Referência'),
+                $ponto_referencia
+            ]
+        );
+        $row->layout = ['col-sm-5', 'col-sm-7'];
+
+        $cpf_cnpj->addValidation('CNPJ', new TCNPJValidator);
+        $tipo_pessoa->addValidation('Tipo de Pessoa', new TRequiredValidator);
+        $nome->addValidation('Nome Completo', new TRequiredValidator);
+        $popular->addValidation('Nome Popular', new TRequiredValidator);
+        $fone->addValidation('Fone', new TRequiredValidator);
+        $email->addValidation('Email', new TEmailValidator);
+        $email->addValidation('Email', new TRequiredValidator);
+        //$status_pessoa->addValidation('Status', new TRequiredValidator);
 
         $estado_id->setChangeAction(new TAction(array($this, 'onStateChange')));
         $cidade_id->setChangeAction(new TAction(array($this, 'onCityChange')));
         $tipo_id->setChangeAction(new TAction(array($this, 'onTipoChange')));
 
-        /*$this->form->appendPage('Skills');
-        $skill_list = new TDBCheckGroup('skill_list', 'samples', 'Skill', 'id', 'name');
-        $this->form->addFields( [ new TLabel('Skill') ],     [ $skill_list ] );
-        
-        $this->form->appendPage('Contacts');
-        $contact_type = new TCombo('contact_type[]');
-        $contact_type->setSize('100%');
-        $contact_type->addItems( ['email' => 'E-mail',
-                                  'phone' => 'Phone' ]);
-        $contact_value = new TEntry('contact_value[]');
-        $contact_value->setSize('100%');
-        
-        $this->contacts = new TFieldList;
-        $this->contacts->addField( '<b>Type</b>', $contact_type, ['width' => '50%']);
-        $this->contacts->addField( '<b>Value</b>', $contact_value, ['width' => '50%']);
-        $this->form->addField($contact_type);
-        $this->form->addField($contact_value);
-        $this->contacts->enableSorting();
-        
-        $this->form->addContent( [ new TLabel('Contacts') ], [ $this->contacts ] );*/
-
-        $cpf_cnpj->addValidation('CNPJ', new TCNPJValidator);
-        $nome->addValidation('Nome Completo', new TRequiredValidator);
-        $popular->addValidation('Nome Popular', new TRequiredValidator);
-        $fone->addValidation('Fone', new TRequiredValidator);
-        $email->addValidation('Email', new TRequiredValidator);
-        $status_pessoa->addValidation('Status', new TRequiredValidator);
-
+        // validations
         $estado_id->addValidation('Estado', new TRequiredValidator);
         $cidade_id->addValidation('Cidade', new TRequiredValidator);
         $tipo_id->addValidation('Tipo', new TRequiredValidator);
@@ -226,6 +241,8 @@ class PessoaFormView extends TPage
      */
     public static function onSave($param)
     {
+
+        $param['status_pessoa'] = 21;
         $param['ck_pessoa'] = 1;
 
         try {
@@ -256,6 +273,25 @@ class PessoaFormView extends TPage
 
             // stores the object in the database
             $pessoa->store();
+
+            PessoaContato::where('pessoa_id', '=', $pessoa->id)->delete();
+
+            if (isset($param['fone']) and !empty($param['fone'])) {
+                $pessoacontatofone = new PessoaContato();
+                $pessoacontatofone->pessoa_id = $pessoa->id;
+                $pessoacontatofone->tipo_contato_id = 101;
+                $pessoacontatofone->contato = $param['fone'];
+                $pessoacontatofone->status_contato_id = 1;
+                $pessoacontatofone->store();
+            }
+            if (isset($param['email']) and !empty($param['email'])) {
+                $pessoacontatoemail = new PessoaContato();
+                $pessoacontatoemail->pessoa_id = $pessoa->id;
+                $pessoacontatoemail->tipo_contato_id = 102;
+                $pessoacontatoemail->contato = $param['email'];
+                $pessoacontatoemail->status_contato_id = 1;
+                $pessoacontatoemail->store();
+            }
 
             $data = new stdClass;
             $data->id = $pessoa->id;
@@ -293,8 +329,18 @@ class PessoaFormView extends TPage
 
                 // load the Active Record according to its ID
                 $pessoa = new Pessoa($param['id']);
+
+                $fone = PessoaContato::where('pessoa_id', '=', $pessoa->id)->where('tipo_contato_id', '=', 101)->first();
+                if ($fone) {
+                    $pessoa->fone = $fone->contato;
+                }
+                $email = PessoaContato::where('pessoa_id', '=', $pessoa->id)->where('tipo_contato_id', '=', 102)->first();
+                if ($email) {
+                    $pessoa->email = $email->contato;
+                }
+
                 $endereco = new Endereco($pessoa->endereco_id);
-                
+
                 // fill the form with the active record data*/
                 $this->form->setData($pessoa);
 
@@ -333,7 +379,6 @@ class PessoaFormView extends TPage
     public function onClear($param)
     {
         $this->form->clear();
-
     }
 
     /**

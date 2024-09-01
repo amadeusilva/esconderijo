@@ -11,7 +11,7 @@
  */
 class SystemDocumentBookmark extends TRecord
 {
-    const TABLENAME = 'system_document_bookmark';
+    const TABLENAME = 'communication.system_document_bookmark';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     

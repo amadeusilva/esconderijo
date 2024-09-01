@@ -11,7 +11,7 @@
  */
 class SystemFolder extends TRecord
 {
-    const TABLENAME = 'system_folder';
+    const TABLENAME = 'communication.system_folder';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     const CREATEDAT = 'created_at';

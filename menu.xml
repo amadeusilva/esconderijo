@@ -17,6 +17,58 @@
       </menuitem>
     </menu>
   </menuitem>
+  <menuitem label="Casais">
+    <icon>far:newspaper fa-fw</icon>
+    <menu>
+      <menuitem label="Lista de Casais">
+        <action>CasalDataGrid</action>
+        <icon>fas:pen-square fa-fw</icon>
+      </menuitem>
+    </menu>
+  </menuitem>
+  <menuitem label="ECC">
+    <icon>far:newspaper fa-fw</icon>
+    <menu>
+      <menuitem label="Encontros">
+        <action>EncontroDataGrid</action>
+        <icon>fas:pen-square fa-fw</icon>
+      </menuitem>
+      <menuitem label="Encontristas">
+        <action>EncontristaDataGrid</action>
+        <icon>fas:pen-square fa-fw</icon>
+      </menuitem>
+    </menu>
+  </menuitem>
+  <menuitem label="Dados Gerais">
+    <icon>far:newspaper fa-fw</icon>
+    <menu>
+      <menuitem label="Lista">
+        <action>ListaDataGridView</action>
+        <icon>fas:pen-square fa-fw</icon>
+      </menuitem>
+      <menuitem label="Itens de Lista">
+        <action>ListaItensDataGridView</action>
+        <icon>fas:pen-square fa-fw</icon>
+      </menuitem>
+      <menuitem label="Subitens">
+        <action>ListaItensSubDataGridView</action>
+        <icon>fas:pen-square fa-fw</icon>
+      </menuitem>
+      <menuitem label="Hinário">
+        <action>HinarioDataGrid</action>
+        <icon>fas:pen-square fa-fw</icon>
+      </menuitem>
+    </menu>
+  </menuitem>
+  <menuitem label="Eventos">
+    <icon>far:newspaper fa-fw</icon>
+    <menu>
+      <menuitem label="Lista de Eventos">
+        <action>EventoDataGridView</action>
+        <icon>fas:pen-square fa-fw</icon>
+      </menuitem>
+    </menu>
+  </menuitem>
   <menuitem label="_t{Administration}">
     <icon>fas:home fa-fw</icon>
     <menu>
@@ -101,45 +153,6 @@
       <menuitem label="_t{List news}">
         <action>SystemPostFeedView</action>
         <icon>fas:newspaper fa-fw</icon>
-      </menuitem>
-    </menu>
-  </menuitem>
-  <menuitem label="Dados Gerais">
-    <icon>far:newspaper fa-fw</icon>
-    <menu>
-      <menuitem label="Lista">
-        <action>ListaDataGridView</action>
-        <icon>fas:pen-square fa-fw</icon>
-      </menuitem>
-      <menuitem label="Itens de Lista">
-        <action>ListaItensDataGridView</action>
-        <icon>fas:pen-square fa-fw</icon>
-      </menuitem>
-      <menuitem label="Subitens">
-        <action>ListaItensSubDataGridView</action>
-        <icon>fas:pen-square fa-fw</icon>
-      </menuitem>
-    </menu>
-  </menuitem>
-  <menuitem label="Eventos">
-    <icon>far:newspaper fa-fw</icon>
-    <menu>
-      <menuitem label="Lista de Eventos">
-        <action>EventoDataGridView</action>
-        <icon>fas:pen-square fa-fw</icon>
-      </menuitem>
-    </menu>
-  </menuitem>
-  <menuitem label="Casais">
-    <icon>far:newspaper fa-fw</icon>
-    <menu>
-      <menuitem label="Lista de Casais">
-        <action>CasalLista</action>
-        <icon>far:file-pdf fa-fw</icon>
-      </menuitem>
-      <menuitem label="Novo Casal">
-        <action>InicioCasal</action>
-        <icon>fas:phone-alt fa-fw</icon>
       </menuitem>
     </menu>
   </menuitem>

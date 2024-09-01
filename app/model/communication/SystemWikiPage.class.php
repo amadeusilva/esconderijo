@@ -12,7 +12,7 @@
  */
 class SystemWikiPage extends TRecord
 {
-    const TABLENAME = 'system_wiki_page';
+    const TABLENAME = 'communication.system_wiki_page';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     const CREATEDAT = 'created_at';

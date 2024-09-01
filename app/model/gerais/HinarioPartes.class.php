@@ -3,9 +3,9 @@
  * Pessoa Active Record
  * @author  <your-name-here>
  */
-class CasalConvite extends TRecord
+class Hinario extends TRecord
 {
-    const TABLENAME = 'casal_convite';
+    const TABLENAME = 'globais.hinario_partes';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     
@@ -15,14 +15,9 @@ class CasalConvite extends TRecord
     public function __construct($id = NULL, $callObjectLoad = TRUE)
     {
         parent::__construct($id, $callObjectLoad);
-        parent::addAttribute('encontro_id');
-        parent::addAttribute('filho_casal_id');
-        parent::addAttribute('pai_casal_id');
+        parent::addAttribute('hinario_id');
+        parent::addAttribute('tipo_parte');
+        parent::addAttribute('parte');
     }
-    
-    public function get_Cidade()
-    {
-        return Encontro::find($this->encontro_id);
-    }
-    
+
 }

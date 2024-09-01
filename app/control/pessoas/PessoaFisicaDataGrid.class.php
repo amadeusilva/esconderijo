@@ -31,7 +31,7 @@ class PessoaFisicaDataGrid extends TPage
         TSession::delValue('dados_parentes_pf');
         TSession::delValue('endereco_pessoa');
         TSession::delValue('dados_relacao');
-        
+
         TSession::delValue('pessoa_painel');
         TSession::delValue('pessoa_painel_vinculos');
 
@@ -148,7 +148,7 @@ class PessoaFisicaDataGrid extends TPage
         $action->setParameters($param); // pass the key parameter ahead
 
         // shows a dialog to the user
-        new TQuestion(AdiantiCoreTranslator::translate('Deseja realmente excluir esta pessoa?'), $action);
+        new TQuestion('Deseja realmente excluir esta pessoa?', $action);
     }
 
     /**
@@ -163,20 +163,15 @@ class PessoaFisicaDataGrid extends TPage
             PessoaFisica::where('pessoa_id', '=', $param['key'])->delete();
             PessoaContato::where('pessoa_id', '=', $param['key'])->delete();
 
-            $buscarelacao = PessoaParentesco::where('pessoa_id', '=', $param['key'])->first();
+            $buscarelacao = PessoaParentesco::where('pessoa_id', '=', $param['key'])->load();
 
             if ($buscarelacao) {
-                PessoasRelacao::where('relacao_id', '=', $buscarelacao->id)->delete();
+                foreach ($buscarelacao as $br) {
+                    PessoasRelacao::where('id', '=', $br->relacao_id)->delete();
+                }
             }
 
             PessoaParentesco::where('pessoa_id', '=', $param['key'])->delete();
-
-            $buscarelacao2 = PessoaParentesco::where('pessoa_parente_id', '=', $param['key'])->first();
-
-            if ($buscarelacao2) {
-                PessoasRelacao::where('relacao_id', '=', $buscarelacao2->id)->delete();
-            }
-
             PessoaParentesco::where('pessoa_parente_id', '=', $param['key'])->delete();
 
             $object = new Pessoa($key, FALSE); // instantiates the Active Record

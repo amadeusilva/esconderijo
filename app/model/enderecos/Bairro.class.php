@@ -5,7 +5,7 @@
  */
 class Bairro extends TRecord
 {
-    const TABLENAME = 'bairro';
+    const TABLENAME = 'enderecos.bairro';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     

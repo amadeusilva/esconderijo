@@ -11,7 +11,7 @@
  */
 class SystemDocumentCategory extends TRecord
 {
-    const TABLENAME = 'system_document_category';
+    const TABLENAME = 'communication.system_document_category';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     

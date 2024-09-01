@@ -12,7 +12,7 @@
  */
 class SystemUserOldPassword extends TRecord
 {
-    const TABLENAME  = 'system_user_old_password';
+    const TABLENAME  = 'permission.system_user_old_password';
     const PRIMARYKEY = 'id';
     const IDPOLICY   = 'max'; // {max, serial}
     const CREATEDAT  = 'created_at';

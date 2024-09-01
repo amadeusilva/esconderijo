@@ -445,8 +445,12 @@ class AddParente extends TWindow
 
                 $dados_iniciais_pf = TSession::getValue('dados_iniciais_pf');
                 //verificar se tem outro conjugue
-                if ($data->parentesco_id >= 921 and $data->parentesco_id <= 926) {
+                if ($data->parentesco_id >= 921 and $data->parentesco_id <= 926 and isset($dados_iniciais_pf['id']) and !empty($dados_iniciais_pf['id'])) {
+
                     $conjugue_vinculado = PessoaParentesco::where('pessoa_id', '=', $dados_iniciais_pf['id'])->where('parentesco_id', '>=', 921)->where('parentesco_id', '<=', 926)->first();
+
+                    //$conjugue_vinculado = array();
+
                     if ($conjugue_vinculado) {
                         if ($data->id != $conjugue_vinculado->pessoa_parente_id) {
                             if ($conjugue_vinculado->PessoaParente->cpf_cnpj) {

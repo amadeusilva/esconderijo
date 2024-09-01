@@ -12,7 +12,7 @@
  */
 class SystemPost extends TRecord
 {
-    const TABLENAME = 'system_post';
+    const TABLENAME = 'communication.system_post';
     const PRIMARYKEY= 'id';
     const IDPOLICY =  'max'; // {max, serial}
     const CREATEDAT = 'created_at';
