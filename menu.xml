@@ -37,6 +37,10 @@
         <action>EncontristaDataGrid</action>
         <icon>fas:pen-square fa-fw</icon>
       </menuitem>
+      <menuitem label="Encontreiro">
+        <action>EncontreiroDataGrid</action>
+        <icon>fas:pen-square fa-fw</icon>
+      </menuitem>
     </menu>
   </menuitem>
   <menuitem label="Dados Gerais">

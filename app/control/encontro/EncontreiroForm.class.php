@@ -17,7 +17,7 @@ use Adianti\Widget\Form\TText;
  * @copyright  Copyright (c) 2006 Adianti Solutions Ltd. (http://www.adianti.com.br)
  * @license    http://www.adianti.com.br/framework-license
  */
-class EncontristaForm extends TWindow
+class EncontreiroForm extends TWindow
 {
     protected $form; // form
 
@@ -34,13 +34,13 @@ class EncontristaForm extends TWindow
         parent::setModal(true);
         parent::removePadding();
         parent::setSize(400, null);
-        parent::setTitle('Encontrista');
+        parent::setTitle('Encontreiro');
 
         $this->setDatabase('adea');    // defines the database
-        $this->setActiveRecord('Encontrista');   // defines the active record
+        $this->setActiveRecord('Encontreiro');   // defines the active record
 
         // creates the form
-        $this->form = new BootstrapFormBuilder('form_encontrista');
+        $this->form = new BootstrapFormBuilder('form_encontreiro');
         $this->form->setClientValidation(true);
 
         //dados 
@@ -54,26 +54,55 @@ class EncontristaForm extends TWindow
         $encontro_id->enableSearch();
         $encontro_id->setSize('100%');
 
-        $casal_id = new TDBCombo('casal_id', 'adea', 'ViewCasal', 'relacao_id', 'casal', 'relacao_id');
+        $casal_id = new TDBCombo('casal_id', 'adea', 'ViewEncontrista', 'casal_id', 'casal', 'casal_id');
         $casal_id->enableSearch();
         $casal_id->setSize('100%');
 
         $options = [1 => 'Sim', 2 => 'Não'];
-        $secretario_s_n = new TRadioGroup('secretario_s_n');
-        $secretario_s_n->setUseButton();
-        $secretario_s_n->addItems($options);
-        $secretario_s_n->setLayout('horizontal');
-        $secretario_s_n->setValue(2);
-        $secretario_s_n->setSize('100%');
+
+        $camisa_encontro_br = new TRadioGroup('camisa_encontro_br');
+        $camisa_encontro_br->setUseButton();
+        $camisa_encontro_br->addItems($options);
+        $camisa_encontro_br->setLayout('horizontal');
+        $camisa_encontro_br->setValue(2);
+        $camisa_encontro_br->setSize('100%');
+
+        $camisa_encontro_cor = new TRadioGroup('camisa_encontro_cor');
+        $camisa_encontro_cor->setUseButton();
+        $camisa_encontro_cor->addItems($options);
+        $camisa_encontro_cor->setLayout('horizontal');
+        $camisa_encontro_cor->setValue(2);
+        $camisa_encontro_cor->setSize('100%');
+
+        $disponibilidade_nt = new TRadioGroup('disponibilidade_nt');
+        $disponibilidade_nt->setUseButton();
+        $disponibilidade_nt->addItems($options);
+        $disponibilidade_nt->setLayout('horizontal');
+        $disponibilidade_nt->setValue(2);
+        $disponibilidade_nt->setSize('100%');
+
+        $coordenar_s_n = new TRadioGroup('coordenar_s_n');
+        $coordenar_s_n->setUseButton();
+        $coordenar_s_n->addItems($options);
+        $coordenar_s_n->setLayout('horizontal');
+        $coordenar_s_n->setValue(2);
+        $coordenar_s_n->setSize('100%');
+
+        $funcao_id = new TRadioGroup('funcao_id');
+        $funcao_id->setUseButton();
+        $funcao_id->addItems($options);
+        $funcao_id->setLayout('horizontal');
+        $funcao_id->setValue(2);
+        $funcao_id->setSize('100%');
 
         $filterCirculo = new TCriteria;
         $filterCirculo->add(new TFilter('lista_id', '=', '18'));
-        $circulo_id = new TDBCombo('circulo_id', 'adea', 'ListaItens', 'id', 'item', 'id', $filterCirculo);
+        $circulo_id = new TDBCombo('circulo_id', 'adea', 'ListaItens', 'id', 'abrev', 'id', $filterCirculo);
         $circulo_id->setSize('100%');
 
-        $casal_convite_id = new TDBCombo('casal_convite_id', 'adea', 'ViewEncontrista', 'casal_id', 'casal', 'casal_id');
-        $casal_convite_id->enableSearch();
-        $casal_convite_id->setSize('100%');
+        $equipe_id = new TDBCombo('equipe_id', 'adea', 'Equipe', 'id', 'equipe', 'id');
+        $equipe_id->enableSearch();
+        $equipe_id->setSize('100%');
 
         // define some properties for the form fields
 
@@ -96,7 +125,6 @@ class EncontristaForm extends TWindow
                 $casal_id
             ]
         );
-
         $row->layout = ['col-sm-12'];
 
         $row = $this->form->addFields(
@@ -105,34 +133,77 @@ class EncontristaForm extends TWindow
                 $circulo_id
             ]
         );
-
         $row->layout = ['col-sm-12'];
 
         $row = $this->form->addFields(
             [
-                new TLabel('Secretário?')],[
-                $secretario_s_n
+                new TLabel('Camisa Branca?')
+            ],
+            [
+                $camisa_encontro_br
             ]
         );
-
         $row->layout = ['col-sm-12', 'col-sm-12'];
 
         $row = $this->form->addFields(
             [
-                new TLabel('Convite'),
-                $casal_convite_id
+                new TLabel('Camisa Círculo?')
+            ],
+            [
+                $camisa_encontro_cor
             ]
         );
+        $row->layout = ['col-sm-12', 'col-sm-12'];
 
+        $row = $this->form->addFields(
+            [
+                new TLabel('Disponibilidade à noite?')
+            ],
+            [
+                $disponibilidade_nt
+            ]
+        );
+        $row->layout = ['col-sm-12', 'col-sm-12'];
+
+        $row = $this->form->addFields(
+            [
+                new TLabel('Deseja Coordenar?')
+            ],
+            [
+                $coordenar_s_n
+            ]
+        );
+        $row->layout = ['col-sm-12', 'col-sm-12'];
+
+        $row = $this->form->addFields(
+            [
+                new TLabel('Função')
+            ],
+            [
+                $funcao_id
+            ]
+        );
+        $row->layout = ['col-sm-12', 'col-sm-12'];
+
+        $row = $this->form->addFields(
+            [
+                new TLabel('Equipe'),
+                $equipe_id
+            ]
+        );
         $row->layout = ['col-sm-12'];
 
         // validations
         //id`, `encontro_id`, `casal_pessoa_id`, `funcao_id`, `circulo_id`, `casal_pessoa_convite_id
         $encontro_id->addValidation('Encontro', new TRequiredValidator);
         $casal_id->addValidation('Casal', new TRequiredValidator);
-        $secretario_s_n->addValidation('Secretário', new TRequiredValidator);
         $circulo_id->addValidation('Círculo', new TRequiredValidator);
-        $casal_convite_id->addValidation('Convite', new TRequiredValidator);
+        $camisa_encontro_br->addValidation('Camisa Branca', new TRequiredValidator);
+        $camisa_encontro_cor->addValidation('Camisa Círculo', new TRequiredValidator);
+        $disponibilidade_nt->addValidation('Disponibilidade à noite', new TRequiredValidator);
+        $coordenar_s_n->addValidation('Deseja Coordenar?', new TRequiredValidator);
+        $funcao_id->addValidation('Função', new TRequiredValidator);
+        $equipe_id->addValidation('Equipe', new TRequiredValidator);
 
         // define the form action
         $this->form->addAction('Salvar', new TAction(array($this, 'onSave')), 'fa:save green');
@@ -155,10 +226,13 @@ class EncontristaForm extends TWindow
                 $key = $param['id'];  // get the parameter
                 TTransaction::open('adea');   // open a transaction with database 'samples'
                 $montagem = new Montagem($key);        // instantiates object City
-                $encontrista = Encontrista::where('montagem_id', '=', $montagem->id)->first();
+                $encontreiro = Encontreiro::where('montagem_id', '=', $montagem->id)->first();
 
-                $montagem->secretario_s_n = $encontrista->secretario_s_n;
-                $montagem->casal_convite_id = $encontrista->casal_convite_id;
+                $montagem->camisa_encontro_br = $encontreiro->camisa_encontro_br;
+                $montagem->camisa_encontro_cor = $encontreiro->camisa_encontro_cor;
+                $montagem->disponibilidade_nt = $encontreiro->disponibilidade_nt;
+                $montagem->coordenador_s_n = $encontreiro->coordenador_s_n;
+                $montagem->equipe_id = $encontreiro->equipe_id;
 
                 $this->form->setData($montagem);   // fill the form with the active record data
                 TTransaction::close();           // close the transaction
@@ -188,24 +262,37 @@ class EncontristaForm extends TWindow
 
             $montagem = new Montagem();  // create an empty object
             $montagem->fromArray((array) $data); // load the object with data
-            $montagem->tipo_encontr_ista_eiro = 1;
+            $montagem->tipo_id = 2;
             $montagem->conducao_propria_id = 0;
             $montagem->store(); // save the object
 
-            Encontrista::where('montagem_id', '=', $montagem->id)->delete();
+            $encontreiro = Encontreiro::where('montagem_id', '=', $montagem->id)->first();
 
-            $encontrista = new Encontrista();  // create an empty object
-            $encontrista->montagem_id = $montagem->id;
-            $encontrista->fromArray((array) $data); // load the object with data
-            $encontrista->store(); // save the object
+            if (!$encontreiro) {
+                $encontreiro = new Encontreiro();  // create an empty object
+                $encontreiro->montagem_id = $montagem->id;
+            }
+
+            $encontreiro->fromArray((array) $data); // load the object with data
+            $encontreiro->store(); // save the object
+
+            $encontreiro_equipe = EncontreiroEquipe::where('encontreiro_id', '=', $encontreiro->id)->first();
+
+            if (!$encontreiro_equipe) {
+                $encontreiro_equipe = new EncontreiroEquipe();  // create an empty object
+                $encontreiro_equipe->encontreiro_id = $encontreiro->id;
+            }
+
+            $encontreiro_equipe->fromArray((array) $data); // load the object with data
+            $encontreiro_equipe->store(); // save the object
 
             // fill the form with the active record data
-            $this->form->setData($encontrista);
+            $this->form->setData($encontreiro);
 
             TTransaction::close();  // close the transaction
 
             // fill the form with the active record data
-            $posAction = new TAction(array('EncontristaDataGrid', 'onReload'));
+            $posAction = new TAction(array('EncontreiroDataGrid', 'onReload'));
 
             // show the message dialog
             new TMessage('info', 'Registro Salvo com Sucesso!', $posAction);

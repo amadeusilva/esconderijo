@@ -21,6 +21,8 @@ class CirculoHistorico extends TRecord
         parent::addAttribute('circulo_id');
         parent::addAttribute('motivo_id');
         parent::addAttribute('obs_motivo');
+        parent::addAttribute('casal_id');
+        parent::addAttribute('dt_historico');
     }
 
     public function get_Circulo()

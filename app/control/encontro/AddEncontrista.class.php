@@ -56,6 +56,7 @@ class AddEncontrista extends TWindow
         $row = $this->form->addFields([new TLabel('Nome dele:', '#2196F3'), $ele_nome]);
         $row->layout = ['col-sm-12'];
         $ele_nome->addValidation('Nome Dele', new TRequiredValidator);
+        $ele_nome->setExitAction(new TAction(array($this, 'onNome')));
 
         $ele_popular  = new TDBEntry('ele_popular', 'adea', 'ViewPessoaFisica', 'popular', '', $filterGeneroM);
         $ele_popular->setInnerIcon(new TImage('fa:user #2196F3'), 'left');
@@ -135,6 +136,7 @@ class AddEncontrista extends TWindow
         $filter->add(new TFilter('evento_id', '=', '701'));
         $encontro_id = new TDBCombo('encontro_id', 'adea', 'ViewEncontro', 'id', 'sigla', 'id', $filter);
         $encontro_id->setSize('100%');
+        $encontro_id->enableSearch();
         $encontro_id->addValidation('Encontro', new TRequiredValidator);
 
         $filterCirculo = new TCriteria;
@@ -237,12 +239,12 @@ class AddEncontrista extends TWindow
         $tipo_id->setChangeAction(new TAction(array($this, 'onTipoChange')));
 
         // validations
-        $estado_id->addValidation('Estado', new TRequiredValidator);
-        $cidade_id->addValidation('Cidade', new TRequiredValidator);
-        $tipo_id->addValidation('Tipo', new TRequiredValidator);
-        $logradouro_id->addValidation('Logradouro', new TRequiredValidator);
-        $bairro_id->addValidation('Bairro', new TRequiredValidator);
-        $n->addValidation('Nº', new TRequiredValidator);
+        //$estado_id->addValidation('Estado', new TRequiredValidator);
+        //$cidade_id->addValidation('Cidade', new TRequiredValidator);
+        //$tipo_id->addValidation('Tipo', new TRequiredValidator);
+        //$logradouro_id->addValidation('Logradouro', new TRequiredValidator);
+        //$bairro_id->addValidation('Bairro', new TRequiredValidator);
+        //$n->addValidation('Nº', new TRequiredValidator);
 
         // define the form action
         $this->form->addAction('Salvar', new TAction(array($this, 'onSave')), 'fa:save green');
@@ -252,6 +254,40 @@ class AddEncontrista extends TWindow
         $this->setUseMessages(false);
 
         parent::add($this->form);
+    }
+
+    public static function onNome($param)
+    {
+        try {
+            TTransaction::open('adea');
+            if (!empty($param['ele_nome'])) {
+                $buscapessoa = ViewPessoaFisica::where('nome', '=', $param['ele_nome'])->first();
+                if ($buscapessoa) {
+                    $nometela = new stdClass;
+                    $nometela->ele_popular        = $buscapessoa->popular;
+                    $nometela->dn_ele             = TDate::date2br($buscapessoa->dt_nascimento);
+
+                    $buscacasal = ViewCasal::where('ele_id', '=', $buscapessoa->id)->first();
+
+
+                    $nometela->relacao_id  = $buscacasal->relacao_id;
+
+                    $nometela->dt_casamento  = TDate::date2br($buscacasal->dt_inicial);
+
+                    $buscapessoa2 = new ViewPessoaFisica($buscacasal->ela_id);
+
+                    $nometela->ela_nome           = $buscapessoa2->nome;
+                    $nometela->ela_popular        = $buscapessoa2->popular;
+                    $nometela->dn_ela             = TDate::date2br($buscapessoa2->dt_nascimento);
+
+                    TForm::sendData('form_AddEncontrista', $nometela);
+                }
+            }
+
+            TTransaction::close();
+        } catch (Exception $e) {
+            new TMessage('error', $e->getMessage());
+        }
     }
 
     /**
@@ -344,7 +380,7 @@ class AddEncontrista extends TWindow
             $ele->popular = $data->ele_popular;
 
             //endereco_id deles
-            if (isset($data->logradouro_id)) {
+            if (isset($data->logradouro_id) and !empty($data->logradouro_id)) {
                 $consultaendereco = Endereco::where('logradouro_id', '=', $data->logradouro_id)->where('n', '=', $data->n)->where('bairro_id', '=', $data->bairro_id)->first();
                 if ($consultaendereco) {
                     $ele->endereco_id = $consultaendereco->id;
@@ -408,7 +444,9 @@ class AddEncontrista extends TWindow
 
             $ela->nome = $data->ela_nome;
             $ela->popular = $data->ela_popular;
-            $ela->endereco_id = $ele->endereco_id;
+            if (isset($ele->endereco_id) and !empty($ele->endereco_id)) {
+                $ela->endereco_id = $ele->endereco_id;
+            }
             if (!isset($data->relacao_id) or empty($data->relacao_id)) {
                 $ela->status_pessoa = 21;
                 $ela->ck_pessoa = 2;
@@ -477,13 +515,11 @@ class AddEncontrista extends TWindow
                 $encontrista = Encontrista::where('montagem_id', '=', $montagem->id)->first();
             } else {
                 $montagem = new Montagem();
-                $montagem->tipo_encontr_ista_eiro = 1;
+                $montagem->tipo_id = 1;
                 $montagem->casal_id = $relacao_deles->id;
 
                 //encontrista
                 $encontrista = new Encontrista();
-                $encontrista->montagem_id = $montagem->id;
-                $encontrista->secretario_s_n = 2;
             }
 
             $montagem->encontro_id = $data->encontro_id;
@@ -492,7 +528,24 @@ class AddEncontrista extends TWindow
             $montagem->store(); // save the object
 
             //casal_convite_id
+            $encontrista->montagem_id = $montagem->id;
+            $encontrista->secretario_s_n = 2;
             $encontrista->store(); // save the object
+
+            if (isset($data->relacao_id) and !empty($data->relacao_id)) {
+                $historico_circulo = CirculoHistorico::where('casal_id', '=', $data->relacao_id)->orderBy('id', 'asc')->first();
+            } else {
+                $historico_circulo = new CirculoHistorico();
+                $historico_circulo->dt_historico = $montagem->Encontro->dt_inicial;
+                $relacao_id_deles = ViewCasal::where('ele_id', '=', $ele->id)->where('ela_id', '=', $ela->id)->first();
+                $historico_circulo->casal_id = $relacao_id_deles->relacao_id;
+            }
+
+            $historico_circulo->user_sessao_id = TSession::getValue('userid');
+            $historico_circulo->circulo_id = $data->circulo_id;
+            $historico_circulo->motivo_id = 1;
+            $historico_circulo->obs_motivo = 'Montagem de participação como Encontrista';
+            $historico_circulo->store(); // save the object
 
             // fill the form with the active record data
             $this->form->setData($relacao_deles);

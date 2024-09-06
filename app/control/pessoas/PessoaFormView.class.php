@@ -220,7 +220,7 @@ class PessoaFormView extends TPage
         $estado_id->addValidation('Estado', new TRequiredValidator);
         $cidade_id->addValidation('Cidade', new TRequiredValidator);
         $tipo_id->addValidation('Tipo', new TRequiredValidator);
-        $logradouro_id->addValidation('Logradouro', new TRequiredValidator);
+        //$logradouro_id->addValidation('Logradouro', new TRequiredValidator);
         $bairro_id->addValidation('Bairro', new TRequiredValidator);
         $n->addValidation('Nº', new TRequiredValidator);
 

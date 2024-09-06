@@ -10,7 +10,7 @@
  * @copyright  Copyright (c) 2006 Adianti Solutions Ltd. (http://www.adianti.com.br)
  * @license    http://www.adianti.com.br/framework-license
  */
-class EncontristaDataGrid extends TPage
+class EncontreiroDataGrid extends TPage
 {
     protected $datagrid; // listing
     protected $pageNavigation;
@@ -30,9 +30,7 @@ class EncontristaDataGrid extends TPage
         //TSession::delValue('dados_pf_atualizacao_cadastral');
 
         $this->setDatabase('adea');        // defines the database
-        $this->setActiveRecord('ViewEncontrista');       // defines the active record
-        $this->setDefaultOrder('id', 'desc');  // defines the default order
-        $this->setLimit(100);
+        $this->setActiveRecord('ViewEncontreiro');       // defines the active record
 
         // creates the DataGrid
         $this->datagrid = new BootstrapDatagridWrapper(new TDataGrid);
@@ -41,25 +39,79 @@ class EncontristaDataGrid extends TPage
         // creates the datagrid columns
         $col_id    = new TDataGridColumn('id', 'Id', 'center');
         $col_casal_id    = new TDataGridColumn('casal_id', 'Nº', 'center');
-        $col_encontro_id = new TDataGridColumn('encontro_id', 'Encontro', 'left');
+        $col_encontro_id = new TDataGridColumn('encontro_id', 'Encontro', 'center');
         $col_encontro = new TDataGridColumn('encontro', 'Evento', 'left');
         $col_casal = new TDataGridColumn('casal', 'Casal', 'left');
-        $col_secretario_s_n = new TDataGridColumn('secretario_s_n', 'Secretário?', 'center');
         $col_circulo = new TDataGridColumn('circulo', 'Círculo', 'left');
-        $col_casal_convite = new TDataGridColumn('casal_convite', 'Casal Convite', 'left');
-
-        //parent::addAttribute('conducao_propria');
+        $col_camisa_encontro_br = new TDataGridColumn('camisa_encontro_br', 'Camisa Branca', 'center');
+        $col_camisa_encontro_cor = new TDataGridColumn('camisa_encontro_cor', 'Camisa Círculo', 'center');
+        $col_disponibilidade_nt = new TDataGridColumn('disponibilidade_nt', 'Disp. Noite?', 'center');
+        $col_coordenar_s_n = new TDataGridColumn('coordenar_s_n', 'Coordenar?', 'center');
+        $col_funcao_id = new TDataGridColumn('funcao_id', 'Função', 'center');
+        $col_equipe = new TDataGridColumn('equipe', 'Equipe', 'left');
 
         $this->datagrid->addColumn($col_id);
         $this->datagrid->addColumn($col_casal_id);
         $this->datagrid->addColumn($col_encontro_id);
         $this->datagrid->addColumn($col_encontro);
         $this->datagrid->addColumn($col_casal);
-        $this->datagrid->addColumn($col_secretario_s_n);
         $this->datagrid->addColumn($col_circulo);
-        $this->datagrid->addColumn($col_casal_convite);
+        $this->datagrid->addColumn($col_camisa_encontro_br);
+        $this->datagrid->addColumn($col_camisa_encontro_cor);
+        $this->datagrid->addColumn($col_disponibilidade_nt);
+        $this->datagrid->addColumn($col_coordenar_s_n);
+        $this->datagrid->addColumn($col_funcao_id);
+        $this->datagrid->addColumn($col_equipe);
 
-        $col_secretario_s_n->setTransformer(function ($value) {
+        $col_camisa_encontro_br->setTransformer(function ($value) {
+            if ($value == 1) {
+                $div = new TElement('span');
+                $div->class = "label label-success";
+                $div->style = "text-shadow:none; font-size:12px";
+                $div->add('Sim');
+                return $div;
+            } else {
+                $div = new TElement('span');
+                $div->class = "label label-danger";
+                $div->style = "text-shadow:none; font-size:12px";
+                $div->add('Não');
+                return $div;
+            }
+        });
+
+        $col_camisa_encontro_cor->setTransformer(function ($value) {
+            if ($value == 1) {
+                $div = new TElement('span');
+                $div->class = "label label-success";
+                $div->style = "text-shadow:none; font-size:12px";
+                $div->add('Sim');
+                return $div;
+            } else {
+                $div = new TElement('span');
+                $div->class = "label label-danger";
+                $div->style = "text-shadow:none; font-size:12px";
+                $div->add('Não');
+                return $div;
+            }
+        });
+
+        $col_disponibilidade_nt->setTransformer(function ($value) {
+            if ($value == 1) {
+                $div = new TElement('span');
+                $div->class = "label label-success";
+                $div->style = "text-shadow:none; font-size:12px";
+                $div->add('Sim');
+                return $div;
+            } else {
+                $div = new TElement('span');
+                $div->class = "label label-danger";
+                $div->style = "text-shadow:none; font-size:12px";
+                $div->add('Não');
+                return $div;
+            }
+        });
+
+        $col_coordenar_s_n->setTransformer(function ($value) {
             if ($value == 1) {
                 $div = new TElement('span');
                 $div->class = "label label-success";
@@ -83,17 +135,19 @@ class EncontristaDataGrid extends TPage
         $col_encontro_id->setAction(new TAction([$this, 'onReload']), ['order' => 'encontro_id']);
         $col_encontro->setAction(new TAction([$this, 'onReload']), ['order' => 'encontro']);
         $col_casal->setAction(new TAction([$this, 'onReload']), ['order' => 'casal']);
-        $col_secretario_s_n->setAction(new TAction([$this, 'onReload']), ['order' => 'secretario_s_n']);
         $col_circulo->setAction(new TAction([$this, 'onReload']), ['order' => 'circulo']);
-        $col_casal_convite->setAction(new TAction([$this, 'onReload']), ['order' => 'casal_convite']);
+        $col_camisa_encontro_br->setAction(new TAction([$this, 'onReload']), ['order' => 'camisa_encontro_br']);
+        $col_camisa_encontro_cor->setAction(new TAction([$this, 'onReload']), ['order' => 'camisa_encontro_cor']);
+        $col_disponibilidade_nt->setAction(new TAction([$this, 'onReload']), ['order' => 'disponibilidade_nt']);
+        $col_coordenar_s_n->setAction(new TAction([$this, 'onReload']), ['order' => 'coordenador_s_n']);
+        $col_funcao_id->setAction(new TAction([$this, 'onReload']), ['order' => 'funcao_id']);
+        $col_equipe->setAction(new TAction([$this, 'onReload']), ['order' => 'equipe']);
 
-        $action1 = new TDataGridAction(['EncontristaForm', 'onEdit'],   ['key' => '{id}', 'register_state' => 'false']);
+        $action1 = new TDataGridAction(['EncontreiroForm', 'onEdit'],   ['key' => '{id}', 'register_state' => 'false']);
         $action2 = new TDataGridAction([$this, 'onDelete'],   ['key' => '{id}']);
-        $action3 = new TDataGridAction(['AddEncontrista', 'onEdit'],   ['id' => '{id}', 'casal_id' => '{casal_id}', 'register_state' => 'false']);
 
         $this->datagrid->addAction($action1, 'Editar',   'far:edit blue');
         $this->datagrid->addAction($action2, 'Deletar', 'far:trash-alt red');
-        $this->datagrid->addAction($action3, 'Editar',   'far:edit orange');
 
         // create the datagrid model
         $this->datagrid->createModel();
@@ -104,14 +158,14 @@ class EncontristaDataGrid extends TPage
         $input_search->setSize('100%');
 
         // enable fuse search by column name
-        $this->datagrid->enableSearch($input_search, 'id, encontro_id, encontro, casal, secretario_s_n, circulo, casal_convite');
+        $this->datagrid->enableSearch($input_search, 'id, encontro_id, encontro, casal, circulo');
 
         // creates the page navigation
         $this->pageNavigation = new TPageNavigation;
         $this->pageNavigation->enableCounters();
         $this->pageNavigation->setAction(new TAction(array($this, 'onReload')));
 
-        $panel = new TPanelGroup('Encontristas');
+        $panel = new TPanelGroup('Encontreiro');
         $panel->addHeaderWidget($input_search);
         $panel->add($this->datagrid);
         $panel->addFooter($this->pageNavigation);
@@ -128,8 +182,7 @@ class EncontristaDataGrid extends TPage
         $dropdown->addAction('Save as XML', new TAction([$this, 'onExportXML'], ['register_state' => 'false', 'static' => '1']), 'fa:code fa-fw green');
 
         // add form actions
-        $panel->addHeaderActionLink('Avulso',  new TAction(['AddEncontrista', 'onClear'], ['register_state' => 'false']), 'fa:plus orange');
-        $panel->addHeaderActionLink('Novo',  new TAction(['EncontristaForm', 'onClear'], ['register_state' => 'false']), 'fa:plus green');
+        $panel->addHeaderActionLink('Novo',  new TAction(['EncontreiroForm', 'onClear'], ['register_state' => 'false']), 'fa:plus green');
         $panel->addHeaderWidget($dropdown);
 
         // creates the page structure using a table
@@ -152,7 +205,7 @@ class EncontristaDataGrid extends TPage
         $action->setParameters($param); // pass the key parameter ahead
 
         // shows a dialog to the user
-        new TQuestion('Deseja realmente excluir este encontrista?', $action);
+        new TQuestion('Deseja realmente excluir este encontreiro?', $action);
     }
 
     /**
@@ -164,7 +217,7 @@ class EncontristaDataGrid extends TPage
             $key = $param['key']; // get the parameter $key
             TTransaction::open('adea'); // open a transaction with database
 
-            Encontrista::where('montagem_id', '=', $param['key'])->delete();
+            Encontreiro::where('montagem_id', '=', $param['key'])->delete();
 
             /*
             $buscarelacao = PessoaParentesco::where('pessoa_id', '=', $param['key'])->load();

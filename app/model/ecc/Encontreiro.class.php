@@ -20,12 +20,19 @@ class Encontreiro extends TRecord
         parent::addAttribute('camisa_encontro_br');
         parent::addAttribute('camisa_encontro_cor');
         parent::addAttribute('disponibilidade_nt');
-        parent::addAttribute('coordenador_s_n');
-        parent::addAttribute('equipe_id');
+        parent::addAttribute('coordenar_s_n');
     }
 
     public function get_Montagem()
     {
         return ListaItens::find($this->montagem_id);
+    }
+
+    public function delete($id = null)
+    {
+        $id = isset($id) ? $id : $this->id;
+
+        EncontreiroEquipe::where('encontreiro_id', '=', $this->id)->delete();
+        parent::delete($id);
     }
 }

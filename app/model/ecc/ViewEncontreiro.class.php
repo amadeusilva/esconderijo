@@ -4,14 +4,14 @@
  * Pessoa Active Record
  * @author  <your-name-here>
  */
-class ViewEncontrista extends TRecord
+class ViewEncontreiro extends TRecord
 {
-    const TABLENAME = 'ecc.view_encontrista';
+    const TABLENAME = 'ecc.view_encontreiro';
     const PRIMARYKEY = 'id';
     const IDPOLICY =  'max'; // {max, serial}
 
     /**
-	CREATE VIEW ecc.view_encontrista AS
+	CREATE VIEW ecc.view_encontreiro AS
 SELECT 
             montagem.id,
             montagem.encontro_id,
@@ -23,11 +23,15 @@ SELECT
             (SELECT placa FROM globais.conducao_propria WHERE conducao_propria.id = montagem.conducao_propria_id) AS conducao_propria,
             montagem.circulo_id,
             (SELECT item FROM globais.lista_itens WHERE lista_itens.id = montagem.circulo_id) AS circulo,
-            encontrista.secretario_s_n,
-            encontrista.casal_convite_id,
-            (SELECT casal FROM pessoas.view_casal WHERE view_casal.relacao_id = encontrista.casal_convite_id) AS casal_convite
-FROM ecc.montagem, ecc.encontrista WHERE montagem.id = encontrista.montagem_id
-AND montagem.tipo_id = 1
+            encontreiro.camisa_encontro_br,
+            encontreiro.camisa_encontro_cor,
+            encontreiro.disponibilidade_nt,
+            encontreiro.coordenar_s_n,
+            encontreiro_equipe.funcao_id,  
+            encontreiro_equipe.equipe_id,            
+            (SELECT equipe FROM globais.equipe WHERE equipe.id = encontreiro_equipe.equipe_id) AS equipe
+FROM ecc.montagem, ecc.encontreiro, ecc.encontreiro_equipe WHERE montagem.id = encontreiro.montagem_id AND encontreiro.id = encontreiro_equipe.encontreiro_id
+AND montagem.tipo_id = 2
      */
 
     /**
@@ -44,9 +48,13 @@ AND montagem.tipo_id = 1
         parent::addAttribute('conducao_propria');
         parent::addAttribute('circulo_id');
         parent::addAttribute('circulo');
-        parent::addAttribute('secretario_s_n');
-        parent::addAttribute('casal_convite_id');
-        parent::addAttribute('casal_convite');
+        parent::addAttribute('camisa_encontro_br');
+        parent::addAttribute('camisa_encontro_cor');
+        parent::addAttribute('disponibilidade_nt');
+        parent::addAttribute('coordenar_s_n');
+        parent::addAttribute('funcao_id');
+        parent::addAttribute('equipe_id');
+        parent::addAttribute('equipe');
     }
 
     /*
