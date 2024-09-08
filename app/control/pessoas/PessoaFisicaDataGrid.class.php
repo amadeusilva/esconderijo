@@ -40,6 +40,7 @@ class PessoaFisicaDataGrid extends TPage
 
         $this->setDatabase('adea');        // defines the database
         $this->setActiveRecord('ViewPessoaFisica');       // defines the active record
+        $this->setLimit(1000);
 
         // creates the DataGrid
         $this->datagrid = new BootstrapDatagridWrapper(new TDataGrid);

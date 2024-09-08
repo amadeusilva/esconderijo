@@ -447,7 +447,7 @@ class DadosEndereco extends TPage
                     }
                     $pessoarelacao->estado_civil_id = $dadosrelacao['estado_civil_id'];
                     $pessoarelacao->tipo_vinculo = $dadosrelacao['tipo_vinculo'];
-                    $pessoarelacao->status_relacao_id = 2;
+                    $pessoarelacao->status_relacao_id = 10;
 
                     $pessoarelacao->store();
 

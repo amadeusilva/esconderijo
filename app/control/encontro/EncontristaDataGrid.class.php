@@ -32,7 +32,7 @@ class EncontristaDataGrid extends TPage
         $this->setDatabase('adea');        // defines the database
         $this->setActiveRecord('ViewEncontrista');       // defines the active record
         $this->setDefaultOrder('id', 'desc');  // defines the default order
-        $this->setLimit(100);
+        $this->setLimit(1000);
 
         // creates the DataGrid
         $this->datagrid = new BootstrapDatagridWrapper(new TDataGrid);

@@ -132,7 +132,7 @@ class EncontristaForm extends TWindow
         $casal_id->addValidation('Casal', new TRequiredValidator);
         $secretario_s_n->addValidation('Secretário', new TRequiredValidator);
         $circulo_id->addValidation('Círculo', new TRequiredValidator);
-        $casal_convite_id->addValidation('Convite', new TRequiredValidator);
+        //$casal_convite_id->addValidation('Convite', new TRequiredValidator);
 
         // define the form action
         $this->form->addAction('Salvar', new TAction(array($this, 'onSave')), 'fa:save green');
