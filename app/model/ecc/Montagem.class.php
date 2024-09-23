@@ -32,4 +32,9 @@ class Montagem extends TRecord
     {
         return Encontro::find($this->encontro_id);
     }
+
+    public function get_Encontreiro()
+    {
+        return Encontreiro::where('montagem_id', '=', $this->id)->first();
+    }
 }

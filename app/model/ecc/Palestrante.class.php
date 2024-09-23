@@ -4,9 +4,9 @@
  * Pessoa Active Record
  * @author  <your-name-here>
  */
-class EncontreiroEquipe extends TRecord
+class Palestrante extends TRecord
 {
-    const TABLENAME = 'ecc.encontreiro_equipe';
+    const TABLENAME = 'ecc.palestrante';
     const PRIMARYKEY = 'id';
     const IDPOLICY =  'max'; // {max, serial}
 
@@ -17,9 +17,8 @@ class EncontreiroEquipe extends TRecord
     {
         parent::__construct($id, $callObjectLoad);
         parent::addAttribute('encontreiro_id');
+        parent::addAttribute('palestra_id');
         parent::addAttribute('funcao_id');
-        parent::addAttribute('equipe_id');
-        parent::addAttribute('tipo_enc_id');
     }
 
     public function get_Encontreiro()
@@ -27,8 +26,8 @@ class EncontreiroEquipe extends TRecord
         return Encontreiro::find($this->encontreiro_id);
     }
 
-    public function get_Equipe()
+    public function get_Palestra()
     {
-        return Equipe::find($this->equipe_id);
+        return ListaItens::find($this->palestra_id);
     }
 }

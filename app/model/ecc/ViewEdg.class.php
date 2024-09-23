@@ -4,14 +4,14 @@
  * Pessoa Active Record
  * @author  <your-name-here>
  */
-class ViewEncontreiro extends TRecord
+class ViewEdg extends TRecord
 {
-    const TABLENAME = 'ecc.view_encontreiro';
+    const TABLENAME = 'ecc.view_edg';
     const PRIMARYKEY = 'id';
     const IDPOLICY =  'max'; // {max, serial}
 
     /**
-	CREATE VIEW ecc.view_encontreiro AS
+	CREATE VIEW ecc.view_edg AS
 SELECT 
             montagem.id,
             montagem.encontro_id,
@@ -29,9 +29,9 @@ SELECT
             encontreiro.coordenar_s_n,
             encontreiro_equipe.funcao_id,  
             encontreiro_equipe.equipe_id,            
-            (SELECT equipe FROM globais.equipe WHERE equipe.id = encontreiro_equipe.equipe_id) AS equipe
+            (SELECT item FROM globais.lista_itens WHERE lista_itens.id = encontreiro_equipe.equipe_id) AS pasta
 FROM ecc.montagem, ecc.encontreiro, ecc.encontreiro_equipe WHERE montagem.id = encontreiro.montagem_id AND encontreiro.id = encontreiro_equipe.encontreiro_id
-AND montagem.tipo_id = 2 AND encontreiro_equipe.tipo_enc_id = 1
+AND montagem.tipo_id = 4
      */
 
     /**
@@ -54,7 +54,7 @@ AND montagem.tipo_id = 2 AND encontreiro_equipe.tipo_enc_id = 1
         parent::addAttribute('coordenar_s_n');
         parent::addAttribute('funcao_id');
         parent::addAttribute('equipe_id');
-        parent::addAttribute('equipe');
+        parent::addAttribute('pasta');
     }
 
     public function get_DadosCasal()

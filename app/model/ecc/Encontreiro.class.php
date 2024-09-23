@@ -25,7 +25,12 @@ class Encontreiro extends TRecord
 
     public function get_Montagem()
     {
-        return ListaItens::find($this->montagem_id);
+        return Montagem::find($this->montagem_id);
+    }
+
+    public function get_EncontreiroEquipe()
+    {
+        return EncontreiroEquipe::where('encontreiro_id', '=', $this->id)->load();
     }
 
     public function delete($id = null)

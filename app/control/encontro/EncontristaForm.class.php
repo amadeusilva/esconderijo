@@ -57,6 +57,7 @@ class EncontristaForm extends TWindow
         $casal_id = new TDBCombo('casal_id', 'adea', 'ViewCasal', 'relacao_id', 'casal', 'relacao_id');
         $casal_id->enableSearch();
         $casal_id->setSize('100%');
+        $casal_id->setChangeAction(new TAction(array($this, 'onEncontrista')));
 
         $options = [1 => 'Sim', 2 => 'Não'];
         $secretario_s_n = new TRadioGroup('secretario_s_n');
@@ -142,6 +143,23 @@ class EncontristaForm extends TWindow
         $this->setUseMessages(false);
 
         parent::add($this->form);
+    }
+
+    public static function onEncontrista($param)
+    {
+        try {
+            TTransaction::open('adea');
+            if (!empty($param['casal_id']) and !empty($param['encontro_id'])) {
+                $montagem = Montagem::where('casal_id', '=', $param['casal_id'])->where('encontro_id', '=', $param['encontro_id'])->where('tipo_id', '=', 1)->first();
+                if ($montagem) {
+                    AdiantiCoreApplication::loadPage(__CLASS__, 'onEdit', ['id' => $montagem->id]);
+                }
+            }
+
+            TTransaction::close();
+        } catch (Exception $e) {
+            new TMessage('error', $e->getMessage());
+        }
     }
 
     /**

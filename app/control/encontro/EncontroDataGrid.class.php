@@ -31,6 +31,8 @@ class EncontroDataGrid extends TPage
 
         $this->setDatabase('adea');        // defines the database
         $this->setActiveRecord('ViewEncontro');       // defines the active record
+        $this->setDefaultOrder('id', 'asc');  // defines the default order
+        $this->setLimit(1000);
 
         // creates the DataGrid
         $this->datagrid = new BootstrapDatagridWrapper(new TDataGrid);
@@ -82,11 +84,14 @@ class EncontroDataGrid extends TPage
         $col_tema->setAction(new TAction([$this, 'onReload']), ['order' => 'tema']);
         $col_cantico->setAction(new TAction([$this, 'onReload']), ['order' => 'cantico']);
 
-        $action1 = new TDataGridAction(['EncontroForm', 'onEdit'],   ['key' => '{id}', 'register_state' => 'false']);
+        $action1 = new TDataGridAction(['EncontroPanel', 'onView'],   ['key' => '{id}', 'register_state' => 'false']);
         $action2 = new TDataGridAction([$this, 'onDelete'],   ['key' => '{id}']);
 
-        $this->datagrid->addAction($action1, 'Editar',   'far:edit blue');
+        $this->datagrid->addAction($action1, 'Visualizar',   'fa:search blue');
         $this->datagrid->addAction($action2, 'Deletar', 'far:trash-alt red');
+
+        //$action1 = new TDataGridAction(['EncontroForm', 'onEdit'],   ['key' => '{id}', 'register_state' => 'false']);
+        //$this->datagrid->addAction($action1, 'Editar',   'far:edit blue');
 
         // create the datagrid model
         $this->datagrid->createModel();

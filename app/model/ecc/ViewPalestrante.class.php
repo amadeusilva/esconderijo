@@ -4,14 +4,14 @@
  * Pessoa Active Record
  * @author  <your-name-here>
  */
-class ViewEncontrista extends TRecord
+class ViewPalestrante extends TRecord
 {
-    const TABLENAME = 'ecc.view_encontrista';
+    const TABLENAME = 'ecc.view_palestrante';
     const PRIMARYKEY = 'id';
     const IDPOLICY =  'max'; // {max, serial}
 
     /**
-	CREATE VIEW ecc.view_encontrista AS
+	CREATE VIEW ecc.view_palestrante AS
 SELECT 
             montagem.id,
             montagem.encontro_id,
@@ -23,11 +23,12 @@ SELECT
             (SELECT placa FROM globais.conducao_propria WHERE conducao_propria.id = montagem.conducao_propria_id) AS conducao_propria,
             montagem.circulo_id,
             (SELECT item FROM globais.lista_itens WHERE lista_itens.id = montagem.circulo_id) AS circulo,
-            encontrista.secretario_s_n,
-            encontrista.casal_convite_id,
-            (SELECT casal FROM pessoas.view_casal WHERE view_casal.relacao_id = encontrista.casal_convite_id) AS casal_convite
-FROM ecc.montagem, ecc.encontrista WHERE montagem.id = encontrista.montagem_id
-AND montagem.tipo_id = 1
+            encontreiro.camisa_encontro_br,
+            encontreiro.camisa_encontro_cor,
+            palestrante.palestra_id,
+            (SELECT item FROM globais.lista_itens WHERE lista_itens.id = palestrante.palestra_id) AS palestra
+FROM ecc.montagem, ecc.encontreiro, ecc.palestrante WHERE montagem.id = encontreiro.montagem_id AND encontreiro.id = palestrante.encontreiro_id
+AND montagem.tipo_id = 3
      */
 
     /**
@@ -44,27 +45,24 @@ AND montagem.tipo_id = 1
         parent::addAttribute('conducao_propria');
         parent::addAttribute('circulo_id');
         parent::addAttribute('circulo');
-        parent::addAttribute('secretario_s_n');
-        parent::addAttribute('casal_convite_id');
-        parent::addAttribute('casal_convite');
+        parent::addAttribute('camisa_encontro_br');
+        parent::addAttribute('camisa_encontro_cor');
+        parent::addAttribute('palestra_id');
+        parent::addAttribute('palestra');
     }
-
 
     public function get_DadosCasal()
     {
         return new ViewCasal($this->casal_id);
     }
 
-    public function get_Secretario()
+    public function get_CirculoCor()
     {
-        if ($this->secretario_s_n == 1) {
-            $div = new TElement('span');
-            $div->class = "label label-success";
-            $div->style = "text-shadow:none; font-size:12px";
-            $div->add('Secretário');
-            return $div;
-        } else {
-            return '';
-        }
+        $circulo_cor = ListaItens::where('item', '=', $this->circulo)->first();
+        $div = new TElement('span');
+        $div->class = "label";
+        $div->style = "text-shadow:none; font-size:12px; color: black; background-color: $circulo_cor->obs;";
+        $div->add($this->circulo);
+        return $div;
     }
 }

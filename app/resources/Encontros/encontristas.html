@@ -1,0 +1,125 @@
+<!--[main]-->
+<link href="app/resources/styles.css" rel="stylesheet" type="text/css" media="screen" />
+
+<table style="width: 100%">
+    <tr>
+        <td>
+            <table class="customform" style="width:100%">
+                <tr>
+                    <td class="sectiontitle" colspan=5 align="center">LISTA DE ENCONTRISTAS</td>
+                </tr>
+                <tbody class="formdata">
+                    <tr class="oddrow">
+                        <td style="font-weight:bold" align="center">Ordem</td>
+                        <td style="font-weight:bold" align="center">Casal / Nascimento</td>
+                        <td style="font-weight:bold" align="center">Nome Completo / Endereço</td>
+                        <td style="font-weight:bold" align="center">Casamento</td>
+                        <td style="font-weight:bold" align="center">Círculo</td>
+                    </tr>
+                    <!--[encontrista]-->
+                    <tr>
+                        <td align="center">{$ordem}</td>
+                        <td align="center">{$casal}<br>{$nasc_dele} - {$nasc_dela}</td>
+                        <td align="center">{$nome_dele}<br>{$nome_dela}<br>{$endereco}</td>
+                        <td align="center">{$dt_casamento}</td>
+                        <td align="center">{$circulo}</td>
+                    </tr>
+                    <!--[/encontrista]-->
+                </tbody>
+            </table>
+
+            <td>
+                <table class="customform" style="width:100%">
+                    <tr>
+                        <td class="sectiontitle" colspan=5 align="center">LISTA DE ENCONTREIROS</td>
+                    </tr>
+                    <tbody class="formdata">
+                        <tr class="oddrow">
+                            <td style="font-weight:bold" align="center">Ordem</td>
+                            <td style="font-weight:bold" align="center">Casal / Nascimento</td>
+                            <td style="font-weight:bold" align="center">Nome Completo / Endereço</td>
+                            <td style="font-weight:bold" align="center">Casamento</td>
+                            <td style="font-weight:bold" align="center">Círculo</td>
+                        </tr>
+                        <!--[encontreiro]-->
+                        <tr>
+                            <td align="center">{$ordem}</td>
+                            <td align="center">{$casal}<br>{$nasc_dele} - {$nasc_dela}</td>
+                            <td align="center">{$nome_dele}<br>{$nome_dela}<br>{$endereco}</td>
+                            <td align="center">{$dt_casamento}</td>
+                            <td align="center">{$circulo}</td>
+                        </tr>
+                        <!--[/encontreiro]-->
+                    </tbody>
+                </table>
+        </td>
+    </tr>
+    <!--
+    rowspan="3"
+    <tr>
+        <td>
+            <table class="customform" style="width:100%">
+                <tr>
+                    <td class="sectiontitle" colspan="4">Contacts</td>
+                </tr>
+                <tbody class="formdata">
+                    <tr class="oddrow">
+                        <td align="center" colspan=2>Action</td>
+                        <td align="center">Name</td>
+                        <td align="center">Value</td>
+                    </tr>
+                    <--[contact-details]->
+                    <tr>
+                        <td align="center"><a generator="adianti" href="index.php?class=CustomerStatusView&method=delete&key={$contact_id}&static=1"> <span class="far fa-trash-alt"></span></a></td>
+                        <td align="center"><a generator="adianti" href="index.php?class=ContactFormWindow&method=onEdit&key={$contact_id}"> <span class="fa fa-edit"></span></a></td>
+                        <td align="center">{$type}</td>
+                        <td align="center">{$value}</td>
+                    </tr>
+                    <--[/contact-details]->
+                    <tr>
+                        <td style="background: whiteSmoke; border-top:1px solid grey" colspan="4" align="right"> <a generator="adianti" href="index.php?class=ContactFormWindow&method=onLoad&customer_id={$id}" class="btn btn-success"> <span class="fa fa-plus-square"></span> Add </a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <table class="customform" style="width:100%">
+                <tr>
+                    <td class="sectiontitle" colspan="6">Sales</td>
+                </tr>
+                <tbody class="formdata">
+                    <tr class="oddrow">
+                        <td align="center">Date</td>
+                        <td align="center">Product</td>
+                        <td align="center">Sale Price</td>
+                        <td align="center">Amount</td>
+                        <td align="center">Discount</td>
+                        <td align="center">Total</td>
+                    </tr>
+                    <--[sale-details]->
+                    <tr>
+                        <td align="center">{$date}</td>
+                        <td align="left">{$product_id} - {$product_description}</td>
+                        <td align="right">{$sale_price}</td>
+                        <td align="right">{$amount}</td>
+                        <td align="right">{$discount}</td>
+                        <td align="right">{$total}</td>
+                    </tr>
+                    <--[/sale-details]->
+                    <--[sale-totals]->
+                    <tr bgcolor="#CECECE">
+                        <td align="right" colspan="5"><b> Total: </b></td>
+                        <td align="right"><b> {$total} </b></td>
+                    </tr>
+                    <-[/sale-totals]->
+                    <tr>
+                        <td style="background: whiteSmoke; border-top:1px solid grey" colspan="6" align="right"> <a generator="adianti" href="index.php?class=SaleForm&method=onLoad&customer_id={$id}&customer_name={$name}" class="btn btn-success"> <span class="fa fa-plus-square"></span> Add </a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </td>
+    </tr>-->
+</table>
+<!--[/main]-->

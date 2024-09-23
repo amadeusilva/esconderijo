@@ -18,7 +18,7 @@ use Adianti\Widget\Form\TText;
  * @copyright  Copyright (c) 2006 Adianti Solutions Ltd. (http://www.adianti.com.br)
  * @license    http://www.adianti.com.br/framework-license
  */
-class EncontreiroForm extends TWindow
+class EdgForm extends TWindow
 {
     protected $form; // form
     private $equipe;
@@ -30,30 +30,25 @@ class EncontreiroForm extends TWindow
      * Class constructor
      * Creates the page and the registration form
      */
-    function __construct($param)
+    function __construct()
     {
         parent::__construct();
         parent::setModal(true);
         parent::removePadding();
         parent::setSize(400, null);
-        parent::setTitle('Encontreiro');
+        parent::setTitle('Equipe de Direção Geral');
 
         $this->setDatabase('adea');    // defines the database
         $this->setActiveRecord('Encontreiro');   // defines the active record
 
         // creates the form
-        $this->form = new BootstrapFormBuilder('form_encontreiro');
+        $this->form = new BootstrapFormBuilder('form_edg');
         $this->form->setClientValidation(true);
 
         //dados 
         $id = new TEntry('id');
         $id->setEditable(FALSE);
         $id->setSize('100%');
-
-        //dados 
-        $tipo_enc_id = new TEntry('tipo_enc_id');
-        $tipo_enc_id->setEditable(FALSE);
-        $tipo_enc_id->setSize('100%');
 
         $casal_id = new TDBCombo('casal_id', 'adea', 'ViewEncontrista', 'casal_id', 'casal', 'casal_id');
         $casal_id->enableSearch();
@@ -108,27 +103,23 @@ class EncontreiroForm extends TWindow
         $row = $this->form->addFields(
             [new TLabel('Cod.:'),    $id],
             [
-                new TLabel('Tipo'),
-                $tipo_enc_id
-            ],
-            [
-                new TLabel('Encontro'),
-                $encontro_id
+                new TLabel('Casal'),
+                $casal_id
             ]
         );
-        $row->layout = ['col-sm-3', 'col-sm-3', 'col-sm-6'];
+        $row->layout = ['col-sm-3', 'col-sm-9'];
 
         $row = $this->form->addFields(
             [
-                new TLabel('Casal'),
-                $casal_id
+                new TLabel('Encontro'),
+                $encontro_id
             ],
             [
                 new TLabel('Círculo'),
                 $circulo_id
             ]
         );
-        $row->layout = ['col-sm-7', 'col-sm-5'];
+        $row->layout = ['col-sm-6', 'col-sm-6'];
 
         $label = new TLabel('<br>Camisas?', '#62a8ee', 14, 'b');
         $label->style = 'text-align:left;border-bottom:1px solid #62a8ee;width:100%';
@@ -180,15 +171,17 @@ class EncontreiroForm extends TWindow
 
         $funcao_id = new TCombo('funcao_id[]');
         $funcao_id->setSize('100%');
-        $funcao_id->addItems([1 => 'Coordenador', 2 => 'Adjunto', 3 => 'Membro']);
+        $funcao_id->addItems([1 => 'Titular', 2 => 'Apoio']);
 
-        $equipe_id = new TDBCombo('equipe_id[]', 'adea', 'Equipe', 'id', 'equipe', 'id');
+        $filterPasta = new TCriteria;
+        $filterPasta->add(new TFilter('lista_id', '=', '20'));
+        $equipe_id = new TDBCombo('equipe_id[]', 'adea', 'ListaItens', 'id', 'item', 'id', $filterPasta);
         $equipe_id->enableSearch();
         $equipe_id->setSize('100%');
 
         $this->equipe = new TFieldList;
         $this->equipe->addField('<b>Função</b>', $funcao_id, ['width' => '50%']);
-        $this->equipe->addField('<b>Equipe</b>', $equipe_id, ['width' => '50%']);
+        $this->equipe->addField('<b>Pasta</b>', $equipe_id, ['width' => '50%']);
         $this->form->addField($funcao_id);
         $this->form->addField($equipe_id);
         $this->equipe->enableSorting();
@@ -211,7 +204,7 @@ class EncontreiroForm extends TWindow
         $disponibilidade_nt->addValidation('Disponibilidade à noite', new TRequiredValidator);
         $coordenar_s_n->addValidation('Deseja Coordenar?', new TRequiredValidator);
         $funcao_id->addValidation('Função', new TRequiredValidator);
-        $equipe_id->addValidation('Equipe', new TRequiredValidator);
+        $equipe_id->addValidation('Pasta', new TRequiredValidator);
 
         // define the form action
         $this->form->addAction('Salvar', new TAction(array($this, 'onSave')), 'fa:save green');
@@ -233,7 +226,7 @@ class EncontreiroForm extends TWindow
                     $nometela = new stdClass;
                     $nometela->circulo_id        = $buscacirculo->circulo_id;
 
-                    TForm::sendData('form_encontreiro', $nometela);
+                    TForm::sendData('form_edg', $nometela);
                 }
             }
 
@@ -245,10 +238,16 @@ class EncontreiroForm extends TWindow
 
     public static function onEncontreiro($param)
     {
+
+        echo '<pre>';
+        print_r($param);
+        echo '</pre>';
+        exit;
+
         try {
             TTransaction::open('adea');
             if (!empty($param['casal_id']) and !empty($param['encontro_id'])) {
-                $montagem = Montagem::where('casal_id', '=', $param['casal_id'])->where('encontro_id', '=', $param['encontro_id'])->where('tipo_id', '=', 2)->first();
+                $montagem = Montagem::where('casal_id', '=', $param['casal_id'])->where('encontro_id', '=', $param['encontro_id'])->first();
                 if ($montagem) {
                     AdiantiCoreApplication::loadPage(__CLASS__, 'onEdit', ['id' => $montagem->id]);
                 }
@@ -266,12 +265,6 @@ class EncontreiroForm extends TWindow
      */
     function onEdit($param)
     {
-
-        echo '<pre>';
-        print_r($param);
-        echo '</pre>';
-        exit;
-
         try {
             if (isset($param['id'])) {
                 $key = $param['id'];  // get the parameter
@@ -323,6 +316,7 @@ class EncontreiroForm extends TWindow
      */
     public function onSave($param)
     {
+
         try {
             // open a transaction with database 'samples'
             TTransaction::open('adea');
@@ -331,9 +325,13 @@ class EncontreiroForm extends TWindow
 
             $data = $this->form->getData(); // get form data as array
 
+            //if (isset($param['id']) and !empty(isset($param['id']))) {
+            //    $montagem = new Montagem($param['id']);
+            //}
+
             $montagem = new Montagem();  // create an empty object
             $montagem->fromArray((array) $data); // load the object with data
-            $montagem->tipo_id = 2;
+            $montagem->tipo_id = 4;
             $montagem->conducao_propria_id = 0;
             $montagem->store(); // save the object
 
@@ -372,7 +370,7 @@ class EncontreiroForm extends TWindow
             TTransaction::close();  // close the transaction
 
             // fill the form with the active record data
-            $posAction = new TAction(array('EncontreiroDataGrid', 'onReload'));
+            $posAction = new TAction(array('EdgDataGrid', 'onReload'));
 
             // show the message dialog
             new TMessage('info', 'Registro Salvo com Sucesso!', $posAction);
