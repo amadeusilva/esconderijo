@@ -17,6 +17,7 @@ class Hinario extends TRecord
         parent::__construct($id, $callObjectLoad);
         parent::addAttribute('ordem');
         parent::addAttribute('titulo');
+        parent::addAttribute('hino');
     }
 
 }

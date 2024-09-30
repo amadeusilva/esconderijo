@@ -25,10 +25,13 @@ SELECT
             (SELECT item FROM globais.lista_itens WHERE lista_itens.id = montagem.circulo_id) AS circulo,
             encontreiro.camisa_encontro_br,
             encontreiro.camisa_encontro_cor,
-            palestrante.palestra_id,
-            (SELECT item FROM globais.lista_itens WHERE lista_itens.id = palestrante.palestra_id) AS palestra
-FROM ecc.montagem, ecc.encontreiro, ecc.palestrante WHERE montagem.id = encontreiro.montagem_id AND encontreiro.id = palestrante.encontreiro_id
-AND montagem.tipo_id = 3
+            encontreiro.disponibilidade_nt,
+            encontreiro.coordenar_s_n,
+            encontreiro_equipe.funcao_id,  
+            encontreiro_equipe.equipe_id as palestra_id,            
+            (SELECT item FROM globais.lista_itens WHERE lista_itens.id = encontreiro_equipe.equipe_id) AS palestra
+FROM ecc.montagem, ecc.encontreiro, ecc.encontreiro_equipe WHERE montagem.id = encontreiro.montagem_id AND encontreiro.id = encontreiro_equipe.encontreiro_id
+AND montagem.tipo_id = 2 AND encontreiro_equipe.tipo_enc_id = 2
      */
 
     /**
@@ -47,6 +50,9 @@ AND montagem.tipo_id = 3
         parent::addAttribute('circulo');
         parent::addAttribute('camisa_encontro_br');
         parent::addAttribute('camisa_encontro_cor');
+        parent::addAttribute('disponibilidade_nt');
+        parent::addAttribute('coordenar_s_n');
+        parent::addAttribute('funcao_id');
         parent::addAttribute('palestra_id');
         parent::addAttribute('palestra');
     }
@@ -64,5 +70,28 @@ AND montagem.tipo_id = 3
         $div->style = "text-shadow:none; font-size:12px; color: black; background-color: $circulo_cor->obs;";
         $div->add($this->circulo);
         return $div;
+    }
+
+    public function get_Funcao()
+    {
+        if ($this->funcao_id == 1) {
+            $div = new TElement('span');
+            $div->class = "label label-success";
+            $div->style = "text-shadow:none; font-size:12px";
+            $div->add('Palestrante');
+            return $div;
+        } else if ($this->funcao_id == 2) {
+            $div = new TElement('span');
+            $div->class = "label label-warning";
+            $div->style = "text-shadow:none; font-size:12px";
+            $div->add('Apoio');
+            return $div;
+        } else {
+            $div = new TElement('span');
+            $div->class = "label label-info";
+            $div->style = "text-shadow:none; font-size:12px";
+            $div->add('Membro');
+            return $div;
+        }
     }
 }

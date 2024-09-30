@@ -36,7 +36,16 @@ class EncontreiroForm extends TWindow
         parent::setModal(true);
         parent::removePadding();
         parent::setSize(400, null);
-        parent::setTitle('Encontreiro');
+
+        if ($param['tipo_enc_id'] == 1) {
+            parent::setTitle('Encontreiro');
+        } else if ($param['tipo_enc_id'] == 2) {
+            parent::setTitle('Palestrante');
+        } else if ($param['tipo_enc_id'] == 3) {
+            parent::setTitle('EDG');
+        } else {
+            parent::setTitle('Sem Título');
+        }
 
         $this->setDatabase('adea');    // defines the database
         $this->setActiveRecord('Encontreiro');   // defines the active record
@@ -65,7 +74,6 @@ class EncontreiroForm extends TWindow
         $encontro_id = new TDBCombo('encontro_id', 'adea', 'ViewEncontro', 'id', '{sigla} ({id})', 'id', $filter);
         $encontro_id->enableSearch();
         $encontro_id->setSize('100%');
-        $encontro_id->setChangeAction(new TAction(array($this, 'onEncontreiro')));
 
         $options = [1 => 'Sim', 2 => 'Não'];
 
@@ -102,6 +110,7 @@ class EncontreiroForm extends TWindow
         $circulo_id = new TDBCombo('circulo_id', 'adea', 'ListaItens', 'id', 'abrev', 'id', $filterCirculo);
         $circulo_id->setSize('100%');
         $circulo_id->setEditable(FALSE);
+        $circulo_id->setChangeAction(new TAction(array($this, 'onEncontreiro')));
 
         // define some properties for the form fields
 
@@ -174,21 +183,62 @@ class EncontreiroForm extends TWindow
         );
         $row->layout = ['col-sm-4', 'col-sm-8', 'col-sm-4', 'col-sm-8'];
 
-        $label = new TLabel('<br>Equipe(s)', '#62a8ee', 14, 'b');
-        $label->style = 'text-align:left;border-bottom:1px solid #62a8ee;width:100%';
-        $this->form->addContent([$label]);
+        if ($param['tipo_enc_id'] == 1) {
 
-        $funcao_id = new TCombo('funcao_id[]');
-        $funcao_id->setSize('100%');
-        $funcao_id->addItems([1 => 'Coordenador', 2 => 'Adjunto', 3 => 'Membro']);
+            $label = new TLabel('<br>Equipe(s)', '#62a8ee', 14, 'b');
+            $label->style = 'text-align:left;border-bottom:1px solid #62a8ee;width:100%';
+            $this->form->addContent([$label]);
 
-        $equipe_id = new TDBCombo('equipe_id[]', 'adea', 'Equipe', 'id', 'equipe', 'id');
-        $equipe_id->enableSearch();
-        $equipe_id->setSize('100%');
+            $funcao_id = new TCombo('funcao_id[]');
+            $funcao_id->setSize('100%');
+            $funcao_id->addItems([1 => 'Coordenador', 2 => 'Adjunto', 3 => 'Apoio', 4 => 'Membro']);
 
-        $this->equipe = new TFieldList;
-        $this->equipe->addField('<b>Função</b>', $funcao_id, ['width' => '50%']);
-        $this->equipe->addField('<b>Equipe</b>', $equipe_id, ['width' => '50%']);
+            $equipe_id = new TDBCombo('equipe_id[]', 'adea', 'Equipe', 'id', 'equipe', 'id');
+            $equipe_id->enableSearch();
+            $equipe_id->setSize('100%');
+
+            $this->equipe = new TFieldList;
+            $this->equipe->addField('<b>Função</b>', $funcao_id, ['width' => '50%']);
+            $this->equipe->addField('<b>Equipe</b>', $equipe_id, ['width' => '50%']);
+        } else if ($param['tipo_enc_id'] == 2) {
+            $label = new TLabel('<br>Palestra(s)', '#62a8ee', 14, 'b');
+            $label->style = 'text-align:left;border-bottom:1px solid #62a8ee;width:100%';
+            $this->form->addContent([$label]);
+
+            $funcao_id = new TCombo('funcao_id[]');
+            $funcao_id->setSize('100%');
+            $funcao_id->addItems([1 => 'Palestrante', 2 => 'Apoio']);
+
+            $filterPalestra = new TCriteria;
+            $filterPalestra->add(new TFilter('lista_id', '=', '19'));
+            $equipe_id = new TDBCombo('equipe_id[]', 'adea', 'ListaItens', 'id', 'item', 'id', $filterPalestra);
+            $equipe_id->enableSearch();
+            $equipe_id->setSize('100%');
+
+            $this->equipe = new TFieldList;
+            $this->equipe->addField('<b>Função</b>', $funcao_id, ['width' => '50%']);
+            $this->equipe->addField('<b>Palestra</b>', $equipe_id, ['width' => '50%']);
+        } else if ($param['tipo_enc_id'] == 3) {
+            $label = new TLabel('<br>Pasta(s)', '#62a8ee', 14, 'b');
+            $label->style = 'text-align:left;border-bottom:1px solid #62a8ee;width:100%';
+            $this->form->addContent([$label]);
+
+            $funcao_id = new TCombo('funcao_id[]');
+            $funcao_id->setSize('100%');
+            $funcao_id->addItems([1 => 'Coordenador', 2 => 'Adjunto']);
+
+            $filterPalestra = new TCriteria;
+            $filterPalestra->add(new TFilter('lista_id', '=', '20'));
+            $equipe_id = new TDBCombo('equipe_id[]', 'adea', 'ListaItens', 'id', 'item', 'id', $filterPalestra);
+            $equipe_id->enableSearch();
+            $equipe_id->setSize('100%');
+
+            $this->equipe = new TFieldList;
+            $this->equipe->addField('<b>Função</b>', $funcao_id, ['width' => '50%']);
+            $this->equipe->addField('<b>Pasta</b>', $equipe_id, ['width' => '50%']);
+        }
+
+
         $this->form->addField($funcao_id);
         $this->form->addField($equipe_id);
         $this->equipe->enableSorting();
@@ -228,7 +278,7 @@ class EncontreiroForm extends TWindow
         try {
             TTransaction::open('adea');
             if (!empty($param['casal_id'])) {
-                $buscacirculo = CirculoHistorico::where('casal_id', '=', $param['casal_id'])->first();
+                $buscacirculo = CirculoHistorico::where('casal_id', '=', $param['casal_id'])->orderby('id', 'desc')->first();
                 if ($buscacirculo) {
                     $nometela = new stdClass;
                     $nometela->circulo_id        = $buscacirculo->circulo_id;
@@ -250,7 +300,7 @@ class EncontreiroForm extends TWindow
             if (!empty($param['casal_id']) and !empty($param['encontro_id'])) {
                 $montagem = Montagem::where('casal_id', '=', $param['casal_id'])->where('encontro_id', '=', $param['encontro_id'])->where('tipo_id', '=', 2)->first();
                 if ($montagem) {
-                    AdiantiCoreApplication::loadPage(__CLASS__, 'onEdit', ['id' => $montagem->id]);
+                    AdiantiCoreApplication::loadPage(__CLASS__, 'onEdit', ['id' => $montagem->id, 'tipo_enc_id' => $param['tipo_enc_id']]);
                 }
             }
 
@@ -267,11 +317,6 @@ class EncontreiroForm extends TWindow
     function onEdit($param)
     {
 
-        echo '<pre>';
-        print_r($param);
-        echo '</pre>';
-        exit;
-
         try {
             if (isset($param['id'])) {
                 $key = $param['id'];  // get the parameter
@@ -284,7 +329,7 @@ class EncontreiroForm extends TWindow
                 $montagem->disponibilidade_nt = $encontreiro->disponibilidade_nt;
                 $montagem->coordenar_s_n = $encontreiro->coordenar_s_n;
 
-                $encontreiro_equipe = EncontreiroEquipe::where('encontreiro_id', '=', $encontreiro->id)->load();
+                $encontreiro_equipe = EncontreiroEquipe::where('encontreiro_id', '=', $encontreiro->id)->where('tipo_enc_id', '=', $param['tipo_enc_id'])->load();
 
                 if ($encontreiro_equipe) {
                     $this->equipe->addHeader();
@@ -299,21 +344,27 @@ class EncontreiroForm extends TWindow
                     $this->equipe->addCloneAction();
                 } else {
                     $this->onClear($param);
+                    $this->onLoad($param);
                 }
 
                 $this->form->setData($montagem);   // fill the form with the active record data
+                $this->onLoad($param);
+
                 TTransaction::close();           // close the transaction
             } else {
-                $this->form->clear(true);
-
-                $this->equipe->addHeader();
-                $this->equipe->addDetail(new stdClass);
-                $this->equipe->addCloneAction();
+                $this->onClear($param);
             }
         } catch (Exception $e) // in case of exception
         {
             new TMessage('error', $e->getMessage()); // shows the exception error message
             TTransaction::rollback(); // undo all pending operations
+        }
+    }
+
+    public function onLoad($param)
+    {
+        if (isset($param)) {
+            TForm::sendData('form_encontreiro', $param);
         }
     }
 
@@ -339,13 +390,12 @@ class EncontreiroForm extends TWindow
 
             $encontreiro = Encontreiro::where('montagem_id', '=', $montagem->id)->first();
             if ($encontreiro) {
-                $salva_encontreiro_id = $encontreiro->id;
-                $encontreiro->delete();
-                $encontreiro_equipe = EncontreiroEquipe::where('encontreiro_id', '=', $salva_encontreiro_id)->delete();
+                $encontreiro_equipe = EncontreiroEquipe::where('encontreiro_id', '=', $encontreiro->id)->where('tipo_enc_id', '=', $data->tipo_enc_id)->delete();
+            } else {
+                $encontreiro = new Encontreiro();  // create an empty object
+                $encontreiro->montagem_id = $montagem->id;
             }
 
-            $encontreiro = new Encontreiro();  // create an empty object
-            $encontreiro->montagem_id = $montagem->id;
             $encontreiro->camisa_encontro_br = $data->camisa_encontro_br;
             $encontreiro->camisa_encontro_cor = $data->camisa_encontro_cor;
             $encontreiro->disponibilidade_nt = $data->disponibilidade_nt;
@@ -359,6 +409,7 @@ class EncontreiroForm extends TWindow
                         $encontreiro_equipe->encontreiro_id = $encontreiro->id;
                         $encontreiro_equipe->funcao_id  = $funcao_id;
                         $encontreiro_equipe->equipe_id = $param['equipe_id'][$row];
+                        $encontreiro_equipe->tipo_enc_id  = $data->tipo_enc_id;
 
                         // add the contact to the customer
                         $encontreiro_equipe->store(); // save the object
@@ -372,7 +423,13 @@ class EncontreiroForm extends TWindow
             TTransaction::close();  // close the transaction
 
             // fill the form with the active record data
-            $posAction = new TAction(array('EncontreiroDataGrid', 'onReload'));
+            if ($data->tipo_enc_id == 1) {
+                $posAction = new TAction(array('EncontreiroDataGrid', 'onReload'));
+            } else if ($data->tipo_enc_id == 2) {
+                $posAction = new TAction(array('PalestranteDataGrid', 'onReload'));
+            } else if ($data->tipo_enc_id == 3) {
+                $posAction = new TAction(array('EdgDataGrid', 'onReload'));
+            }
 
             // show the message dialog
             new TMessage('info', 'Registro Salvo com Sucesso!', $posAction);
@@ -391,8 +448,19 @@ class EncontreiroForm extends TWindow
     {
         $this->form->clear();
 
+        $form_vazio = new stdClass;
+        $form_vazio->tipo_enc_id = $param['tipo_enc_id'];
+        $form_vazio->encontro_id = 3;
+        $form_vazio->camisa_encontro_br = 2;
+        $form_vazio->camisa_encontro_cor = 2;
+        $form_vazio->disponibilidade_nt = 2;
+        $form_vazio->coordenar_s_n = 2;
+        TForm::sendData('form_encontreiro', $form_vazio);
+
         $this->equipe->addHeader();
-        $this->equipe->addDetail(new stdClass);
+        $dados = new stdClass();
+        $dados->funcao_id = 4;
+        $this->equipe->addDetail($dados);
         $this->equipe->addCloneAction();
     }
 

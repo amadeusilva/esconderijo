@@ -53,6 +53,7 @@ class EncontristaForm extends TWindow
         $encontro_id = new TDBCombo('encontro_id', 'adea', 'ViewEncontro', 'id', '{sigla} ({id})', 'id', $filter);
         $encontro_id->enableSearch();
         $encontro_id->setSize('100%');
+        //$encontro_id->setValue(1);
 
         $casal_id = new TDBCombo('casal_id', 'adea', 'ViewCasal', 'relacao_id', 'casal', 'relacao_id');
         $casal_id->enableSearch();
@@ -71,6 +72,7 @@ class EncontristaForm extends TWindow
         $filterCirculo->add(new TFilter('lista_id', '=', '18'));
         $circulo_id = new TDBCombo('circulo_id', 'adea', 'ListaItens', 'id', 'item', 'id', $filterCirculo);
         $circulo_id->setSize('100%');
+        //$circulo_id->setValue(16);
 
         $casal_convite_id = new TDBCombo('casal_convite_id', 'adea', 'ViewEncontrista', 'casal_id', 'casal', 'casal_id');
         $casal_convite_id->enableSearch();
@@ -111,7 +113,9 @@ class EncontristaForm extends TWindow
 
         $row = $this->form->addFields(
             [
-                new TLabel('Secretário?')],[
+                new TLabel('Secretário?')
+            ],
+            [
                 $secretario_s_n
             ]
         );
@@ -149,11 +153,15 @@ class EncontristaForm extends TWindow
     {
         try {
             TTransaction::open('adea');
-            if (!empty($param['casal_id']) and !empty($param['encontro_id'])) {
-                $montagem = Montagem::where('casal_id', '=', $param['casal_id'])->where('encontro_id', '=', $param['encontro_id'])->where('tipo_id', '=', 1)->first();
+            //if (!empty($param['casal_id']) and !empty($param['encontro_id'])) {
+            if (!empty($param['casal_id'])) {
+                //$montagem = Montagem::where('casal_id', '=', $param['casal_id'])->where('encontro_id', '=', $param['encontro_id'])->where('tipo_id', '=', 1)->first();
+                $montagem = Montagem::where('casal_id', '=', $param['casal_id'])->where('tipo_id', '=', 1)->first();
                 if ($montagem) {
                     AdiantiCoreApplication::loadPage(__CLASS__, 'onEdit', ['id' => $montagem->id]);
                 }
+            } else {
+                $this->form->clear(true);
             }
 
             TTransaction::close();
@@ -206,7 +214,7 @@ class EncontristaForm extends TWindow
 
             $montagem = new Montagem();  // create an empty object
             $montagem->fromArray((array) $data); // load the object with data
-            $montagem->tipo_encontr_ista_eiro = 1;
+            $montagem->tipo_id = 1;
             $montagem->conducao_propria_id = 0;
             $montagem->store(); // save the object
 
@@ -216,6 +224,24 @@ class EncontristaForm extends TWindow
             $encontrista->montagem_id = $montagem->id;
             $encontrista->fromArray((array) $data); // load the object with data
             $encontrista->store(); // save the object
+
+            if (isset($data->id) and !empty($data->id)) {
+                $historico_circulo = CirculoHistorico::where(
+                    'casal_id',
+                    '=',
+                    $data->casal_id
+                )->orderBy('id', 'asc')->first();
+            } else {
+                $historico_circulo = new CirculoHistorico();
+                $historico_circulo->casal_id = $data->casal_id;
+                $historico_circulo->motivo_id = 1;
+                $historico_circulo->obs_motivo = 'Montagem de participação como Encontrista';
+                $historico_circulo->dt_historico = date('Y-m-d');
+            }
+
+            $historico_circulo->user_sessao_id = TSession::getValue('userid');
+            $historico_circulo->circulo_id = $data->circulo_id;
+            $historico_circulo->store(); // save the object
 
             // fill the form with the active record data
             $this->form->setData($encontrista);

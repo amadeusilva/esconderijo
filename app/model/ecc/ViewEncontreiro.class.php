@@ -86,6 +86,12 @@ AND montagem.tipo_id = 2 AND encontreiro_equipe.tipo_enc_id = 1
             $div->style = "text-shadow:none; font-size:12px";
             $div->add('Adjunto');
             return $div;
+        } else if ($this->funcao_id == 3) {
+            $div = new TElement('span');
+            $div->class = "label label-warning";
+            $div->style = "text-shadow:none; font-size:12px";
+            $div->add('Apoio');
+            return $div;
         } else {
             $div = new TElement('span');
             $div->class = "label label-info";

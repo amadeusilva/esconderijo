@@ -85,13 +85,13 @@ class EncontroDataGrid extends TPage
         $col_cantico->setAction(new TAction([$this, 'onReload']), ['order' => 'cantico']);
 
         $action1 = new TDataGridAction(['EncontroPanel', 'onView'],   ['key' => '{id}', 'register_state' => 'false']);
-        $action2 = new TDataGridAction([$this, 'onDelete'],   ['key' => '{id}']);
+        $action2 = new TDataGridAction(['EncontroForm', 'onEdit'],   ['key' => '{id}', 'register_state' => 'false']);
+        $action3 = new TDataGridAction([$this, 'onDelete'],   ['key' => '{id}']);
 
         $this->datagrid->addAction($action1, 'Visualizar',   'fa:search blue');
-        $this->datagrid->addAction($action2, 'Deletar', 'far:trash-alt red');
+        $this->datagrid->addAction($action2, 'Editar',   'far:edit blue');
+        $this->datagrid->addAction($action3, 'Deletar', 'far:trash-alt red');
 
-        //$action1 = new TDataGridAction(['EncontroForm', 'onEdit'],   ['key' => '{id}', 'register_state' => 'false']);
-        //$this->datagrid->addAction($action1, 'Editar',   'far:edit blue');
 
         // create the datagrid model
         $this->datagrid->createModel();

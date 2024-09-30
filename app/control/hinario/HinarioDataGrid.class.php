@@ -37,17 +37,20 @@ class HinarioDataGrid extends TPage
         $col_id    = new TDataGridColumn('id', 'Id', 'right');
         $col_ordem = new TDataGridColumn('ordem', 'Ordem', 'center');
         $col_titulo = new TDataGridColumn('titulo', 'Título', 'left');
+        //$col_hino = new TDataGridColumn('hino', 'Hino', 'left');
 
         $this->datagrid->addColumn($col_id);
         $this->datagrid->addColumn($col_ordem);
         $this->datagrid->addColumn($col_titulo);
+        //$this->datagrid->addColumn($col_hino);
 
         $col_id->setAction(new TAction([$this, 'onReload']),   ['order' => 'id']);
         $col_ordem->setAction(new TAction([$this, 'onReload']), ['order' => 'ordem']);
         $col_titulo->setAction(new TAction([$this, 'onReload']), ['order' => 'titulo']);
+        //$col_hino->setAction(new TAction([$this, 'onReload']), ['order' => 'hino']);
 
         $action1 = new TDataGridAction(['HinarioPanel', 'onView'],   ['key' => '{id}', 'register_state' => 'false']);
-        $action2 = new TDataGridAction(['HinarioForm', 'onEdit'], ['id'=>'{id}', 'register_state' => 'false']);
+        $action2 = new TDataGridAction(['HinarioForm', 'onEdit'], ['id' => '{id}', 'register_state' => 'false']);
         $action3 = new TDataGridAction([$this, 'onDelete'],   ['key' => '{id}']);
 
         $this->datagrid->addAction($action1, 'Visualizar',   'fa:search blue');
@@ -63,7 +66,7 @@ class HinarioDataGrid extends TPage
         $input_search->setSize('100%');
 
         // enable fuse search by column name
-        $this->datagrid->enableSearch($input_search, 'id, ordem, titulo');
+        $this->datagrid->enableSearch($input_search, 'id, ordem, titulo, hino');
 
         // creates the page navigation
         $this->pageNavigation = new TPageNavigation;
@@ -98,55 +101,5 @@ class HinarioDataGrid extends TPage
 
         // add the table inside the page
         parent::add($vbox);
-    }
-
-    /**
-     * Ask before deletion
-     */
-    public static function onDelete($param)
-    {
-        // define the delete action
-        $action = new TAction(array(__CLASS__, 'Delete'));
-        $action->setParameters($param); // pass the key parameter ahead
-
-        // shows a dialog to the user
-        new TQuestion('Deseja realmente excluir esta pessoa?', $action);
-    }
-
-    /**
-     * Delete a record
-     */
-    public static function Delete($param)
-    {
-        try {
-            $key = $param['key']; // get the parameter $key
-            TTransaction::open('adea'); // open a transaction with database
-
-            PessoaFisica::where('pessoa_id', '=', $param['key'])->delete();
-            PessoaContato::where('pessoa_id', '=', $param['key'])->delete();
-
-            $buscarelacao = PessoaParentesco::where('pessoa_id', '=', $param['key'])->load();
-
-            if ($buscarelacao) {
-                foreach ($buscarelacao as $br) {
-                    PessoasRelacao::where('id', '=', $br->relacao_id)->delete();
-                }
-            }
-
-            PessoaParentesco::where('pessoa_id', '=', $param['key'])->delete();
-            PessoaParentesco::where('pessoa_parente_id', '=', $param['key'])->delete();
-
-            $object = new Pessoa($key, FALSE); // instantiates the Active Record
-            $object->delete(); // deletes the object from the database
-
-            TTransaction::close(); // close the transaction
-
-            $pos_action = new TAction([__CLASS__, 'onReload']);
-            new TMessage('info', AdiantiCoreTranslator::translate('Record deleted'), $pos_action); // success message
-        } catch (Exception $e) // in case of exception
-        {
-            new TMessage('error', $e->getMessage()); // shows the exception error message
-            TTransaction::rollback(); // undo all pending operations
-        }
     }
 }

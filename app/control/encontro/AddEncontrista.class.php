@@ -76,6 +76,7 @@ class AddEncontrista extends TWindow
         $ctt_ele       = new TEntry('ctt_ele');
         $ctt_ele->setMask('(99) 99999-9999');
         $ctt_ele->setSize('100%');
+        $ctt_ele->setValue('00000000000');
         //$ctt_ele->addValidation('Contato Dele', new TRequiredValidator);
 
         $row = $this->form->addFields([new TLabel('Nascimento dele:', '#2196F3'), $dn_ele], [new TLabel('Contato dele:', '#2196F3'), $ctt_ele]);
@@ -112,6 +113,7 @@ class AddEncontrista extends TWindow
         $ctt_ela       = new TEntry('ctt_ela');
         $ctt_ela->setMask('(99) 99999-9999');
         $ctt_ela->setSize('100%');
+        $ctt_ela->setValue('00000000000');
         //$ctt_ela->addValidation('Contato dela', new TRequiredValidator);
 
         $row = $this->form->addFields([new TLabel('Nascimento dela:', '#FF007F'), $dn_ela], [new TLabel('Contato dela:', '#FF007F'), $ctt_ela]);
@@ -137,12 +139,14 @@ class AddEncontrista extends TWindow
         $encontro_id = new TDBCombo('encontro_id', 'adea', 'ViewEncontro', 'id', 'sigla', 'id', $filter);
         $encontro_id->setSize('100%');
         $encontro_id->enableSearch();
+        $encontro_id->setValue(3);
         $encontro_id->addValidation('Encontro', new TRequiredValidator);
 
         $filterCirculo = new TCriteria;
         $filterCirculo->add(new TFilter('lista_id', '=', '18'));
         $circulo_id = new TDBCombo('circulo_id', 'adea', 'ListaItens', 'id', 'abrev', 'id', $filterCirculo);
         $circulo_id->setSize('100%');
+        $circulo_id->setValue(17);
         $circulo_id->addValidation('Círculo', new TRequiredValidator);
 
         $row = $this->form->addFields([new TLabel('Encontro:', 'red'), $encontro_id], [new TLabel('Círculo:', 'red'), $circulo_id]);
@@ -153,6 +157,7 @@ class AddEncontrista extends TWindow
         $cep                 = new TEntry('cep');
         $cep  = new TDBEntry('cep', 'adea', 'Endereco', 'cep');
         $cep->setMask('99.999-999');
+        $cep->setValue(68925165);
         $cep->setExitAction(new TAction(array($this, 'onCEPAction')));
 
         $estado_id       = new TDBCombo('estado_id', 'adea', 'Estado', 'id', 'estado', 'estado');
@@ -173,6 +178,7 @@ class AddEncontrista extends TWindow
         $bairro_id->enableSearch();
 
         $n                  = new TEntry('n');
+        $n->setValue('S/N');
 
         $ponto_referencia  = new TDBEntry('ponto_referencia', 'adea', 'ENDERECO', 'ponto_referencia');
         $ponto_referencia->placeholder = 'PRÓXIMO A PRAÇAS, HOSPITAIS, EMPRESAS...';

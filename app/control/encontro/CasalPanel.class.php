@@ -12,7 +12,7 @@ use Adianti\Widget\Util\TImage;
  * @copyright  Copyright (c) 2006 Adianti Solutions Ltd. (http://www.adianti.com.br)
  * @license    http://www.adianti.com.br/framework-license
  */
-class EncontroPanel extends TPage
+class CasalPanel extends TPage
 {
     protected $form; // form
 
@@ -32,8 +32,8 @@ class EncontroPanel extends TPage
 
         parent::setTargetContainer('adianti_right_panel');
 
-        $this->form = new BootstrapFormBuilder('form_Encontro_Panel');
-        $this->form->setFormTitle('Encontro');
+        $this->form = new BootstrapFormBuilder('form_Casal_Panel');
+        $this->form->setFormTitle('Nome do Casal');
 
         $dropdown = new TDropDown('Opções', 'fa:th');
         //$dropdown->addAction(
@@ -59,6 +59,7 @@ class EncontroPanel extends TPage
      */
     public function onView($param)
     {
+
         try {
             TTransaction::open('adea');
 
@@ -272,7 +273,7 @@ class EncontroPanel extends TPage
             }
 
             //PALESTRANTES
-            $palestrantes = ViewPalestrante::where('encontro_id', '=', $encontro->id)->countDistinctBy('id', 'contagem');
+            $palestrantes = ViewEncontreiro::where('casal_id', '=', $param['relacao_id'])->countDistinctBy('id', 'contagem');
 
             if ($palestrantes) {
 

@@ -142,6 +142,12 @@ class EncontreiroDataGrid extends TPage
                 $div->style = "text-shadow:none; font-size:12px";
                 $div->add('Adjunto');
                 return $div;
+            } else if ($value == 3) {
+                $div = new TElement('span');
+                $div->class = "label label-warning";
+                $div->style = "text-shadow:none; font-size:12px";
+                $div->add('Apoio');
+                return $div;
             } else {
                 $div = new TElement('span');
                 $div->class = "label label-info";
@@ -189,7 +195,7 @@ class EncontreiroDataGrid extends TPage
         $this->pageNavigation->enableCounters();
         $this->pageNavigation->setAction(new TAction(array($this, 'onReload')));
 
-        $panel = new TPanelGroup('Encontreiro');
+        $panel = new TPanelGroup('Encontreiros');
         $panel->addHeaderWidget($input_search);
         $panel->add($this->datagrid);
         $panel->addFooter($this->pageNavigation);
@@ -206,7 +212,7 @@ class EncontreiroDataGrid extends TPage
         $dropdown->addAction('Save as XML', new TAction([$this, 'onExportXML'], ['register_state' => 'false', 'static' => '1']), 'fa:code fa-fw green');
 
         // add form actions
-        $panel->addHeaderActionLink('Novo',  new TAction(['EncontreiroForm', 'onEdit'], ['register_state' => 'false']), 'fa:plus green');
+        $panel->addHeaderActionLink('Novo',  new TAction(['EncontreiroForm', 'onEdit'], ['tipo_enc_id' => 1, 'register_state' => 'false']), 'fa:plus green');
         $panel->addHeaderWidget($dropdown);
 
         // creates the page structure using a table

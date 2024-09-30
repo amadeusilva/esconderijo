@@ -76,7 +76,7 @@ class CasalDataGrid extends TPage
         $col_tipo_vinculo->setAction(new TAction([$this, 'onReload']), ['order' => 'tipo_vinculo']);
         $col_status_relacao_id->setAction(new TAction([$this, 'onReload']), ['order' => 'status_relacao_id']);
 
-        $action1 = new TDataGridAction(['PessoaPanel', 'onView'],   ['key' => '{relacao_id}', 'register_state' => 'false']);
+        $action1 = new TDataGridAction(['CasalPanel', 'onView'],   ['key' => '{relacao_id}', 'register_state' => 'false']);
         $action2 = new TDataGridAction([$this, 'onDelete'],   ['key' => '{relacao_id}']);
 
         $this->datagrid->addAction($action1, 'Visualizar',   'fa:search blue');

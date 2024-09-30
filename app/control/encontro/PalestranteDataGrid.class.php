@@ -45,7 +45,12 @@ class PalestranteDataGrid extends TPage
         $col_encontro = new TDataGridColumn('encontro', 'Evento', 'left');
         $col_casal = new TDataGridColumn('casal', 'Casal', 'left');
         $col_circulo = new TDataGridColumn('circulo', 'Círculo', 'left');
-        $col_palestra = new TDataGridColumn('palestra', 'Palestra', 'left');
+        //$col_camisa_encontro_br = new TDataGridColumn('camisa_encontro_br', 'Camisa Branca', 'center');
+        //$col_camisa_encontro_cor = new TDataGridColumn('camisa_encontro_cor', 'Camisa Círculo', 'center');
+        //$col_disponibilidade_nt = new TDataGridColumn('disponibilidade_nt', 'Disp. Noite?', 'center');
+        //$col_coordenar_s_n = new TDataGridColumn('coordenar_s_n', 'Coordenar?', 'center');
+        $col_funcao_id = new TDataGridColumn('funcao_id', 'Função', 'center');
+        $col_equipe = new TDataGridColumn('palestra', 'Palestra', 'left');
 
         $this->datagrid->addColumn($col_id);
         $this->datagrid->addColumn($col_casal_id);
@@ -53,7 +58,94 @@ class PalestranteDataGrid extends TPage
         $this->datagrid->addColumn($col_encontro);
         $this->datagrid->addColumn($col_casal);
         $this->datagrid->addColumn($col_circulo);
-        $this->datagrid->addColumn($col_palestra);
+        //$this->datagrid->addColumn($col_camisa_encontro_br);
+        //$this->datagrid->addColumn($col_camisa_encontro_cor);
+        //$this->datagrid->addColumn($col_disponibilidade_nt);
+        //$this->datagrid->addColumn($col_coordenar_s_n);
+        $this->datagrid->addColumn($col_funcao_id);
+        $this->datagrid->addColumn($col_equipe);
+
+        /*
+        $col_camisa_encontro_br->setTransformer(function ($value) {
+            if ($value == 1) {
+                $div = new TElement('span');
+                $div->class = "label label-success";
+                $div->style = "text-shadow:none; font-size:12px";
+                $div->add('Sim');
+                return $div;
+            } else {
+                $div = new TElement('span');
+                $div->class = "label label-danger";
+                $div->style = "text-shadow:none; font-size:12px";
+                $div->add('Não');
+                return $div;
+            }
+        });
+
+        $col_camisa_encontro_cor->setTransformer(function ($value) {
+            if ($value == 1) {
+                $div = new TElement('span');
+                $div->class = "label label-success";
+                $div->style = "text-shadow:none; font-size:12px";
+                $div->add('Sim');
+                return $div;
+            } else {
+                $div = new TElement('span');
+                $div->class = "label label-danger";
+                $div->style = "text-shadow:none; font-size:12px";
+                $div->add('Não');
+                return $div;
+            }
+        });
+
+        $col_disponibilidade_nt->setTransformer(function ($value) {
+            if ($value == 1) {
+                $div = new TElement('span');
+                $div->class = "label label-success";
+                $div->style = "text-shadow:none; font-size:12px";
+                $div->add('Sim');
+                return $div;
+            } else {
+                $div = new TElement('span');
+                $div->class = "label label-danger";
+                $div->style = "text-shadow:none; font-size:12px";
+                $div->add('Não');
+                return $div;
+            }
+        });
+
+        $col_coordenar_s_n->setTransformer(function ($value) {
+            if ($value == 1) {
+                $div = new TElement('span');
+                $div->class = "label label-success";
+                $div->style = "text-shadow:none; font-size:12px";
+                $div->add('Sim');
+                return $div;
+            } else {
+                $div = new TElement('span');
+                $div->class = "label label-danger";
+                $div->style = "text-shadow:none; font-size:12px";
+                $div->add('Não');
+                return $div;
+            }
+        });
+        */
+
+        $col_funcao_id->setTransformer(function ($value) {
+            if ($value == 1) {
+                $div = new TElement('span');
+                $div->class = "label label-success";
+                $div->style = "text-shadow:none; font-size:12px";
+                $div->add('Palestrante');
+                return $div;
+            } else {
+                $div = new TElement('span');
+                $div->class = "label label-info";
+                $div->style = "text-shadow:none; font-size:12px";
+                $div->add('Apoio');
+                return $div;
+            }
+        });
 
         //$col_tema->enableAutoHide(1000);
         //$col_cantico->enableAutoHide(1000);
@@ -64,9 +156,14 @@ class PalestranteDataGrid extends TPage
         $col_encontro->setAction(new TAction([$this, 'onReload']), ['order' => 'encontro']);
         $col_casal->setAction(new TAction([$this, 'onReload']), ['order' => 'casal']);
         $col_circulo->setAction(new TAction([$this, 'onReload']), ['order' => 'circulo']);
-        $col_palestra->setAction(new TAction([$this, 'onReload']), ['order' => 'palestra']);
+        //$col_camisa_encontro_br->setAction(new TAction([$this, 'onReload']), ['order' => 'camisa_encontro_br']);
+        //$col_camisa_encontro_cor->setAction(new TAction([$this, 'onReload']), ['order' => 'camisa_encontro_cor']);
+        //$col_disponibilidade_nt->setAction(new TAction([$this, 'onReload']), ['order' => 'disponibilidade_nt']);
+        //$col_coordenar_s_n->setAction(new TAction([$this, 'onReload']), ['order' => 'coordenador_s_n']);
+        $col_funcao_id->setAction(new TAction([$this, 'onReload']), ['order' => 'funcao_id']);
+        $col_equipe->setAction(new TAction([$this, 'onReload']), ['order' => 'palestra']);
 
-        $action1 = new TDataGridAction(['PalestranteForm', 'onEdit'],   ['key' => '{id}', 'register_state' => 'false']);
+        $action1 = new TDataGridAction(['EncontreiroForm', 'onEdit'],   ['key' => '{id}', 'tipo_enc_id' => 2, 'register_state' => 'false']);
         $action2 = new TDataGridAction([$this, 'onDelete'],   ['key' => '{id}']);
 
         $this->datagrid->addAction($action1, 'Editar',   'far:edit blue');
@@ -81,14 +178,14 @@ class PalestranteDataGrid extends TPage
         $input_search->setSize('100%');
 
         // enable fuse search by column name
-        $this->datagrid->enableSearch($input_search, 'id, encontro_id, encontro, casal, circulo, palestra');
+        $this->datagrid->enableSearch($input_search, 'id, encontro_id, encontro, casal, circulo');
 
         // creates the page navigation
         $this->pageNavigation = new TPageNavigation;
         $this->pageNavigation->enableCounters();
         $this->pageNavigation->setAction(new TAction(array($this, 'onReload')));
 
-        $panel = new TPanelGroup('Palestrante');
+        $panel = new TPanelGroup('Palestrantes');
         $panel->addHeaderWidget($input_search);
         $panel->add($this->datagrid);
         $panel->addFooter($this->pageNavigation);
@@ -105,7 +202,7 @@ class PalestranteDataGrid extends TPage
         $dropdown->addAction('Save as XML', new TAction([$this, 'onExportXML'], ['register_state' => 'false', 'static' => '1']), 'fa:code fa-fw green');
 
         // add form actions
-        $panel->addHeaderActionLink('Novo',  new TAction(['PalestranteForm', 'onEdit'], ['register_state' => 'false']), 'fa:plus green');
+        $panel->addHeaderActionLink('Novo',  new TAction(['EncontreiroForm', 'onEdit'], ['tipo_enc_id' => 2, 'register_state' => 'false']), 'fa:plus green');
         $panel->addHeaderWidget($dropdown);
 
         // creates the page structure using a table
