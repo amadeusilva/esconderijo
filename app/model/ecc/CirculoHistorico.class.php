@@ -24,8 +24,23 @@ class CirculoHistorico extends TRecord
         parent::addAttribute('dt_historico');
     }
 
-    public function get_Circulo()
+    public function get_DadosCasal()
     {
-        return ListaItens::find($this->circulo_id);
+        return new ViewCasal($this->casal_id);
+    }
+
+    public function get_CirculoMotivo()
+    {
+        return ListaItens::find($this->motivo_id);
+    }
+
+    public function get_CirculoCor()
+    {
+        $circulo_cor = ListaItens::where('id', '=', $this->circulo_id)->first();
+        $div = new TElement('span');
+        $div->class = "label";
+        $div->style = "text-shadow:none; font-size:12px; color: black; background-color: $circulo_cor->obs;";
+        $div->add($circulo_cor->item);
+        return $div;
     }
 }

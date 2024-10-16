@@ -42,7 +42,8 @@ class EncontroDataGrid extends TPage
         $col_id    = new TDataGridColumn('id', 'Id', 'center');
         $col_num = new TDataGridColumn('num', 'Número', 'center');
         $col_evento = new TDataGridColumn('evento', 'Evento', 'left');
-        $col_local = new TDataGridColumn('local', 'Local', 'left');
+        $col_local1 = new TDataGridColumn('local', 'Local', 'left');
+        $col_local2 = new TDataGridColumn('NomePopular->popular', 'Local', 'left');
         $col_endereco = new TDataGridColumn('endereco', 'Endereço', 'left');
         $col_dt_inicial = new TDataGridColumn('dt_inicial', 'Início', 'center');
         $col_dt_final = new TDataGridColumn('dt_final', 'Término', 'center');
@@ -53,7 +54,8 @@ class EncontroDataGrid extends TPage
         $this->datagrid->addColumn($col_id);
         $this->datagrid->addColumn($col_num);
         $this->datagrid->addColumn($col_evento);
-        $this->datagrid->addColumn($col_local);
+        $this->datagrid->addColumn($col_local1);
+        $this->datagrid->addColumn($col_local2);
         $this->datagrid->addColumn($col_endereco);
         $this->datagrid->addColumn($col_dt_inicial);
         $this->datagrid->addColumn($col_dt_final);
@@ -71,13 +73,16 @@ class EncontroDataGrid extends TPage
             return $date->format('d/m/Y');
         });
 
+        $col_local1->enableAutoHide(1000);
+        $col_endereco->enableAutoHide(1000);
         $col_tema->enableAutoHide(1000);
         $col_cantico->enableAutoHide(1000);
 
         $col_id->setAction(new TAction([$this, 'onReload']),   ['order' => 'id']);
         $col_num->setAction(new TAction([$this, 'onReload']), ['order' => 'num']);
         $col_evento->setAction(new TAction([$this, 'onReload']), ['order' => 'evento']);
-        $col_local->setAction(new TAction([$this, 'onReload']), ['order' => 'local']);
+        $col_local1->setAction(new TAction([$this, 'onReload']), ['order' => 'local']);
+        $col_local2->setAction(new TAction([$this, 'onReload']), ['order' => 'local']);
         $col_endereco->setAction(new TAction([$this, 'onReload']), ['order' => 'endereco']);
         $col_dt_inicial->setAction(new TAction([$this, 'onReload']), ['order' => 'dt_inicial']);
         $col_dt_final->setAction(new TAction([$this, 'onReload']), ['order' => 'dt_final']);

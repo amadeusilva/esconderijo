@@ -16,7 +16,6 @@ class EncontroPanel extends TPage
 {
     protected $form; // form
 
-    protected $form_encontro; // form
     protected $form_encontristas; // form
 
     // trait with onReload, onSearch, onDelete...
@@ -68,96 +67,46 @@ class EncontroPanel extends TPage
             $total_encontreiros = Montagem::where('tipo_id', '=', 2)->where('encontro_id', '=', $encontro->id)->countDistinctBy('casal_id');
             $total = $total_encontristas + $total_encontreiros;
 
-            $this->form_encontro = new BootstrapFormBuilder('form_Encontro');
+            //$this->form_encontro = new BootstrapFormBuilder('form_Encontro');
 
-            $row = $this->form_encontro->addFields([new TLabel('<b>Cod.:</b>', ''), $encontro->id], [new TLabel('<b>Evento:</b>', ''), $encontro->sigla]);
+            $row = $this->form->addFields([new TLabel('<b>Cod.:</b>', ''), $encontro->id], [new TLabel('<b>Evento:</b>', ''), $encontro->sigla]);
             $row->layout = ['col-sm-6', 'col-sm-6'];
 
-            $row = $this->form_encontro->addFields([new TLabel('<b>Encontristas:</b>', ''), $total_encontristas], [new TLabel('<b>Encontreiros:</b>', ''), $total_encontreiros], [new TLabel('<b>Total:</b>', ''), $total]);
+            $row = $this->form->addFields([new TLabel('<b>Encontristas:</b>', ''), $total_encontristas], [new TLabel('<b>Encontreiros:</b>', ''), $total_encontreiros], [new TLabel('<b>Total:</b>', ''), $total]);
             $row->layout = ['col-sm-4', 'col-sm-4', 'col-sm-4'];
 
-            $row = $this->form_encontro->addFields([new TLabel('<b>Data Início:</b>', ''), TDate::date2br($encontro->dt_inicial)], [new TLabel('<b>Data Fim:</b>', ''), TDate::date2br($encontro->dt_final)], [new TLabel('<b>Cântico:</b>', ''), $encontro->cantico]);
+            $row = $this->form->addFields([new TLabel('<b>Data Início:</b>', ''), TDate::date2br($encontro->dt_inicial)], [new TLabel('<b>Data Fim:</b>', ''), TDate::date2br($encontro->dt_final)], [new TLabel('<b>Cântico:</b>', ''), $encontro->cantico]);
             $row->layout = ['col-sm-3', 'col-sm-3', 'col-sm-6'];
 
-            $row = $this->form_encontro->addFields([new TLabel('<b>Local:</b>', ''), $encontro->local], [new TLabel('<b>Endereço:</b>', ''), $encontro->endereco]);
+            $row = $this->form->addFields([new TLabel('<b>Local:</b>', ''), $encontro->local], [new TLabel('<b>Endereço:</b>', ''), $encontro->endereco]);
             $row->layout = ['col-sm-6', 'col-sm-6'];
 
-            $row = $this->form_encontro->addFields([new TLabel('<b>Tema:</b>', ''), $encontro->tema]);
+            $row = $this->form->addFields([new TLabel('<b>Tema:</b>', ''), $encontro->tema]);
             $row->layout = ['col-sm-12'];
 
-            $row = $this->form_encontro->addFields([new TLabel('<b>Divisa:</b>', ''), $encontro->divisa]);
+            $row = $this->form->addFields([new TLabel('<b>Divisa:</b>', ''), $encontro->divisa]);
             $row->layout = ['col-sm-12'];
 
             $label = new TLabel('<br>Listas', '#62a8ee', 14, 'b');
             $label->style = 'text-align:left;border-bottom:1px solid #62a8ee;width:100%';
 
-            $row = $this->form_encontro->addFields([$label]);
+            $row = $this->form->addFields([$label]);
             $row->layout = ['col-sm-12'];
 
-            //ENCONTRISTAS
-            $button_encontrista = new TButton('show_hide_encontrista');
-            $button_encontrista->class = 'btn btn-default btn-sm active';
-            $button_encontrista->setLabel('Exibir Lista de <b>Encontristas</b> por Círculos');
-            $button_encontrista->addFunction("\$('[oid=notebook_encontrista-measures]').slideToggle(); $(this).toggleClass( 'active' )");
-            $row = $this->form_encontro->addFields([$button_encontrista]);
-            $row->layout = ['col-sm-12'];
+
+            //GERAL
             // creates a notebook
-            $notebook_encontrista = new TNotebook;
-            $notebook_encontrista->oid = 'notebook_encontrista-measures';
-
-            //ENCONTREIROS
-            $button_encontreiro = new TButton('show_hide_encontreiro');
-            $button_encontreiro->class = 'btn btn-default btn-sm active';
-            $button_encontreiro->setLabel('Exibir Lista de <b>Encontreiros</b> por Equipe');
-            $button_encontreiro->addFunction("\$('[oid=notebook_encontreiro-measures]').slideToggle(); $(this).toggleClass( 'active' )");
-            $row = $this->form_encontro->addFields([$button_encontreiro]);
-            $row->layout = ['col-sm-12'];
-            // creates a notebook
-            $notebook_encontreiro = new TNotebook;
-            $notebook_encontreiro->oid = 'notebook_encontreiro-measures';
-
-            //PALESTRANTES
-            $button_palestrante = new TButton('show_hide_palestrante');
-            $button_palestrante->class = 'btn btn-default btn-sm active';
-            $button_palestrante->setLabel('Exibir Lista de <b>Palestrantes</b>');
-            $button_palestrante->addFunction("\$('[oid=notebook_palestrante-measures]').slideToggle(); $(this).toggleClass( 'active' )");
-            $row = $this->form_encontro->addFields([$button_palestrante]);
-            $row->layout = ['col-sm-12'];
-            // creates a notebook
-            $notebook_palestrante = new TNotebook;
-            $notebook_palestrante->oid = 'notebook_palestrante-measures';
-
-            //EDG
-            $button_edg = new TButton('show_hide_edg');
-            $button_edg->class = 'btn btn-default btn-sm active';
-            $button_edg->setLabel('Exibir <b>Equipe de Direção Geral</b>');
-            $button_edg->addFunction("\$('[oid=notebook_edg-measures]').slideToggle(); $(this).toggleClass( 'active' )");
-            $row = $this->form_encontro->addFields([$button_edg]);
-            $row->layout = ['col-sm-12'];
-            // creates a notebook
-            $notebook_edg = new TNotebook;
-            $notebook_edg->oid = 'notebook_edg-measures';
-
-            // creates a frame
-            $frame_dados = new TFrame;
-            $frame_dados->setLegend('Dados');
-            $frame_dados->add($this->form_encontro);
-            $this->form->addContent([$frame_dados]);
-
-            // creates a frame
-            $frame_listas = new TFrame;
-            $frame_listas->setLegend('Listas');
-            $frame_listas->add($notebook_encontrista);
-            $frame_listas->add($notebook_encontreiro);
-            $frame_listas->add($notebook_palestrante);
-            $frame_listas->add($notebook_edg);
-
-            $this->form->addContent([$frame_listas]);
+            $notebook_geral = new TNotebook;
+            $this->form->addContent([$notebook_geral]);
 
             //ENCONTRISTAS
             $encontristas = ViewEncontrista::where('encontro_id', '=', $encontro->id)->groupBy('circulo')->countDistinctBy('id', 'contagem');
 
             if ($encontristas) {
+
+                //ENCONTRISTAS
+                // creates a notebook
+                $notebook_encontrista = new TNotebook;
 
                 foreach ($encontristas as $encontrista) {
 
@@ -191,8 +140,8 @@ class EncontroPanel extends TPage
                     $row->style = 'font-weight: bold; border-bottom: 2px solid black; background-color: #dcdcdc;';
                     $row->addCell('Ordem');
                     $row->addCell('Casal');
-                    $row->addCell('Nome Completo / Nascimento');
                     $row->addCell('Casamento');
+                    $row->addCell('Convite');
 
                     foreach ($encontristas_circulo as $enc_cir) {
                         $row = $table->addRow();
@@ -203,20 +152,36 @@ class EncontroPanel extends TPage
                         $ordem_label->setFontStyle('b');
                         $ordem_label->setValue($ordem);
 
+                        $action = new TAction(['CasalPanel', 'onView']);
+                        $action->setParameter('relacao_id', $enc_cir->casal_id);
+
+                        $casal_link = new TActionLink($enc_cir->Secretario, $action, 'black', 12, 'u'); //biu
+
                         $row->addCell($ordem_label);
-                        $row->addCell($enc_cir->casal . ' ' . $enc_cir->Secretario);
-                        $row->addCell($enc_cir->DadosCasal->Ele->nome . ' - ' . $enc_cir->DadosCasal->Ela->nome . '<br>' . TDate::date2br($enc_cir->DadosCasal->Ele->dt_nascimento) . ' - ' . TDate::date2br($enc_cir->DadosCasal->Ela->dt_nascimento));
+                        $row->addCell($casal_link);
+                        //$row->addCell($enc_cir->DadosCasal->Ele->nome . ' - ' . $enc_cir->DadosCasal->Ela->nome . '<br>' . TDate::date2br($enc_cir->DadosCasal->Ele->dt_nascimento) . ' - ' . TDate::date2br($enc_cir->DadosCasal->Ela->dt_nascimento));
                         $row->addCell(TDate::date2br($enc_cir->DadosCasal->dt_inicial));
+                        if ($enc_cir->casal_convite) {
+                            $row->addCell($enc_cir->casal_convite);
+                        } else {
+                            $row->addCell('Não informado');
+                        }
                     }
 
                     $notebook_encontrista->appendPage($encontrista->circulo, $table);
                 }
+
+                $notebook_geral->appendPage('<b>ENCONTRISTAS</b>', $notebook_encontrista);
             }
 
             //ENCONTREIROS
             $encontreiros = ViewEncontreiro::where('encontro_id', '=', $encontro->id)->groupBy('equipe')->countDistinctBy('id', 'contagem');
 
             if ($encontreiros) {
+
+                //ENCONTREIROS
+                // creates a notebook
+                $notebook_encontreiro = new TNotebook;
 
                 foreach ($encontreiros as $encontreiro) {
 
@@ -234,7 +199,7 @@ class EncontroPanel extends TPage
                     $row = $table->addRow();
                     $row->style = 'font-weight: bold; border-bottom: 2px solid black; background-color: #6c757d;';
                     $title = $row->addCell($title);
-                    $title->colspan = 6;
+                    $title->colspan = 5;
 
                     $ordem = 0;
 
@@ -246,7 +211,7 @@ class EncontroPanel extends TPage
                     $row->addCell('Ordem');
                     $row->addCell('Função');
                     $row->addCell('Casal');
-                    $row->addCell('Nome Completo / Nascimento');
+                    //$row->addCell('Nome Completo / Nascimento');
                     $row->addCell('Casamento');
                     $row->addCell('Círculo');
 
@@ -259,16 +224,22 @@ class EncontroPanel extends TPage
                         $ordem_label->setFontStyle('b');
                         $ordem_label->setValue($ordem);
 
+                        $action = new TAction(['CasalPanel', 'onView']);
+                        $action->setParameter('relacao_id', $enc_equip->casal_id);
+
+                        $casal_link = new TActionLink($enc_equip->casal, $action, 'black', 12, 'u'); //biu
+
                         $row->addCell($ordem_label);
                         $row->addCell($enc_equip->Funcao);
-                        $row->addCell($enc_equip->casal);
-                        $row->addCell($enc_equip->DadosCasal->Ele->nome . ' - ' . $enc_equip->DadosCasal->Ela->nome . '<br>' . TDate::date2br($enc_equip->DadosCasal->Ele->dt_nascimento) . ' - ' . TDate::date2br($enc_equip->DadosCasal->Ela->dt_nascimento));
+                        $row->addCell($casal_link);
+                        //$row->addCell($enc_equip->DadosCasal->Ele->nome . ' - ' . $enc_equip->DadosCasal->Ela->nome . '<br>' . TDate::date2br($enc_equip->DadosCasal->Ele->dt_nascimento) . ' - ' . TDate::date2br($enc_equip->DadosCasal->Ela->dt_nascimento));
                         $row->addCell(TDate::date2br($enc_equip->DadosCasal->dt_inicial));
                         $row->addCell($enc_equip->CirculoCor);
                     }
 
                     $notebook_encontreiro->appendPage($encontreiro->equipe, $table);
                 }
+                $notebook_geral->appendPage('<b>ENCONTREIROS</b>', $notebook_encontreiro);
             }
 
             //PALESTRANTES
@@ -291,7 +262,7 @@ class EncontroPanel extends TPage
                 $row = $table->addRow();
                 $row->style = 'font-weight: bold; border-bottom: 2px solid black; background-color: #6f42c1;';
                 $title = $row->addCell($title);
-                $title->colspan = 6;
+                $title->colspan = 5;
 
                 $ordem = 0;
 
@@ -303,7 +274,7 @@ class EncontroPanel extends TPage
                 $row->addCell('Ordem');
                 $row->addCell('Palestra');
                 $row->addCell('Casal');
-                $row->addCell('Nome Completo / Nascimento');
+                //$row->addCell('Nome Completo / Nascimento');
                 $row->addCell('Casamento');
                 $row->addCell('Círculo');
 
@@ -320,15 +291,20 @@ class EncontroPanel extends TPage
                     $palestra_label->setFontStyle('b');
                     $palestra_label->setValue($pales_pal->palestra);
 
+                    $action = new TAction(['CasalPanel', 'onView']);
+                    $action->setParameter('relacao_id', $pales_pal->casal_id);
+
+                    $casal_link = new TActionLink($pales_pal->casal, $action, 'black', 12, 'u'); //biu
+
                     $row->addCell($ordem_label);
                     $row->addCell($palestra_label);
-                    $row->addCell($pales_pal->casal . ' ' . $pales_pal->Funcao);
-                    $row->addCell($pales_pal->DadosCasal->Ele->nome . ' - ' . $pales_pal->DadosCasal->Ela->nome . '<br>' . TDate::date2br($pales_pal->DadosCasal->Ele->dt_nascimento) . ' - ' . TDate::date2br($pales_pal->DadosCasal->Ela->dt_nascimento));
+                    $row->addCell($casal_link);// . ' ' . $pales_pal->Funcao);
+                    //$row->addCell($pales_pal->DadosCasal->Ele->nome . ' - ' . $pales_pal->DadosCasal->Ela->nome . '<br>' . TDate::date2br($pales_pal->DadosCasal->Ele->dt_nascimento) . ' - ' . TDate::date2br($pales_pal->DadosCasal->Ela->dt_nascimento));
                     $row->addCell(TDate::date2br($pales_pal->DadosCasal->dt_inicial));
                     $row->addCell($pales_pal->CirculoCor);
                 }
 
-                $notebook_palestrante->appendPage('LISTA DE PALESTRANTES', $table);
+                $notebook_geral->appendPage('<b>PALESTRANTES</b>', $table);
             }
 
             //EDG
@@ -351,7 +327,7 @@ class EncontroPanel extends TPage
                 $row = $table->addRow();
                 $row->style = 'font-weight: bold; border-bottom: 2px solid black; background-color: #343a40;';
                 $title = $row->addCell($title);
-                $title->colspan = 6;
+                $title->colspan = 5;
 
                 $ordem = 0;
 
@@ -363,7 +339,7 @@ class EncontroPanel extends TPage
                 $row->addCell('Ordem');
                 $row->addCell('Pasta');
                 $row->addCell('Casal');
-                $row->addCell('Nome Completo / Nascimento');
+                //$row->addCell('Nome Completo / Nascimento');
                 $row->addCell('Casamento');
                 $row->addCell('Círculo');
 
@@ -380,15 +356,21 @@ class EncontroPanel extends TPage
                     $pasta_label->setFontStyle('b');
                     $pasta_label->setValue($edg_ed->pasta);
 
+                    $action = new TAction(['CasalPanel', 'onView']);
+                    $action->setParameter('relacao_id', $edg_ed->casal_id);
+
+                    $casal_link = new TActionLink($edg_ed->casal, $action, 'black', 12, 'u'); //biu
+
+
                     $row->addCell($ordem_label);
                     $row->addCell($pasta_label);
-                    $row->addCell($edg_ed->casal . '<br>' . $edg_ed->Funcao);
-                    $row->addCell($edg_ed->DadosCasal->Ele->nome . ' - ' . $edg_ed->DadosCasal->Ela->nome . '<br>' . TDate::date2br($edg_ed->DadosCasal->Ele->dt_nascimento) . ' - ' . TDate::date2br($edg_ed->DadosCasal->Ela->dt_nascimento));
+                    $row->addCell($casal_link);// . '<br>' . $edg_ed->Funcao);
+                    //$row->addCell($edg_ed->DadosCasal->Ele->nome . ' - ' . $edg_ed->DadosCasal->Ela->nome . '<br>' . TDate::date2br($edg_ed->DadosCasal->Ele->dt_nascimento) . ' - ' . TDate::date2br($edg_ed->DadosCasal->Ela->dt_nascimento));
                     $row->addCell(TDate::date2br($edg_ed->DadosCasal->dt_inicial));
                     $row->addCell($edg_ed->CirculoCor);
                 }
 
-                $notebook_edg->appendPage('EDG', $table);
+                $notebook_geral->appendPage('<b>EDG</b>', $table);
             }
 
             TTransaction::close();

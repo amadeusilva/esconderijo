@@ -57,4 +57,9 @@ FROM globais.encontro;
         parent::addAttribute('cantico_id');
         parent::addAttribute('cantico');
     }
+
+    public function get_NomePopular()
+    {
+        return Pessoa::find($this->local_id);
+    }
 }

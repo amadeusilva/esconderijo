@@ -213,6 +213,7 @@ class EncontreiroDataGrid extends TPage
 
         // add form actions
         $panel->addHeaderActionLink('Novo',  new TAction(['EncontreiroForm', 'onEdit'], ['tipo_enc_id' => 1, 'register_state' => 'false']), 'fa:plus green');
+        $panel->addHeaderActionLink('Equipes',  new TAction(['EquipesForm', 'onClear'], ['register_state' => 'false']), 'fa:plus black');
         $panel->addHeaderWidget($dropdown);
 
         // creates the page structure using a table

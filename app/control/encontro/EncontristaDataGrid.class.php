@@ -130,6 +130,7 @@ class EncontristaDataGrid extends TPage
         // add form actions
         $panel->addHeaderActionLink('Avulso',  new TAction(['AddEncontrista', 'onClear'], ['register_state' => 'false']), 'fa:plus orange');
         $panel->addHeaderActionLink('Novo',  new TAction(['EncontristaForm', 'onClear'], ['register_state' => 'false']), 'fa:plus green');
+        $panel->addHeaderActionLink('Círculos',  new TAction(['CirculosForm', 'onClear'], ['register_state' => 'false']), 'fa:plus black');
         $panel->addHeaderWidget($dropdown);
 
         // creates the page structure using a table

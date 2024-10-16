@@ -139,7 +139,7 @@ class AddEncontrista extends TWindow
         $encontro_id = new TDBCombo('encontro_id', 'adea', 'ViewEncontro', 'id', 'sigla', 'id', $filter);
         $encontro_id->setSize('100%');
         $encontro_id->enableSearch();
-        $encontro_id->setValue(3);
+        $encontro_id->setValue(5);
         $encontro_id->addValidation('Encontro', new TRequiredValidator);
 
         $filterCirculo = new TCriteria;
@@ -152,6 +152,19 @@ class AddEncontrista extends TWindow
         $row = $this->form->addFields([new TLabel('Encontro:', 'red'), $encontro_id], [new TLabel('Círculo:', 'red'), $circulo_id]);
         $row->layout = ['col-sm-6', 'col-sm-6'];
 
+        $options = [1 => 'Santana', 2 => 'Macapá', 3 => 'Belém'];
+
+        $local = new TRadioGroup('local');
+        $local->setUseButton();
+        $local->addItems($options);
+        $local->setLayout('horizontal');
+        $local->setValue(1);
+        $local->setSize('100%');
+
+        $row = $this->form->addFields([new TLabel('Local:', 'red')], [$local]);
+        $row->layout = ['col-sm-12', 'col-sm-12'];
+
+        /*
         // dados endereço
         $this->form->appendPage('Endereço');
         $cep                 = new TEntry('cep');
@@ -183,6 +196,7 @@ class AddEncontrista extends TWindow
         $ponto_referencia  = new TDBEntry('ponto_referencia', 'adea', 'ENDERECO', 'ponto_referencia');
         $ponto_referencia->placeholder = 'PRÓXIMO A PRAÇAS, HOSPITAIS, EMPRESAS...';
         $ponto_referencia->forceUpperCase();
+        
 
         // define some properties for the form fields
         $tipo_id->setEditable(FALSE);
@@ -240,9 +254,13 @@ class AddEncontrista extends TWindow
         );
         $row->layout = ['col-sm-5', 'col-sm-7'];
 
+        
+
         $estado_id->setChangeAction(new TAction(array($this, 'onStateChange')));
         $cidade_id->setChangeAction(new TAction(array($this, 'onCityChange')));
         $tipo_id->setChangeAction(new TAction(array($this, 'onTipoChange')));
+
+        */
 
         // validations
         //$estado_id->addValidation('Estado', new TRequiredValidator);
@@ -329,7 +347,25 @@ class AddEncontrista extends TWindow
                 $object->encontro_id = $encontrista->encontro_id;
                 $object->circulo_id = $encontrista->circulo_id;
 
+
                 $endereco = Endereco::find($object->Ele->endereco_id);        // instantiates object City
+
+                if ($endereco) {
+
+                    $dados_endereco = new stdClass;
+
+                    if ($endereco->cep == '68.925-165') {
+                        $dados_endereco->local            = 1;
+                    } else if ($endereco->cep == '68.901-130') {
+                        $dados_endereco->local            = 2;
+                    } else if ($endereco->cep == '66.017-070') {
+                        $dados_endereco->local            = 3;
+                    }
+
+                    TForm::sendData('form_AddEncontrista', $dados_endereco);
+                }
+
+                /*
 
                 if ($endereco) {
                     $this->form->setData($endereco);   // fill the form with the active record data
@@ -343,6 +379,7 @@ class AddEncontrista extends TWindow
                     $dados_endereco->bairro_id            = $endereco->bairro_id;
                     TForm::sendData('form_AddEncontrista', $dados_endereco);
                 }
+                    */
 
                 $this->form->setData($object);   // fill the form with the active record data
 
@@ -386,6 +423,7 @@ class AddEncontrista extends TWindow
             $ele->popular = $data->ele_popular;
 
             //endereco_id deles
+            /*
             if (isset($data->logradouro_id) and !empty($data->logradouro_id)) {
                 $consultaendereco = Endereco::where('logradouro_id', '=', $data->logradouro_id)->where('n', '=', $data->n)->where('bairro_id', '=', $data->bairro_id)->first();
                 if ($consultaendereco) {
@@ -404,6 +442,18 @@ class AddEncontrista extends TWindow
 
                     $endereco->store();
                     $ele->endereco_id = $endereco->id;
+                }
+            }
+                */
+
+            if (isset($data->local) and !empty($data->local)) {
+
+                if ($data->local == 1) {
+                    $ele->endereco_id = 2;
+                } else if ($data->local == 2) {
+                    $ele->endereco_id = 21;
+                } else if ($data->local == 3) {
+                    $ele->endereco_id = 1;
                 }
             }
 
@@ -549,7 +599,7 @@ class AddEncontrista extends TWindow
 
             $historico_circulo->user_sessao_id = TSession::getValue('userid');
             $historico_circulo->circulo_id = $data->circulo_id;
-            $historico_circulo->motivo_id = 1;
+            $historico_circulo->motivo_id = 1101;
             $historico_circulo->obs_motivo = 'Montagem de participação como Encontrista';
             $historico_circulo->store(); // save the object
 

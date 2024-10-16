@@ -12,12 +12,11 @@ use Adianti\Widget\Util\TImage;
  * @copyright  Copyright (c) 2006 Adianti Solutions Ltd. (http://www.adianti.com.br)
  * @license    http://www.adianti.com.br/framework-license
  */
-class CasalPanel extends TPage
+class CasalPanel extends TWindow
 {
     protected $form; // form
-
-    protected $form_encontro; // form
-    protected $form_encontristas; // form
+    protected $historico_circulos;
+    protected $historico_equipes;
 
     // trait with onReload, onSearch, onDelete...
     use Adianti\Base\AdiantiStandardListTrait;
@@ -30,14 +29,26 @@ class CasalPanel extends TPage
     {
         parent::__construct();
 
-        parent::setTargetContainer('adianti_right_panel');
+        // creates the scroll panel
+        $scroll = new TScroll;
+        $scroll->setSize('100%', '800');
+
+        parent::setSize(0.9, null);
+        parent::removePadding();
+        parent::removeTitleBar();
+        parent::disableEscape();
+
+        // with: 500, height: automatic
+        parent::setSize(0.6, null); // use 0.6, 0.4 (for relative sizes 60%, 40%)
+
+        //parent::setTargetContainer('adianti_right_panel');
 
         $this->form = new BootstrapFormBuilder('form_Casal_Panel');
-        $this->form->setFormTitle('Nome do Casal');
+        $this->form->setFormTitle('Dados do Casal');
 
         $dropdown = new TDropDown('Opções', 'fa:th');
         //$dropdown->addAction(
-        $dropdown->addAction('Imprimir', new TAction([$this, 'onPrint'], ['key' => $param['key'], 'static' => '1']), 'far:file-pdf red');
+        $dropdown->addAction('Imprimir', new TAction([$this, 'onPrint'], ['key' => 1, 'static' => '1']), 'far:file-pdf red');
         //$dropdown->addAction( 'Gerar etiqueta', new TAction([$this, 'onGeraEtiqueta'], ['key'=>$param['key'], 'static' => '1']), 'far:envelope purple');
         //$dropdown->addAction('Editar', new TAction([$this, 'onEdit'], ['key' => $param['key']]), 'far:edit blue');
 
@@ -49,7 +60,8 @@ class CasalPanel extends TPage
         $container = new TVBox;
         $container->style = 'width: 100%';
         // $container->add(new TXMLBreadCrumb('menu.xml', 'PessoaList'));
-        $container->add($this->form);
+        $scroll->add($this->form);
+        $container->add($scroll);
 
         parent::add($container);
     }
@@ -64,220 +76,53 @@ class CasalPanel extends TPage
             TTransaction::open('adea');
 
             //ENCONTROs
-            $encontro = new ViewEncontro($param['key']);
-            $total_encontristas = Montagem::where('tipo_id', '=', 1)->where('encontro_id', '=', $encontro->id)->countDistinctBy('casal_id');
-            $total_encontreiros = Montagem::where('tipo_id', '=', 2)->where('encontro_id', '=', $encontro->id)->countDistinctBy('casal_id');
-            $total = $total_encontristas + $total_encontreiros;
+            $dados_encontristas = ViewEncontrista::where('casal_id', '=', $param['relacao_id'])->first();
+            //$total_encontreiros = Montagem::where('tipo_id', '=', 2)->where('encontro_id', '=', $encontro->id)->countDistinctBy('casal_id');
 
-            $this->form_encontro = new BootstrapFormBuilder('form_Encontro');
+            $row = $this->form->addFields([new TLabel('<b>Cod.:</b>', ''), $dados_encontristas->casal_id], [new TLabel('<b>Evento:</b>', ''), $dados_encontristas->encontro], [new TLabel('<b>Secretário?</b>', ''), $dados_encontristas->Secretario2]);
+            $row->layout = ['col-sm-3', 'col-sm-5', 'col-sm-4'];
 
-            $row = $this->form_encontro->addFields([new TLabel('<b>Cod.:</b>', ''), $encontro->id], [new TLabel('<b>Evento:</b>', ''), $encontro->sigla]);
+            if (!$dados_encontristas->casal_convite) {
+                $dados_encontristas->casal_convite = 'NÃO INFORMADO';
+            }
+
+            $row = $this->form->addFields([new TLabel('<b>Casal:</b>', ''), $dados_encontristas->casal], [new TLabel('<b>Convite:</b>', ''), $dados_encontristas->casal_convite]);
             $row->layout = ['col-sm-6', 'col-sm-6'];
 
-            $row = $this->form_encontro->addFields([new TLabel('<b>Encontristas:</b>', ''), $total_encontristas], [new TLabel('<b>Encontreiros:</b>', ''), $total_encontreiros], [new TLabel('<b>Total:</b>', ''), $total]);
-            $row->layout = ['col-sm-4', 'col-sm-4', 'col-sm-4'];
+            $row = $this->form->addFields([new TLabel('<b>Ele:</b>', ''), $dados_encontristas->DadosCasal->Ele->nome], [new TLabel('<b>Nasc.:</b>', ''), TDate::date2br($dados_encontristas->DadosCasal->Ele->dt_nascimento)]);
+            $row->layout = ['col-sm-8', 'col-sm-4'];
 
-            $row = $this->form_encontro->addFields([new TLabel('<b>Data Início:</b>', ''), TDate::date2br($encontro->dt_inicial)], [new TLabel('<b>Data Fim:</b>', ''), TDate::date2br($encontro->dt_final)], [new TLabel('<b>Cântico:</b>', ''), $encontro->cantico]);
-            $row->layout = ['col-sm-3', 'col-sm-3', 'col-sm-6'];
+            $row = $this->form->addFields([new TLabel('<b>Ela:</b>', ''), $dados_encontristas->DadosCasal->Ela->nome], [new TLabel('<b>Nasc.:</b>', ''), TDate::date2br($dados_encontristas->DadosCasal->Ela->dt_nascimento)]);
+            $row->layout = ['col-sm-8', 'col-sm-4'];
 
-            $row = $this->form_encontro->addFields([new TLabel('<b>Local:</b>', ''), $encontro->local], [new TLabel('<b>Endereço:</b>', ''), $encontro->endereco]);
-            $row->layout = ['col-sm-6', 'col-sm-6'];
+            //[new TLabel('<b>Casamento</b>', ''), TDate::date2br($dados_encontristas->DadosCasal->dt_inicial)]
 
-            $row = $this->form_encontro->addFields([new TLabel('<b>Tema:</b>', ''), $encontro->tema]);
-            $row->layout = ['col-sm-12'];
+            $date = new DateTime($dados_encontristas->DadosCasal->dt_inicial);
+            $interval = $date->diff(new DateTime(date('Y-m-d')));
 
-            $row = $this->form_encontro->addFields([new TLabel('<b>Divisa:</b>', ''), $encontro->divisa]);
-            $row->layout = ['col-sm-12'];
+            $row = $this->form->addFields([new TLabel('<b>Casamento:</b>', ''), TDate::date2br($dados_encontristas->DadosCasal->dt_inicial)], ['<b>Há:</b>', $interval->format('%Y anos')], [new TLabel('<b>Círculo:</b>', ''), $dados_encontristas->CirculoCor]);
+            $row->layout = ['col-sm-5', 'col-sm-3', 'col-sm-4'];
 
-            $label = new TLabel('<br>Listas', '#62a8ee', 14, 'b');
+            //resumos
+            $notebook_resumos = new TNotebook;
+            $label = new TLabel('<br>Resumo de Participações', '#62a8ee', 14, 'b');
             $label->style = 'text-align:left;border-bottom:1px solid #62a8ee;width:100%';
-
-            $row = $this->form_encontro->addFields([$label]);
+            $row = $this->form->addFields([$label]);
             $row->layout = ['col-sm-12'];
+            $this->form->addContent([$notebook_resumos]);
 
-            //ENCONTRISTAS
-            $button_encontrista = new TButton('show_hide_encontrista');
-            $button_encontrista->class = 'btn btn-default btn-sm active';
-            $button_encontrista->setLabel('Exibir Lista de <b>Encontristas</b> por Círculos');
-            $button_encontrista->addFunction("\$('[oid=notebook_encontrista-measures]').slideToggle(); $(this).toggleClass( 'active' )");
-            $row = $this->form_encontro->addFields([$button_encontrista]);
+            //históricos
+            $notebook_historicos = new TNotebook;
+            $label = new TLabel('<br>Históricos', '#62a8ee', 14, 'b');
+            $label->style = 'text-align:left;border-bottom:1px solid #62a8ee;width:100%';
+            $row = $this->form->addFields([$label]);
             $row->layout = ['col-sm-12'];
-            // creates a notebook
-            $notebook_encontrista = new TNotebook;
-            $notebook_encontrista->oid = 'notebook_encontrista-measures';
+            $this->form->addContent([$notebook_historicos]);
 
-            //ENCONTREIROS
-            $button_encontreiro = new TButton('show_hide_encontreiro');
-            $button_encontreiro->class = 'btn btn-default btn-sm active';
-            $button_encontreiro->setLabel('Exibir Lista de <b>Encontreiros</b> por Equipe');
-            $button_encontreiro->addFunction("\$('[oid=notebook_encontreiro-measures]').slideToggle(); $(this).toggleClass( 'active' )");
-            $row = $this->form_encontro->addFields([$button_encontreiro]);
-            $row->layout = ['col-sm-12'];
-            // creates a notebook
-            $notebook_encontreiro = new TNotebook;
-            $notebook_encontreiro->oid = 'notebook_encontreiro-measures';
+            //RESUMO
+            $equipes = Equipe::where('id', '>=', 1)->load();
 
-            //PALESTRANTES
-            $button_palestrante = new TButton('show_hide_palestrante');
-            $button_palestrante->class = 'btn btn-default btn-sm active';
-            $button_palestrante->setLabel('Exibir Lista de <b>Palestrantes</b>');
-            $button_palestrante->addFunction("\$('[oid=notebook_palestrante-measures]').slideToggle(); $(this).toggleClass( 'active' )");
-            $row = $this->form_encontro->addFields([$button_palestrante]);
-            $row->layout = ['col-sm-12'];
-            // creates a notebook
-            $notebook_palestrante = new TNotebook;
-            $notebook_palestrante->oid = 'notebook_palestrante-measures';
-
-            //EDG
-            $button_edg = new TButton('show_hide_edg');
-            $button_edg->class = 'btn btn-default btn-sm active';
-            $button_edg->setLabel('Exibir <b>Equipe de Direção Geral</b>');
-            $button_edg->addFunction("\$('[oid=notebook_edg-measures]').slideToggle(); $(this).toggleClass( 'active' )");
-            $row = $this->form_encontro->addFields([$button_edg]);
-            $row->layout = ['col-sm-12'];
-            // creates a notebook
-            $notebook_edg = new TNotebook;
-            $notebook_edg->oid = 'notebook_edg-measures';
-
-            // creates a frame
-            $frame_dados = new TFrame;
-            $frame_dados->setLegend('Dados');
-            $frame_dados->add($this->form_encontro);
-            $this->form->addContent([$frame_dados]);
-
-            // creates a frame
-            $frame_listas = new TFrame;
-            $frame_listas->setLegend('Listas');
-            $frame_listas->add($notebook_encontrista);
-            $frame_listas->add($notebook_encontreiro);
-            $frame_listas->add($notebook_palestrante);
-            $frame_listas->add($notebook_edg);
-
-            $this->form->addContent([$frame_listas]);
-
-            //ENCONTRISTAS
-            $encontristas = ViewEncontrista::where('encontro_id', '=', $encontro->id)->groupBy('circulo')->countDistinctBy('id', 'contagem');
-
-            if ($encontristas) {
-
-                foreach ($encontristas as $encontrista) {
-
-                    $encontristas_circulo = ViewEncontrista::where('encontro_id', '=', $encontro->id)->where('circulo', '=', $encontrista->circulo)->orderBy('casal', 'asc')->load();
-
-                    // creates a table
-                    $table = new TTable;
-                    $table->width = '100%';
-                    $table->border = '1';
-
-                    // creates a label with the title
-                    $title = new TLabel('<b>' . $encontrista->circulo . ' (' . $encontrista->contagem . ')</b>');
-
-                    $circulo_cor = ListaItens::where('item', '=', $encontrista->circulo)->first();
-                    $circulo_cor_item = $circulo_cor->obs;
-                    // adds a row to the table
-                    $row = $table->addRow();
-                    $row->style = 'font-weight: bold; border-bottom: 2px solid black; background-color: ' . $circulo_cor_item . ';';
-                    $title = $row->addCell($title);
-                    $title->colspan = 4;
-
-                    $ordem = 0;
-
-                    $table->style = 'border-collapse:collapse; border-bottom: 2px solid black;
-                    border-top: 2px solid black;
-                    
-                    text-align: center;';
-
-                    // adds a row for the code field
-                    $row = $table->addRow();
-                    $row->style = 'font-weight: bold; border-bottom: 2px solid black; background-color: #dcdcdc;';
-                    $row->addCell('Ordem');
-                    $row->addCell('Casal');
-                    $row->addCell('Nome Completo / Nascimento');
-                    $row->addCell('Casamento');
-
-                    foreach ($encontristas_circulo as $enc_cir) {
-                        $row = $table->addRow();
-
-                        $ordem += 1;
-
-                        $ordem_label = new TLabel($ordem);
-                        $ordem_label->setFontStyle('b');
-                        $ordem_label->setValue($ordem);
-
-                        $row->addCell($ordem_label);
-                        $row->addCell($enc_cir->casal . ' ' . $enc_cir->Secretario);
-                        $row->addCell($enc_cir->DadosCasal->Ele->nome . ' - ' . $enc_cir->DadosCasal->Ela->nome . '<br>' . TDate::date2br($enc_cir->DadosCasal->Ele->dt_nascimento) . ' - ' . TDate::date2br($enc_cir->DadosCasal->Ela->dt_nascimento));
-                        $row->addCell(TDate::date2br($enc_cir->DadosCasal->dt_inicial));
-                    }
-
-                    $notebook_encontrista->appendPage($encontrista->circulo, $table);
-                }
-            }
-
-            //ENCONTREIROS
-            $encontreiros = ViewEncontreiro::where('encontro_id', '=', $encontro->id)->groupBy('equipe')->countDistinctBy('id', 'contagem');
-
-            if ($encontreiros) {
-
-                foreach ($encontreiros as $encontreiro) {
-
-                    $encontreiros_equipe = ViewEncontreiro::where('encontro_id', '=', $encontro->id)->where('equipe', '=', $encontreiro->equipe)->orderBy('funcao_id, casal', 'asc')->load();
-
-                    // creates a table
-                    $table = new TTable;
-                    $table->width = '100%';
-                    $table->border = '1';
-
-                    // creates a label with the title
-                    $title = new TLabel('<b>' . $encontreiro->equipe . ' (' . $encontreiro->contagem . ')</b>');
-
-                    // adds a row to the table
-                    $row = $table->addRow();
-                    $row->style = 'font-weight: bold; border-bottom: 2px solid black; background-color: #6c757d;';
-                    $title = $row->addCell($title);
-                    $title->colspan = 6;
-
-                    $ordem = 0;
-
-                    $table->style = 'border-collapse:collapse; border-bottom: 2px solid black; border-top: 2px solid black; text-align: center;';
-
-                    // adds a row for the code field
-                    $row = $table->addRow();
-                    $row->style = 'font-weight: bold; border-bottom: 2px solid black; background-color: #dcdcdc;';
-                    $row->addCell('Ordem');
-                    $row->addCell('Função');
-                    $row->addCell('Casal');
-                    $row->addCell('Nome Completo / Nascimento');
-                    $row->addCell('Casamento');
-                    $row->addCell('Círculo');
-
-                    foreach ($encontreiros_equipe as $enc_equip) {
-                        $row = $table->addRow();
-
-                        $ordem += 1;
-
-                        $ordem_label = new TLabel($ordem);
-                        $ordem_label->setFontStyle('b');
-                        $ordem_label->setValue($ordem);
-
-                        $row->addCell($ordem_label);
-                        $row->addCell($enc_equip->Funcao);
-                        $row->addCell($enc_equip->casal);
-                        $row->addCell($enc_equip->DadosCasal->Ele->nome . ' - ' . $enc_equip->DadosCasal->Ela->nome . '<br>' . TDate::date2br($enc_equip->DadosCasal->Ele->dt_nascimento) . ' - ' . TDate::date2br($enc_equip->DadosCasal->Ela->dt_nascimento));
-                        $row->addCell(TDate::date2br($enc_equip->DadosCasal->dt_inicial));
-                        $row->addCell($enc_equip->CirculoCor);
-                    }
-
-                    $notebook_encontreiro->appendPage($encontreiro->equipe, $table);
-                }
-            }
-
-            //PALESTRANTES
-            $palestrantes = ViewEncontreiro::where('casal_id', '=', $param['relacao_id'])->countDistinctBy('id', 'contagem');
-
-            if ($palestrantes) {
-
-                $palestrantes_palestra = ViewPalestrante::where('encontro_id', '=', $encontro->id)->orderBy('palestra_id, casal', 'asc')->load();
+            if ($equipes) {
 
                 // creates a table
                 $table = new TTable;
@@ -285,16 +130,119 @@ class CasalPanel extends TPage
                 $table->border = '1';
 
                 // creates a label with the title
-                $title = new TLabel('<b>PALESTRA / PALESTRANTES</b>');
+                $title = new TLabel('<b>QUADRO DE RESUMO POR EQUIPE</b>');
                 $title->style = 'color: #fff;';
 
                 // adds a row to the table
                 $row = $table->addRow();
-                $row->style = 'font-weight: bold; border-bottom: 2px solid black; background-color: #6f42c1;';
+                $row->style = 'font-weight: bold; border-bottom: 2px solid black; background-color: #343a40;';
                 $title = $row->addCell($title);
-                $title->colspan = 6;
+                $title->colspan = 4;
 
-                $ordem = 0;
+                $table->style = 'border-collapse:collapse; border-bottom: 2px solid black; border-top: 2px solid black; text-align: center;';
+
+                // adds a row for the code field
+                $row = $table->addRow();
+                $row->style = 'font-weight: bold; border-bottom: 2px solid black; background-color: #dcdcdc;';
+                $row->addCell('Ordem');
+                $row->addCell('Equipe');
+                $row->addCell('Total (Coordenação)');
+                $row->addCell('Total Geral');
+
+                $total_coord = 0;
+                $total_geral = 0;
+
+                foreach ($equipes as $equipe) {
+
+                    $row = $table->addRow();
+
+                    $ordem_label = new TLabel('ordem');
+                    $ordem_label->setFontStyle('b');
+                    $ordem_label->setValue($equipe->id);
+
+                    $quantidade_equipe = ViewEncontreiro::where('casal_id', '=', $param['relacao_id'])->where('equipe_id', '=', $equipe->id)->count();
+
+                    $action = new TAction([$this, 'onViewDetalhes']);
+                    $action->setParameter('equipe', $equipe->equipe);
+                    $action->setParameter('contagem_equipe', $quantidade_equipe);
+                    $action->setParameter('casal_id', $param['relacao_id']);
+                    $action->setParameter('equipe_id', $equipe->id);
+                    $action->setParameter('tipo', 1);
+
+                    $equipe_link = new TActionLink('<b>' . $equipe->equipe . '</b>', $action, 'black', 12, 'bu'); //biu
+
+                    $row->addCell($ordem_label);
+
+                    $quantidade_equipe_coord = ViewEncontreiro::where('casal_id', '=', $param['relacao_id'])->where('equipe_id', '=', $equipe->id)->where('funcao_id', '=', 1)->count();
+
+                    if ($quantidade_equipe > 0) {
+                        $row->addCell($equipe_link);
+                    } else {
+                        $row->addCell($equipe->equipe);
+                    }
+
+                    if ($quantidade_equipe_coord > 0) {
+
+                        $coord_label = new TLabel('coord');
+                        $coord_label->setFontStyle('b');
+                        $coord_label->setValue($quantidade_equipe_coord);
+                        $row->addCell($coord_label);
+
+                        $total_coord += $quantidade_equipe_coord;
+                    } else {
+
+                        $row->addCell(0);
+                    }
+
+                    if ($quantidade_equipe > 0) {
+                        $geral_label = new TLabel('geral');
+                        $geral_label->setFontStyle('b');
+                        $geral_label->setValue($quantidade_equipe);
+                        $row->addCell($geral_label);
+
+                        $total_geral += $quantidade_equipe;
+                    } else {
+                        $row->addCell(0);
+                    }
+                }
+
+                // creates a label with the title
+                $rodape = new TLabel('<b>TOTAL</b>');
+                $rodape->style = 'color: #fff;';
+
+                $row = $table->addRow();
+                $row->style = 'font-weight: bold; border-bottom: 2px solid black; background-color: #343a40;';
+                $rodape = $row->addCell($rodape);
+                $rodape->colspan = 2;
+                $total_coord = new TLabel('<b>' . $total_coord . '</b>');
+                $total_coord->style = 'color: #fff;';
+                $total_coord = $row->addCell($total_coord);
+                $label_total_geral = new TLabel('<b>' . $total_geral . '</b>');
+                $label_total_geral->style = 'color: #fff;';
+                $row->addCell($label_total_geral);
+
+                $notebook_resumos->appendPage('Equipes <b>(' . $total_geral . ')</b>', $table);
+            }
+
+            //PALESTRAS
+            $palestras = ListaItens::where('lista_id', '=', 19)->load();
+
+            if ($palestras) {
+
+                // creates a table
+                $table = new TTable;
+                $table->width = '100%';
+                $table->border = '1';
+
+                // creates a label with the title
+                $title = new TLabel('<b>QUADRO DE RESUMO POR PALESTRAS</b>');
+                $title->style = 'color: #fff;';
+
+                // adds a row to the table
+                $row = $table->addRow();
+                $row->style = 'font-weight: bold; border-bottom: 2px solid black; background-color: #343a40;';
+                $title = $row->addCell($title);
+                $title->colspan = 4;
 
                 $table->style = 'border-collapse:collapse; border-bottom: 2px solid black; border-top: 2px solid black; text-align: center;';
 
@@ -303,41 +251,91 @@ class CasalPanel extends TPage
                 $row->style = 'font-weight: bold; border-bottom: 2px solid black; background-color: #dcdcdc;';
                 $row->addCell('Ordem');
                 $row->addCell('Palestra');
-                $row->addCell('Casal');
-                $row->addCell('Nome Completo / Nascimento');
-                $row->addCell('Casamento');
-                $row->addCell('Círculo');
+                $row->addCell('Total (Coordenação)');
+                $row->addCell('Total Geral');
 
-                foreach ($palestrantes_palestra as $pales_pal) {
+                $total_coord = 0;
+                $total_geral = 0;
+                $ordem = 0;
+
+                foreach ($palestras as $palestra) {
+
                     $row = $table->addRow();
 
-                    $ordem += 1;
-
-                    $ordem_label = new TLabel($ordem);
+                    $ordem_label = new TLabel('ordem');
                     $ordem_label->setFontStyle('b');
+                    $ordem += 1;
                     $ordem_label->setValue($ordem);
 
-                    $palestra_label = new TLabel('palestra');
-                    $palestra_label->setFontStyle('b');
-                    $palestra_label->setValue($pales_pal->palestra);
+                    $quantidade_palestra = ViewPalestrante::where('casal_id', '=', $param['relacao_id'])->where('palestra_id', '=', $palestra->id)->count();
+
+                    $action = new TAction([$this, 'onViewDetalhes']);
+                    $action->setParameter('equipe', $palestra->item);
+                    $action->setParameter('contagem_equipe', $quantidade_palestra);
+                    $action->setParameter('casal_id', $param['relacao_id']);
+                    $action->setParameter('equipe_id', $palestra->id);
+                    $action->setParameter('tipo', 2);
+
+                    $palestra_link = new TActionLink('<b>' . $palestra->item . '</b>', $action, 'black', 12, 'bu'); //biu
 
                     $row->addCell($ordem_label);
-                    $row->addCell($palestra_label);
-                    $row->addCell($pales_pal->casal . ' ' . $pales_pal->Funcao);
-                    $row->addCell($pales_pal->DadosCasal->Ele->nome . ' - ' . $pales_pal->DadosCasal->Ela->nome . '<br>' . TDate::date2br($pales_pal->DadosCasal->Ele->dt_nascimento) . ' - ' . TDate::date2br($pales_pal->DadosCasal->Ela->dt_nascimento));
-                    $row->addCell(TDate::date2br($pales_pal->DadosCasal->dt_inicial));
-                    $row->addCell($pales_pal->CirculoCor);
+
+
+                    $quantidade_palestra_coord = ViewPalestrante::where('casal_id', '=', $param['relacao_id'])->where('palestra_id', '=', $palestra->id)->where('funcao_id', '=', 1)->count();
+
+                    if ($quantidade_palestra > 0) {
+                        $row->addCell($palestra_link);
+                    } else {
+                        $row->addCell($palestra->item);
+                    }
+
+                    if ($quantidade_palestra_coord > 0) {
+
+                        $coord_label = new TLabel('coord');
+                        $coord_label->setFontStyle('b');
+                        $coord_label->setValue($quantidade_palestra_coord);
+                        $row->addCell($coord_label);
+
+                        $total_coord += $quantidade_palestra_coord;
+                    } else {
+
+                        $row->addCell(0);
+                    }
+
+                    if ($quantidade_palestra > 0) {
+                        $geral_label = new TLabel('geral');
+                        $geral_label->setFontStyle('b');
+                        $geral_label->setValue($quantidade_palestra);
+                        $row->addCell($geral_label);
+
+                        $total_geral += $quantidade_palestra;
+                    } else {
+                        $row->addCell(0);
+                    }
                 }
 
-                $notebook_palestrante->appendPage('LISTA DE PALESTRANTES', $table);
+                // creates a label with the title
+                $rodape = new TLabel('<b>TOTAL</b>');
+                $rodape->style = 'color: #fff;';
+
+                $row = $table->addRow();
+                $row->style = 'font-weight: bold; border-bottom: 2px solid black; background-color: #343a40;';
+                $rodape = $row->addCell($rodape);
+                $rodape->colspan = 2;
+                $total_coord = new TLabel('<b>' . $total_coord . '</b>');
+                $total_coord->style = 'color: #fff;';
+                $total_coord = $row->addCell($total_coord);
+                $label_total_geral = new TLabel('<b>' . $total_geral . '</b>');
+                $label_total_geral->style = 'color: #fff;';
+                $row->addCell($label_total_geral);
+
+                $notebook_resumos->appendPage('Palestras <b>(' . $total_geral . ')</b>', $table);
             }
 
-            //EDG
-            $edgs = ViewEdg::where('encontro_id', '=', $encontro->id)->countDistinctBy('id', 'contagem');
+            //PALESTRAS
+            $edgs = ListaItens::where('lista_id', '=', 20)->load();
 
             if ($edgs) {
-
-                $edgs_edg = ViewEdg::where('encontro_id', '=', $encontro->id)->orderBy('pasta_id, funcao_id', 'asc')->load();
 
                 // creates a table
                 $table = new TTable;
@@ -345,16 +343,14 @@ class CasalPanel extends TPage
                 $table->border = '1';
 
                 // creates a label with the title
-                $title = new TLabel('<b>EQUIPE DE DIREÇÃO GERAL</b>');
+                $title = new TLabel('<b>QUADRO DE RESUMO POR PASTAS</b>');
                 $title->style = 'color: #fff;';
 
                 // adds a row to the table
                 $row = $table->addRow();
                 $row->style = 'font-weight: bold; border-bottom: 2px solid black; background-color: #343a40;';
                 $title = $row->addCell($title);
-                $title->colspan = 6;
-
-                $ordem = 0;
+                $title->colspan = 4;
 
                 $table->style = 'border-collapse:collapse; border-bottom: 2px solid black; border-top: 2px solid black; text-align: center;';
 
@@ -363,34 +359,172 @@ class CasalPanel extends TPage
                 $row->style = 'font-weight: bold; border-bottom: 2px solid black; background-color: #dcdcdc;';
                 $row->addCell('Ordem');
                 $row->addCell('Pasta');
-                $row->addCell('Casal');
-                $row->addCell('Nome Completo / Nascimento');
-                $row->addCell('Casamento');
-                $row->addCell('Círculo');
+                $row->addCell('Total (Coordenação)');
+                $row->addCell('Total Geral');
 
-                foreach ($edgs_edg as $edg_ed) {
+                $total_coord = 0;
+                $total_geral = 0;
+                $ordem = 0;
+
+                foreach ($edgs as $edg) {
+
                     $row = $table->addRow();
 
-                    $ordem += 1;
-
-                    $ordem_label = new TLabel($ordem);
+                    $ordem_label = new TLabel('ordem');
                     $ordem_label->setFontStyle('b');
+                    $ordem += 1;
                     $ordem_label->setValue($ordem);
 
-                    $pasta_label = new TLabel('pasta');
-                    $pasta_label->setFontStyle('b');
-                    $pasta_label->setValue($edg_ed->pasta);
+                    $quantidade_edg = ViewEdg::where('casal_id', '=', $param['relacao_id'])->where('pasta_id', '=', $edg->id)->count();
+
+                    $action = new TAction([$this, 'onViewDetalhes']);
+                    $action->setParameter('equipe', $edg->item);
+                    $action->setParameter('contagem_equipe', $quantidade_edg);
+                    $action->setParameter('casal_id', $param['relacao_id']);
+                    $action->setParameter('equipe_id', $edg->id);
+                    $action->setParameter('tipo', 3);
+
+                    $edg_link = new TActionLink('<b>' . $edg->item . '</b>', $action, 'black', 12, 'bu'); //biu
 
                     $row->addCell($ordem_label);
-                    $row->addCell($pasta_label);
-                    $row->addCell($edg_ed->casal . '<br>' . $edg_ed->Funcao);
-                    $row->addCell($edg_ed->DadosCasal->Ele->nome . ' - ' . $edg_ed->DadosCasal->Ela->nome . '<br>' . TDate::date2br($edg_ed->DadosCasal->Ele->dt_nascimento) . ' - ' . TDate::date2br($edg_ed->DadosCasal->Ela->dt_nascimento));
-                    $row->addCell(TDate::date2br($edg_ed->DadosCasal->dt_inicial));
-                    $row->addCell($edg_ed->CirculoCor);
+
+
+                    $quantidade_edg_coord = ViewEdg::where('casal_id', '=', $param['relacao_id'])->where('pasta_id', '=', $edg->id)->where('funcao_id', '=', 1)->count();
+
+                    if ($quantidade_edg > 0) {
+                        $row->addCell($edg_link);
+                    } else {
+                        $row->addCell($edg->item);
+                    }
+
+                    if ($quantidade_edg_coord > 0) {
+
+                        $coord_label = new TLabel('coord');
+                        $coord_label->setFontStyle('b');
+                        $coord_label->setValue($quantidade_edg_coord);
+                        $row->addCell($coord_label);
+
+                        $total_coord += $quantidade_edg_coord;
+                    } else {
+                        $row->addCell(0);
+                    }
+
+                    if ($quantidade_edg > 0) {
+                        $geral_label = new TLabel('geral');
+                        $geral_label->setFontStyle('b');
+                        $geral_label->setValue($quantidade_edg);
+                        $row->addCell($geral_label);
+
+                        $total_geral += $quantidade_edg;
+                    } else {
+                        $row->addCell(0);
+                    }
                 }
 
-                $notebook_edg->appendPage('EDG', $table);
+                // creates a label with the title
+                $rodape = new TLabel('<b>TOTAL</b>');
+                $rodape->style = 'color: #fff;';
+
+                $row = $table->addRow();
+                $row->style = 'font-weight: bold; border-bottom: 2px solid black; background-color: #343a40;';
+                $rodape = $row->addCell($rodape);
+                $rodape->colspan = 2;
+                $total_coord = new TLabel('<b>' . $total_coord . '</b>');
+                $total_coord->style = 'color: #fff;';
+                $total_coord = $row->addCell($total_coord);
+                $label_total_geral = new TLabel('<b>' . $total_geral . '</b>');
+                $label_total_geral->style = 'color: #fff;';
+                $row->addCell($label_total_geral);
+
+                $notebook_resumos->appendPage('EDG <b>(' . $total_geral . ')</b>', $table);
             }
+
+            //historico de equipes
+            $this->historico_equipes = new BootstrapDatagridWrapper(new TDataGrid);
+            $this->historico_equipes->style = 'width:100%';
+            $this->historico_equipes->disableDefaultClick();
+
+            //$column_id = $this->historico_equipes->addColumn(new TDataGridColumn('id', 'Cód.', 'center'));
+            $column_encontro = $this->historico_equipes->addColumn(new TDataGridColumn('encontro', 'Encontro', 'center'));
+            //$column_circulo = $this->historico_equipes->addColumn(new TDataGridColumn('CirculoCor', 'Círculo', 'center'));]
+            $column_ano = $this->historico_equipes->addColumn(new TDataGridColumn('AnoEcc', 'Ano', 'center'));
+            $column_coordenar_s_n = $this->historico_equipes->addColumn(new TDataGridColumn('Coordenar', 'Coordenar?', 'center'));
+            $column_funcao_id = $this->historico_equipes->addColumn(new TDataGridColumn('Funcao', 'Função', 'center'));
+            $column_equipe = $this->historico_equipes->addColumn(new TDataGridColumn('equipe', 'Equipe', 'left'));
+
+            // define row actions
+            //$action1 = new TDataGridAction(['CirculoHistoricoForm', 'onEdit'],   ['key' => '{id}']);
+            //$action2 = new TDataGridAction([$this, 'onDelete'], ['key' => '{id}', 'casal_id' => $param['relacao_id']]);
+
+            //$this->historico_circulos->addAction($action1, 'Editar',   'far:edit blue');
+            //$this->historico_circulos->addAction($action2, 'Deletar', 'far:trash-alt red');
+
+            $this->historico_equipes->createModel();
+
+            $historicoequipes = ViewEncontreiro::where('casal_id', '=', $param['relacao_id'])->orderBy('encontro', 'asc')->load();
+            $this->historico_equipes->addItems($historicoequipes);
+            //TSession::setValue('pessoa_painel_vinculos', $circulohistorico);
+
+            $panel_historicoequipes = new TPanelGroup('<b>Histórico de Equipes</b>', '#f5f5f5');
+
+            if ($historicoequipes) {
+                $panel_historicoequipes->add($this->historico_equipes)->style = 'overflow-x:auto';
+            } else {
+                $label_historicoequipes = new TLabel('Não há histórico registrado para este casal.', '#dd5a43', 12, 'b');
+                $panel_historicoequipes->add($label_historicoequipes);
+            }
+
+            //$panel_circulohistorico->addHeaderActionLink('<b>Adicionar</b>',  new TAction(['CirculoHistoricoForm', 'onEdit'], ['casal_id' => $param['relacao_id'], 'user_sessao_id' => TSession::getValue('userid'), 'register_state' => 'false']), 'fa:plus green');
+            //$this->form->addContent([$panel_circulohistorico]);
+
+            $notebook_historicos->appendPage('<b>Equipes</b>', $panel_historicoequipes);
+
+            //historico de circulos
+            $this->historico_circulos = new BootstrapDatagridWrapper(new TDataGrid);
+            $this->historico_circulos->style = 'width:100%';
+            //$this->historico_circulos->disableDefaultClick();
+
+            $column_id = $this->historico_circulos->addColumn(new TDataGridColumn('id', 'Cód.', 'center'));
+            //$column_user_sessao_id = $this->historico_circulos->addColumn(new TDataGridColumn('user_sessao_id', 'Cadastrado por', 'left'));
+            //$column_casal_id = $this->historico_circulos->addColumn(new TDataGridColumn('casal_id', 'Casal', 'left'));
+            $column_circulo_id = $this->historico_circulos->addColumn(new TDataGridColumn('CirculoCor', 'Círculo', 'center'));
+            $column_motivo_id = $this->historico_circulos->addColumn(new TDataGridColumn('CirculoMotivo->item', 'Motivo', 'left'));
+            //$column_obs_motivo = $this->historico_circulos->addColumn(new TDataGridColumn('obs_motivo', 'obs_motivo', 'left'));
+            $column_dt_historico = $this->historico_circulos->addColumn(new TDataGridColumn('dt_historico', 'Data', 'left'));
+
+            // define the transformer method over date
+            $column_dt_historico->setTransformer(function ($value, $object, $row) {
+                $date = new DateTime($value);
+                return $date->format('d/m/Y');
+            });
+
+            // define row actions
+            $action1 = new TDataGridAction(['CirculoHistoricoForm', 'onEdit'],   ['key' => '{id}']);
+            $action2 = new TDataGridAction([$this, 'onDelete'], ['key' => '{id}', 'casal_id' => $param['relacao_id']]);
+
+            $this->historico_circulos->addAction($action1, 'Editar',   'far:edit blue');
+            $this->historico_circulos->addAction($action2, 'Deletar', 'far:trash-alt red');
+
+            $this->historico_circulos->createModel();
+
+            $circulohistorico = CirculoHistorico::where('casal_id', '=', $param['relacao_id'])->orderBy('id', 'asc')->load();
+            $this->historico_circulos->addItems($circulohistorico);
+            //TSession::setValue('pessoa_painel_vinculos', $circulohistorico);
+
+            $panel_circulohistorico = new TPanelGroup('<b>Histórico de Círculos</b>', '#f5f5f5');
+
+            if ($circulohistorico) {
+                $panel_circulohistorico->add($this->historico_circulos)->style = 'overflow-x:auto';
+            } else {
+                $label_circulohistorico = new TLabel('Não há histórico registrado para este casal.', '#dd5a43', 12, 'b');
+                $panel_circulohistorico->add($label_circulohistorico);
+            }
+
+            $panel_circulohistorico->addHeaderActionLink('<b>Adicionar</b>',  new TAction(['CirculoHistoricoForm', 'onEdit'], ['casal_id' => $param['relacao_id'], 'user_sessao_id' => TSession::getValue('userid'), 'register_state' => 'false']), 'fa:plus green');
+            //$this->form->addContent([$panel_circulohistorico]);
+
+            $notebook_historicos->appendPage('<b>Círculos</b>', $panel_circulohistorico);
+
 
             TTransaction::close();
         } catch (Exception $e) {
@@ -398,107 +532,130 @@ class CasalPanel extends TPage
         }
     }
 
-
-    /**
-     * method onView()
-     * Executed when the user clicks at the view button
-     */
-    public static function onViewDocImagem($param)
-    {
-
-        try {
-            if ($param['relacao_id']) {
-
-                TTransaction::open('adea');   // open a transaction with database 'samples'
-
-                // get the parameter
-                $object = new PessoasRelacao($param['relacao_id']);
-
-                $win = TWindow::create('Documento da Relação', 0.8, 0.6);
-                if ($object->doc_imagem) {
-                    $img_doc = new TImage($object->doc_imagem);
-                } else {
-                    $img_doc = new TImage('app/images/dadosderelacao/semdocimagem.jpg');
-                }
-
-                $img_doc->width = '100%';
-                $img_doc->height = '100%';
-                $img_doc->style = '';
-                $div_image = new TElement('div');
-                //$div_image->class = 'zoom';
-                $div_image->add($img_doc);
-
-
-                $win->add($div_image);
-                //$win->add("<center><img style='height:500px;float:right;margin:5px' src='{$object->doc_imagem}'></center>");
-                $win->show();
-
-                TTransaction::close();           // close the transaction
-            } else {
-                $this->form->clear(true);
-            }
-        } catch (Exception $e) // in case of exception
-        {
-            new TMessage('error', $e->getMessage()); // shows the exception error message
-            TTransaction::rollback(); // undo all pending operations
-        }
-    }
-
-    /**
-     * Define when the action can be displayed
-     */
-    public function displayColumn($object)
-    {
-        if ($object->parentesco_id >= 921 and $object->parentesco_id <= 932) {
-            return TRUE;
-        }
-        return FALSE;
-    }
-
-    public function displayColumn2($object)
-    {
-        if ($object->parentesco_id >= 921 and $object->parentesco_id <= 924) {
-            return TRUE;
-        } else if ($object->parentesco_id >= 927 and $object->parentesco_id <= 930) {
-            return TRUE;
-        }
-        return FALSE;
-    }
-
-    public static function onMudaGrauParente($param) {}
-
     /**
      * Ask before deletion
      */
-    public static function onDeleteContato($param)
+    public static function onDelete($param)
     {
         // define the delete action
-        $action = new TAction(array(__CLASS__, 'DeleteContato'));
+        $action = new TAction(array(__CLASS__, 'Delete'));
         $action->setParameters($param); // pass the key parameter ahead
 
         // shows a dialog to the user
-        new TQuestion(AdiantiCoreTranslator::translate('Do you really want to delete ?'), $action);
+        new TQuestion('Deseja realmente deletar este registro ?', $action);
     }
 
     /**
      * Delete a record
      */
-    public static function DeleteContato($param)
+    public static function Delete($param)
     {
         try {
             $key = $param['key']; // get the parameter $key
             TTransaction::open('adea'); // open a transaction with database
-            $object = new PessoaContato($key, FALSE); // instantiates the Active Record
+            $object = new CirculoHistorico($key, FALSE); // instantiates the Active Record
             $object->delete(); // deletes the object from the database
             TTransaction::close(); // close the transaction
 
-            $posAction = new TDataGridAction(['PessoaPanel', 'onView'],   ['key' => $param['pessoa_id'], 'register_state' => 'false']);
-            new TMessage('info', AdiantiCoreTranslator::translate('Record deleted'), $posAction); // success message
+            $pos_action = new TDataGridAction([__CLASS__, 'onView'],   ['relacao_id' => $param['casal_id'], 'register_state' => 'false']);
+
+            new TMessage('info', 'Registro Deletado!', $pos_action); // success message
         } catch (Exception $e) // in case of exception
         {
             new TMessage('error', $e->getMessage()); // shows the exception error message
             TTransaction::rollback(); // undo all pending operations
         }
+    }
+
+    public static function onViewDetalhes($param)
+    {
+
+        $win = TWindow::create('Detalhes da Montagem', 0.5, 0.5);
+
+        try {
+            TTransaction::open('adea');
+
+            if ($param['tipo'] == 1) {
+                $encontreiro_equipe = ViewEncontreiro::where('casal_id', '=', $param['casal_id'])->where('equipe_id', '=', $param['equipe_id'])->orderBy('encontro, funcao_id', 'asc')->load();
+                $nome_desc = 'Equipe';
+            } else if ($param['tipo'] == 2) {
+                $encontreiro_equipe = ViewPalestrante::where('casal_id', '=', $param['casal_id'])->where('palestra_id', '=', $param['equipe_id'])->orderBy('encontro, funcao_id', 'asc')->load();
+                $nome_desc = 'Palestra';
+            } else if ($param['tipo'] == 3) {
+                $encontreiro_equipe = ViewEdg::where('casal_id', '=', $param['casal_id'])->where('pasta_id', '=', $param['equipe_id'])->orderBy('encontro, funcao_id', 'asc')->load();
+                $nome_desc = 'Pasta';
+            }
+
+            // creates a table
+            $table = new TTable;
+            $table->width = '100%';
+            $table->border = '1';
+
+            // creates a label with the title
+            $title = new TLabel('<b>' . $param['equipe'] . '</b>');
+
+            // adds a row to the table
+            $row = $table->addRow();
+            $row->style = 'font-weight: bold; border-bottom: 2px solid black; background-color: #6c757d;';
+            $title = $row->addCell($title);
+            $title->colspan = 6;
+
+            $ordem = 0;
+
+            $table->style = 'border-collapse:collapse; border-bottom: 2px solid black; border-top: 2px solid black; text-align: center;';
+
+            // adds a row for the code field
+            $row = $table->addRow();
+            $row->style = 'font-weight: bold; border-bottom: 2px solid black; background-color: #dcdcdc;';
+            $row->addCell('Ordem');
+            $row->addCell('Função');
+            $row->addCell('Encontro');
+            $row->addCell('Coordenar?');
+            $row->addCell('Camisa?');
+            $row->addCell('Círculo');
+
+            $nome_casal = '';
+
+            foreach ($encontreiro_equipe as $enc_equip) {
+                $row = $table->addRow();
+
+                $nome_casal = $enc_equip->casal;
+                $ordem += 1;
+
+                $ordem_label = new TLabel($ordem);
+                $ordem_label->setFontStyle('b');
+                $ordem_label->setValue($ordem);
+
+                $row->addCell($ordem_label);
+                $row->addCell($enc_equip->Funcao);
+                $row->addCell($enc_equip->encontro);
+                $row->addCell($enc_equip->Coordenar);
+                $row->addCell($enc_equip->CamisaEncontroBr);
+                $row->addCell($enc_equip->CirculoCor);
+            }
+
+            TTransaction::close();
+
+            $win->add('<br>');
+
+            $win->add("Casal: <b>{$nome_casal}</b><br>
+            {$nome_desc}: <b>{$param['equipe']}</b><br>
+            Total de Participações: <b>{$param['contagem_equipe']}</b><br>
+            ");
+
+            $win->add('<br>');
+
+            $win->add($table);
+            $win->show();
+        } catch (Exception $e) {
+            new TMessage('error', $e->getMessage());
+        }
+
+        //$notebook_encontreiro->appendPage($encontreiro->equipe . ' <b>(' . $encontreiro->contagem . ')</b>', $table);
+
+
+        //$win->add("<br> &nbsp; You have clicked at <b>{$name}</b>");
+
     }
 
     public function onPrint($param)
@@ -543,8 +700,7 @@ class CasalPanel extends TPage
      */
     public static function onClose($param)
     {
-        TSession::delValue('pessoa_painel');
-        TSession::delValue('pessoa_painel_vinculos');
-        TScript::create("Template.closeRightPanel()");
+        //TScript::create("Template.closeRightPanel()");
+        parent::closeWindow();
     }
 }

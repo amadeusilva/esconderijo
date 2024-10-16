@@ -62,6 +62,48 @@ AND montagem.tipo_id = 2 AND encontreiro_equipe.tipo_enc_id = 1
         return new ViewCasal($this->casal_id);
     }
 
+    public function get_AnoEcc()
+    {
+        $encontro = new Encontro($this->encontro_id);
+
+        $date = new DateTime($encontro->dt_inicial);
+        return $date->format('Y');
+    }
+
+    public function get_CamisaEncontroBr()
+    {
+        if ($this->camisa_encontro_br == 1) {
+            $div = new TElement('span');
+            $div->class = "label label-success";
+            $div->style = "text-shadow:none; font-size:12px";
+            $div->add('Sim');
+            return $div;
+        } else {
+            $div = new TElement('span');
+            $div->class = "label label-danger";
+            $div->style = "text-shadow:none; font-size:12px";
+            $div->add('Não');
+            return $div;
+        }
+    }
+
+    public function get_Coordenar()
+    {
+        if ($this->coordenar_s_n == 1) {
+            $div = new TElement('span');
+            $div->class = "label label-success";
+            $div->style = "text-shadow:none; font-size:12px";
+            $div->add('Sim');
+            return $div;
+        } else {
+            $div = new TElement('span');
+            $div->class = "label label-danger";
+            $div->style = "text-shadow:none; font-size:12px";
+            $div->add('Não');
+            return $div;
+        }
+    }
+
     public function get_CirculoCor()
     {
         $circulo_cor = ListaItens::where('item', '=', $this->circulo)->first();

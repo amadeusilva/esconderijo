@@ -23,6 +23,11 @@ class Montagem extends TRecord
         parent::addAttribute('circulo_id');
     }
 
+    public function get_DadosCasal()
+    {
+        return new ViewCasal($this->casal_id);
+    }
+
     public function get_Circulo()
     {
         return ListaItens::find($this->circulo_id);

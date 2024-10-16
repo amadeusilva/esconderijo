@@ -35,7 +35,7 @@ class EncontreiroForm extends TWindow
         parent::__construct();
         parent::setModal(true);
         parent::removePadding();
-        parent::setSize(400, null);
+        parent::setSize(500, null);
 
         if ($param['tipo_enc_id'] == 1) {
             parent::setTitle('Encontreiro');
@@ -64,10 +64,36 @@ class EncontreiroForm extends TWindow
         $tipo_enc_id->setEditable(FALSE);
         $tipo_enc_id->setSize('100%');
 
-        $casal_id = new TDBCombo('casal_id', 'adea', 'ViewEncontrista', 'casal_id', 'casal', 'casal_id');
+        $casal_id = new TDBCombo('casal_id', 'adea', 'ViewEncontrista', 'casal_id', '{casal} ({Casamento})', 'casal_id');
         $casal_id->enableSearch();
         $casal_id->setSize('100%');
         $casal_id->setChangeAction(new TAction(array($this, 'onCirculo')));
+
+        $ele_nome = new TEntry('ele_nome');
+        $ele_nome->setEditable(FALSE);
+        $ele_nome->setSize('100%');
+        $ele_dn = new TDate('ele_dn');
+        $ele_dn->setMask('dd/mm/yyyy');
+        $ele_dn->setDatabaseMask('yyyy-mm-dd');
+        $ele_dn->setEditable(FALSE);
+        $ele_dn->setSize('100%');
+
+        $ela_nome = new TEntry('ela_nome');
+        $ela_nome->setEditable(FALSE);
+        $ela_nome->setSize('100%');
+        $ela_dn = new TDate('ela_dn');
+        $ela_dn->setMask('dd/mm/yyyy');
+        $ela_dn->setDatabaseMask('yyyy-mm-dd');
+        $ela_dn->setEditable(FALSE);
+        $ela_dn->setSize('100%');
+
+        /*
+        $dt_casamento       = new TDate('dt_casamento');
+        $dt_casamento->setMask('dd/mm/yyyy');
+        $dt_casamento->setDatabaseMask('yyyy-mm-dd');
+        $dt_casamento->setEditable(FALSE);
+        $dt_casamento->setSize('100%');
+        */
 
         $filter = new TCriteria;
         $filter->add(new TFilter('evento_id', '=', '701'));
@@ -139,27 +165,33 @@ class EncontreiroForm extends TWindow
         );
         $row->layout = ['col-sm-7', 'col-sm-5'];
 
-        $label = new TLabel('<br>Camisas?', '#62a8ee', 14, 'b');
+        $label = new TLabel('<br>Dados do Casal', '#62a8ee', 14, 'b');
         $label->style = 'text-align:left;border-bottom:1px solid #62a8ee;width:100%';
         $this->form->addContent([$label]);
 
         $row = $this->form->addFields(
             [
-                new TLabel('Branca?')
+                new TLabel('Ele'),
+                $ele_nome
             ],
             [
-
-                $camisa_encontro_br
-            ],
-            [
-                new TLabel('Círculo?')
-            ],
-            [
-
-                $camisa_encontro_cor
+                new TLabel('Nasc.:'),
+                $ele_dn
             ]
         );
-        $row->layout = ['col-sm-4', 'col-sm-8', 'col-sm-4', 'col-sm-8'];
+        $row->layout = ['col-sm-8', 'col-sm-4'];
+
+        $row = $this->form->addFields(
+            [
+                new TLabel('Ela'),
+                $ela_nome
+            ],
+            [
+                new TLabel('Nasc.:'),
+                $ela_dn
+            ]
+        );
+        $row->layout = ['col-sm-8', 'col-sm-4'];
 
         $label = new TLabel('<br>Outras Informações', '#62a8ee', 14, 'b');
         $label->style = 'text-align:left;border-bottom:1px solid #62a8ee;width:100%';
@@ -167,21 +199,23 @@ class EncontreiroForm extends TWindow
 
         $row = $this->form->addFields(
             [
-                new TLabel('Noite (Livre)?')
+                new TLabel('Branca?'),
+                $camisa_encontro_br
             ],
             [
-
+                new TLabel('Círculo?'),
+                $camisa_encontro_cor
+            ],
+            [
+                new TLabel('Noite?'),
                 $disponibilidade_nt
             ],
             [
-                new TLabel('Coordenar?')
-            ],
-            [
-
+                new TLabel('Coordenar?'),
                 $coordenar_s_n
             ]
         );
-        $row->layout = ['col-sm-4', 'col-sm-8', 'col-sm-4', 'col-sm-8'];
+        $row->layout = ['col-sm-3', 'col-sm-3', 'col-sm-3', 'col-sm-3'];
 
         if ($param['tipo_enc_id'] == 1) {
 
@@ -283,6 +317,12 @@ class EncontreiroForm extends TWindow
                     $nometela = new stdClass;
                     $nometela->circulo_id        = $buscacirculo->circulo_id;
 
+                    $nometela->ele_nome        = $buscacirculo->DadosCasal->Ele->nome;
+                    $nometela->ele_dn        = TDate::date2br($buscacirculo->DadosCasal->Ele->dt_nascimento);
+
+                    $nometela->ela_nome        = $buscacirculo->DadosCasal->Ela->nome;
+                    $nometela->ela_dn        = TDate::date2br($buscacirculo->DadosCasal->Ela->dt_nascimento);
+
                     TForm::sendData('form_encontreiro', $nometela);
                 }
             }
@@ -323,6 +363,12 @@ class EncontreiroForm extends TWindow
                 TTransaction::open('adea');   // open a transaction with database 'samples'
                 $montagem = new Montagem($key);        // instantiates object City
                 $encontreiro = Encontreiro::where('montagem_id', '=', $montagem->id)->first();
+
+                $montagem->ele_nome        = $montagem->DadosCasal->Ele->nome;
+                $montagem->ele_dn        = TDate::date2br($montagem->DadosCasal->Ele->dt_nascimento);
+
+                $montagem->ela_nome        = $montagem->DadosCasal->Ela->nome;
+                $montagem->ela_dn        = TDate::date2br($montagem->DadosCasal->Ela->dt_nascimento);
 
                 $montagem->camisa_encontro_br = $encontreiro->camisa_encontro_br;
                 $montagem->camisa_encontro_cor = $encontreiro->camisa_encontro_cor;
@@ -450,7 +496,7 @@ class EncontreiroForm extends TWindow
 
         $form_vazio = new stdClass;
         $form_vazio->tipo_enc_id = $param['tipo_enc_id'];
-        $form_vazio->encontro_id = 3;
+        //$form_vazio->encontro_id = 4;
         $form_vazio->camisa_encontro_br = 2;
         $form_vazio->camisa_encontro_cor = 2;
         $form_vazio->disponibilidade_nt = 2;

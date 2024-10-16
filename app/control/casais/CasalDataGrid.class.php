@@ -1,7 +1,9 @@
 <?php
 
+use Adianti\Widget\Form\TDate;
+
 /**
- * StandardDataGridView Listing
+ * CustomerDataGridView
  *
  * @version    1.0
  * @package    samples
@@ -12,26 +14,44 @@
  */
 class CasalDataGrid extends TPage
 {
-    protected $datagrid; // listing
-    protected $pageNavigation;
+    private $form;      // search form
+    private $datagrid;  // listing
+    private $pageNavigation;
 
-    // trait with onReload, onSearch, onDelete...
     use Adianti\Base\AdiantiStandardListTrait;
 
     /**
      * Class constructor
-     * Creates the page, the form and the listing
+     * Creates the page, the search form and the listing
      */
     public function __construct()
     {
         parent::__construct();
 
-        $this->setDatabase('adea');        // defines the database
-        $this->setActiveRecord('ViewCasal');       // defines the active record
+        $this->setDatabase('adea'); // defines the database
+        $this->setActiveRecord('ViewCasal'); // defines the active record
+        $this->setDefaultOrder('relacao_id', 'asc');  // defines the default order
+        $this->addFilterField('relacao_id', '=', 'relacao_id'); // add a filter field
+        $this->addFilterField('casal', 'ilike', 'casal'); // add a filter field
+        $this->addFilterField('dt_inicial', '=', 'dt_inicial'); // add a filter field
+        $this->addFilterField('dt_final', '=', 'dt_final'); // add a filter field
+        $this->addFilterField('tipo_vinculo', 'ilike', 'tipo_vinculo'); // add a filter field
+        $this->addFilterField('status_relacao_id', '=', 'status_relacao_id'); // add a filter field
+        //$this->addFilterField('email', '=', 'email'); // add a filter field
+        //$this->addFilterField('status_pessoa', '=', 'status_pessoa'); // add a filter field
+        //$this->addFilterField('(SELECT logradouro FROM logradouro WHERE id=logradouro_id.id)', 'like', 'endereco_id'); // add a filter field
+        //$this->addFilterField('(SELECT n from endereco WHERE id=pessoa.endereco_id)', 'like', 'endereco_id'); // add a filter field
+        //$this->setOrderCommand('status_pessoa', '(select nome from pessoa where pessoa_id = id)');
 
-        // creates the DataGrid
+        //filtrar pessoa juridica
+        //$criteria = new TCriteria;
+        //$criteria->add(new TFilter('tipo_pessoa', '!=', 1));
+        //$this->setCriteria($criteria); // define a standard filter
+
+        // creates a DataGrid
         $this->datagrid = new BootstrapDatagridWrapper(new TDataGrid);
-        $this->datagrid->width = "100%";
+        $this->datagrid->style = 'width: 100%';
+        //$this->datagrid->enablePopover('Popover', 'Hi <b>{name}</b>, <br> that lives at <b>{city->name} - {city->state->name}</b>');
 
         // creates the datagrid columns
         $col_relacao_id = new TDataGridColumn('relacao_id', 'Id', 'center');
@@ -44,6 +64,13 @@ class CasalDataGrid extends TPage
         $col_dt_final = new TDataGridColumn('dt_final', 'Data Final', 'center');
         $col_tipo_vinculo = new TDataGridColumn('tipo_vinculo', 'Vínculo', 'left');
         $col_status_relacao_id = new TDataGridColumn('status_relacao_id', 'Status', 'center');
+
+        $col_relacao_id->setAction(new TAction([$this, 'onReload']),   ['order' => 'relacao_id']);
+        $col_casal->setAction(new TAction([$this, 'onReload']), ['order' => 'casal']);
+        $col_dt_inicial->setAction(new TAction([$this, 'onReload']), ['order' => 'dt_inicial']);
+        $col_dt_final->setAction(new TAction([$this, 'onReload']), ['order' => 'dt_final']);
+        $col_tipo_vinculo->setAction(new TAction([$this, 'onReload']), ['order' => 'tipo_vinculo']);
+        $col_status_relacao_id->setAction(new TAction([$this, 'onReload']), ['order' => 'status_relacao_id']);
 
         $this->datagrid->addColumn($col_relacao_id);
         $this->datagrid->addColumn($col_casal);
@@ -66,16 +93,6 @@ class CasalDataGrid extends TPage
             }
         });
 
-        //$col_nome->enableAutoHide(1000);
-        //$col_endereco->enableAutoHide(1000);
-
-        $col_relacao_id->setAction(new TAction([$this, 'onReload']),   ['order' => 'relacao_id']);
-        $col_casal->setAction(new TAction([$this, 'onReload']), ['order' => 'casal']);
-        $col_dt_inicial->setAction(new TAction([$this, 'onReload']), ['order' => 'dt_inicial']);
-        $col_dt_final->setAction(new TAction([$this, 'onReload']), ['order' => 'dt_final']);
-        $col_tipo_vinculo->setAction(new TAction([$this, 'onReload']), ['order' => 'tipo_vinculo']);
-        $col_status_relacao_id->setAction(new TAction([$this, 'onReload']), ['order' => 'status_relacao_id']);
-
         $action1 = new TDataGridAction(['CasalPanel', 'onView'],   ['key' => '{relacao_id}', 'register_state' => 'false']);
         $action2 = new TDataGridAction([$this, 'onDelete'],   ['key' => '{relacao_id}']);
 
@@ -85,96 +102,136 @@ class CasalDataGrid extends TPage
         // create the datagrid model
         $this->datagrid->createModel();
 
-        // search box
-        $input_search = new TEntry('input_search');
-        $input_search->placeholder = 'Buscar';
-        $input_search->setSize('100%');
+        // creates the form
+        $this->form = new TForm('form_search_casal');
 
-        // enable fuse search by column name
-        $this->datagrid->enableSearch($input_search, 'relacao_id, casal, dt_inicial, dt_final, tipo_vinculo, status_relacao_id');
+        // add datagrid inside form
+        $this->form->add($this->datagrid);
+        $this->form->style = 'overflow-x:auto';
+
+        // create the form fields
+        $relacao_id            = new TEntry('relacao_id');
+        $casal                 = new TEntry('casal');
+        $dt_inicial            = new TDate('dt_inicial');
+        $dt_inicial->setMask('dd/mm/yyyy');
+        $dt_inicial->setDatabaseMask('yyyy-mm-dd');
+        $dt_final              = new TDate('dt_final');
+        $dt_final->setMask('dd/mm/yyyy');
+        $dt_final->setDatabaseMask('yyyy-mm-dd');
+        $tipo_vinculo          = new TEntry('tipo_vinculo');
+        $status_relacao_id     = new TEntry('status_relacao_id');
+
+        /*
+        $filterTipo = new TCriteria;
+        $filterTipo->add(new TFilter('id', '!=', 1));
+        $filterTipo->add(new TFilter('lista_id', '=', 15));
+        $tipo_pessoa        = new TDBCombo('tipo_pessoa', 'adea', 'ListaItens', 'id', 'item', 'id', $filterTipo);
+        $cpf_cnpj           = new TEntry('cpf_cnpj');
+        $nome               = new TEntry('nome');
+        $popular            = new TEntry('popular');
+        //$fone               = new TEntry('fone');
+        //$email              = new TEntry('email');
+        //$endereco_id        = new TEntry('endereco_id');
+        //$filterStatusPessoa = new TCriteria;
+        //$filterStatusPessoa->add(new TFilter('lista_id', '=', 5));
+        //$status_pessoa      = new TDBCombo('status_pessoa', 'adea', 'ListaItens', 'id', 'item', 'id', $filterStatusPessoa);
+        */
+        // ENTER fires exitAction
+
+        $relacao_id->exitOnEnter();
+        $casal->exitOnEnter();
+        $dt_inicial->exitOnEnter();
+        $dt_final->exitOnEnter();
+        $tipo_vinculo->exitOnEnter();
+        $status_relacao_id->exitOnEnter();
+        //$endereco_id->exitOnEnter();
+
+        $relacao_id->setSize('100%');
+        $casal->setSize('100%');
+        $dt_inicial->setSize('100%');
+        $dt_final->setSize('100%');
+        $tipo_vinculo->setSize('100%');
+        $status_relacao_id->setSize('100%');
+        //$email->setSize('100%');
+        //$endereco_id->setSize('100%');
+        //$status_pessoa->setSize('100%');
+
+        // avoid focus on tab
+        $relacao_id->tabindex = -1;
+        $casal->tabindex = -1;
+        $dt_inicial->tabindex = -1;
+        $dt_final->tabindex = -1;
+        $tipo_vinculo->tabindex = -1;
+        $status_relacao_id->tabindex = -1;
+        //$email->tabindex = -1;
+        //$endereco_id->tabindex = -1;
+        //$status_pessoa->tabindex = -1;
+
+        $relacao_id->setExitAction(new TAction([$this, 'onSearch'], ['static' => '1']));
+        $casal->setExitAction(new TAction([$this, 'onSearch'], ['static' => '1']));
+        $dt_inicial->setExitAction(new TAction([$this, 'onSearch'], ['static' => '1']));
+        $dt_final->setExitAction(new TAction([$this, 'onSearch'], ['static' => '1']));
+        $tipo_vinculo->setExitAction(new TAction([$this, 'onSearch'], ['static' => '1']));
+        $status_relacao_id->setExitAction(new TAction([$this, 'onSearch'], ['static' => '1']));
+        //$email->setExitAction(new TAction([$this, 'onSearch'], ['static' => '1']));
+        //$endereco_id->setExitAction(new TAction([$this, 'onSearch'], ['static' => '1']));
+        //$status_pessoa->setChangeAction( new TAction([$this, 'onSearch'], ['static'=>'1']) );
+
+        // create row with search inputs
+        $tr = new TElement('tr');
+        $this->datagrid->prependRow($tr);
+
+        $tr->add(TElement::tag('td', ''));
+        $tr->add(TElement::tag('td', ''));
+        $tr->add(TElement::tag('td', $relacao_id));
+        $tr->add(TElement::tag('td', $casal));
+        $tr->add(TElement::tag('td', $dt_inicial));
+        $tr->add(TElement::tag('td', $dt_final));
+        $tr->add(TElement::tag('td', $tipo_vinculo));
+        $tr->add(TElement::tag('td', $status_relacao_id));
+        //$tr->add(TElement::tag('td', $email));
+        //$tr->add(TElement::tag('td', $endereco_id));
+        //$tr->add( TElement::tag('td', $status_pessoa));
+
+        $this->form->addField($relacao_id);
+        $this->form->addField($casal);
+        $this->form->addField($dt_inicial);
+        $this->form->addField($dt_final);
+        $this->form->addField($tipo_vinculo);
+        $this->form->addField($status_relacao_id);
+        //$this->form->addField($email);
+        //$this->form->addField($endereco_id);
+        //$this->form->addField($status_pessoa);
+
+        $this->form->setData(TSession::getValue(__CLASS__ . '_filter_data'));
 
         // creates the page navigation
         $this->pageNavigation = new TPageNavigation;
+        $this->pageNavigation->setAction(new TAction([$this, 'onReload']));
         $this->pageNavigation->enableCounters();
-        $this->pageNavigation->setAction(new TAction(array($this, 'onReload')));
 
-        $panel = new TPanelGroup('Casais');
-        $panel->addHeaderWidget($input_search);
-        $panel->add($this->datagrid);
+        $panel = new TPanelGroup('Lista de Casais');
+        $panel->add($this->form);
         $panel->addFooter($this->pageNavigation);
 
-        // turn on horizontal scrolling inside panel body
-        $panel->getBody()->style = "overflow-x:auto;";
-
         // header actions
-        $dropdown = new TDropDown('Export', 'fa:download');
+        $dropdown = new TDropDown('Exportar', 'fa:download');
         $dropdown->setButtonClass('btn btn-default waves-effect dropdown-toggle');
         $dropdown->addAction('Save as CSV', new TAction([$this, 'onExportCSV'], ['register_state' => 'false', 'static' => '1']), 'fa:table fa-fw blue');
         $dropdown->addAction('Save as XLS', new TAction([$this, 'onExportXLS'], ['register_state' => 'false', 'static' => '1']), 'fa:file-excel fa-fw purple');
         $dropdown->addAction('Save as PDF', new TAction([$this, 'onExportPDF'], ['register_state' => 'false', 'static' => '1']), 'far:file-pdf fa-fw red');
         $dropdown->addAction('Save as XML', new TAction([$this, 'onExportXML'], ['register_state' => 'false', 'static' => '1']), 'fa:code fa-fw green');
-
-        // add form actions
-        $panel->addHeaderActionLink('Novo',  new TAction(['DadosIniciaisPF', 'onClear'], ['register_state' => 'false']), 'fa:plus green');
         $panel->addHeaderWidget($dropdown);
 
-        // creates the page structure using a table
+        $panel->addHeaderActionLink('Novo',  new TAction(['DadosIniciaisPF', 'onClear'], ['register_state' => 'false']), 'fa:plus green');
+
+        // creates the page structure using a vertical box
         $vbox = new TVBox;
         $vbox->style = 'width: 100%';
         $vbox->add(new TXMLBreadCrumb('menu.xml', __CLASS__));
         $vbox->add($panel);
 
-        // add the table inside the page
+        // add the box inside the page
         parent::add($vbox);
-    }
-
-    /**
-     * Ask before deletion
-     */
-    public static function onDelete($param)
-    {
-        // define the delete action
-        $action = new TAction(array(__CLASS__, 'Delete'));
-        $action->setParameters($param); // pass the key parameter ahead
-
-        // shows a dialog to the user
-        new TQuestion('Deseja realmente excluir esta pessoa?', $action);
-    }
-
-    /**
-     * Delete a record
-     */
-    public static function Delete($param)
-    {
-        try {
-            $key = $param['key']; // get the parameter $key
-            TTransaction::open('adea'); // open a transaction with database
-
-            PessoaFisica::where('pessoa_id', '=', $param['key'])->delete();
-            PessoaContato::where('pessoa_id', '=', $param['key'])->delete();
-
-            $buscarelacao = PessoaParentesco::where('pessoa_id', '=', $param['key'])->load();
-
-            if ($buscarelacao) {
-                foreach ($buscarelacao as $br) {
-                    PessoasRelacao::where('id', '=', $br->relacao_id)->delete();
-                }
-            }
-
-            PessoaParentesco::where('pessoa_id', '=', $param['key'])->delete();
-            PessoaParentesco::where('pessoa_parente_id', '=', $param['key'])->delete();
-
-            $object = new Pessoa($key, FALSE); // instantiates the Active Record
-            $object->delete(); // deletes the object from the database
-
-            TTransaction::close(); // close the transaction
-
-            $pos_action = new TAction([__CLASS__, 'onReload']);
-            new TMessage('info', AdiantiCoreTranslator::translate('Record deleted'), $pos_action); // success message
-        } catch (Exception $e) // in case of exception
-        {
-            new TMessage('error', $e->getMessage()); // shows the exception error message
-            TTransaction::rollback(); // undo all pending operations
-        }
     }
 }

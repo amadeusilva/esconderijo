@@ -17,7 +17,7 @@ use Adianti\Widget\Form\TText;
  * @copyright  Copyright (c) 2006 Adianti Solutions Ltd. (http://www.adianti.com.br)
  * @license    http://www.adianti.com.br/framework-license
  */
-class EncontristaForm extends TWindow
+class EquipesForm extends TWindow
 {
     protected $form; // form
 
@@ -34,56 +34,64 @@ class EncontristaForm extends TWindow
         parent::setModal(true);
         parent::removePadding();
         parent::setSize(400, null);
-        parent::setTitle('Encontrista');
+        parent::setTitle('Encontreiros - Equipes');
 
         $this->setDatabase('adea');    // defines the database
-        $this->setActiveRecord('Encontrista');   // defines the active record
+        $this->setActiveRecord('Encontreiro');   // defines the active record
 
         // creates the form
-        $this->form = new BootstrapFormBuilder('form_encontrista');
+        $this->form = new BootstrapFormBuilder('form_encontreiro');
         $this->form->setClientValidation(true);
 
         //dados 
-        $id = new TEntry('id');
-        $id->setEditable(FALSE);
-        $id->setSize('100%');
+        //$id = new TEntry('id');
+        //$id->setEditable(FALSE);
+        //$id->setSize('100%');
 
         $filter = new TCriteria;
         $filter->add(new TFilter('evento_id', '=', '701'));
         $encontro_id = new TDBCombo('encontro_id', 'adea', 'ViewEncontro', 'id', '{sigla} ({id})', 'id', $filter);
         $encontro_id->enableSearch();
         $encontro_id->setSize('100%');
-        //$encontro_id->setValue(1);
+        $encontro_id->setValue(5);
 
-        $casal_id = new TDBCombo('casal_id', 'adea', 'ViewCasal', 'relacao_id', 'casal', 'relacao_id');
-        $casal_id->enableSearch();
+        //$casal_id = new TDBCombo('casal_id', 'adea', 'ViewCasal', 'relacao_id', 'casal', 'relacao_id');
+        //$casal_id->enableSearch();
+        //$casal_id->setSize('100%');
+        //$casal_id->setChangeAction(new TAction(array($this, 'onEncontrista')));
+
+        //$filterCasais = new TCriteria;
+        //$filterCasais->add(new TFilter('circulo_id', '=', 17));
+        $casal_id  = new TDBMultiSearch('casal_id', 'adea', 'ViewEncontrista', 'casal_id', 'casal', 'casal');
+        $casal_id->setMask('{casal} ({Casamento})');
+        $casal_id->setMinLength(1);
         $casal_id->setSize('100%');
-        $casal_id->setChangeAction(new TAction(array($this, 'onEncontrista')));
 
-        $options = [1 => 'Sim', 2 => 'Não'];
-        $secretario_s_n = new TRadioGroup('secretario_s_n');
-        $secretario_s_n->setUseButton();
-        $secretario_s_n->addItems($options);
-        $secretario_s_n->setLayout('horizontal');
-        $secretario_s_n->setValue(2);
-        $secretario_s_n->setSize('100%');
+        //$options = [1 => 'Sim', 2 => 'Não'];
+        //$secretario_s_n = new TRadioGroup('secretario_s_n');
+        //$secretario_s_n->setUseButton();
+        //$secretario_s_n->addItems($options);
+        //$secretario_s_n->setLayout('horizontal');
+        //$secretario_s_n->setValue(2);
+        //$secretario_s_n->setSize('100%');
 
-        $filterCirculo = new TCriteria;
-        $filterCirculo->add(new TFilter('lista_id', '=', '18'));
-        $circulo_id = new TDBCombo('circulo_id', 'adea', 'ListaItens', 'id', 'item', 'id', $filterCirculo);
-        $circulo_id->setSize('100%');
+        //$filterCirculo = new TCriteria;
+        //$filterCirculo->add(new TFilter('lista_id', '=', '18'));
+        $equipe_id = new TDBCombo('equipe_id', 'adea', 'Equipe', 'id', 'equipe', 'id');
+        $equipe_id->setSize('100%');
+        $equipe_id->enableSearch();
         //$circulo_id->setValue(16);
 
-        $casal_convite_id = new TDBCombo('casal_convite_id', 'adea', 'ViewEncontrista', 'casal_id', 'casal', 'casal_id');
-        $casal_convite_id->enableSearch();
-        $casal_convite_id->setSize('100%');
+        //$casal_convite_id = new TDBCombo('casal_convite_id', 'adea', 'ViewEncontrista', 'casal_id', 'casal', 'casal_id');
+        //$casal_convite_id->enableSearch();
+        //$casal_convite_id->setSize('100%');
 
         // define some properties for the form fields
 
-        $row = $this->form->addFields(
-            [new TLabel('Cod.:'),    $id]
-        );
-        $row->layout = ['col-sm-12'];
+        //$row = $this->form->addFields(
+        //    [new TLabel('Cod.:'),    $id]
+        //);
+        //$row->layout = ['col-sm-12'];
 
         $row = $this->form->addFields(
             [
@@ -104,13 +112,14 @@ class EncontristaForm extends TWindow
 
         $row = $this->form->addFields(
             [
-                new TLabel('Círculo'),
-                $circulo_id
+                new TLabel('Equipe'),
+                $equipe_id
             ]
         );
 
         $row->layout = ['col-sm-12'];
 
+        /*
         $row = $this->form->addFields(
             [
                 new TLabel('Secretário?')
@@ -130,13 +139,14 @@ class EncontristaForm extends TWindow
         );
 
         $row->layout = ['col-sm-12'];
+        */
 
         // validations
         //id`, `encontro_id`, `casal_pessoa_id`, `funcao_id`, `circulo_id`, `casal_pessoa_convite_id
         $encontro_id->addValidation('Encontro', new TRequiredValidator);
         $casal_id->addValidation('Casal', new TRequiredValidator);
-        $secretario_s_n->addValidation('Secretário', new TRequiredValidator);
-        $circulo_id->addValidation('Círculo', new TRequiredValidator);
+        //$secretario_s_n->addValidation('Secretário', new TRequiredValidator);
+        $equipe_id->addValidation('Equipe', new TRequiredValidator);
         //$casal_convite_id->addValidation('Convite', new TRequiredValidator);
 
         // define the form action
@@ -147,27 +157,6 @@ class EncontristaForm extends TWindow
         $this->setUseMessages(false);
 
         parent::add($this->form);
-    }
-
-    public static function onEncontrista($param)
-    {
-        try {
-            TTransaction::open('adea');
-            //if (!empty($param['casal_id']) and !empty($param['encontro_id'])) {
-            if (!empty($param['casal_id'])) {
-                //$montagem = Montagem::where('casal_id', '=', $param['casal_id'])->where('encontro_id', '=', $param['encontro_id'])->where('tipo_id', '=', 1)->first();
-                $montagem = Montagem::where('casal_id', '=', $param['casal_id'])->where('tipo_id', '=', 1)->first();
-                if ($montagem) {
-                    AdiantiCoreApplication::loadPage(__CLASS__, 'onEdit', ['id' => $montagem->id]);
-                }
-            } else {
-                $this->form->clear(true);
-            }
-
-            TTransaction::close();
-        } catch (Exception $e) {
-            new TMessage('error', $e->getMessage());
-        }
     }
 
     /**
@@ -212,44 +201,58 @@ class EncontristaForm extends TWindow
 
             $data = $this->form->getData(); // get form data as array
 
-            $montagem = new Montagem();  // create an empty object
-            $montagem->fromArray((array) $data); // load the object with data
-            $montagem->tipo_id = 1;
-            $montagem->conducao_propria_id = 0;
-            $montagem->store(); // save the object
+            if (!empty($data->casal_id) and !empty($data->encontro_id)) {
 
-            Encontrista::where('montagem_id', '=', $montagem->id)->delete();
+                foreach ($data->casal_id as $casal_id) {
 
-            $encontrista = new Encontrista();  // create an empty object
-            $encontrista->montagem_id = $montagem->id;
-            $encontrista->fromArray((array) $data); // load the object with data
-            $encontrista->store(); // save the object
+                    $busca_montagem = Montagem::where('casal_id', '=', $casal_id)->where('encontro_id', '=', $data->encontro_id)->where('tipo_id', '=', 2)->first();
+                    if ($busca_montagem) {
+                        $montagem = Montagem::find($busca_montagem->id);
+                    } else {
+                        $montagem = new Montagem();  // create an empty object
+                        $montagem->tipo_id = 2;
+                        $montagem->encontro_id = $data->encontro_id;
+                        $montagem->casal_id = $casal_id;
+                        $montagem->conducao_propria_id = 0;
 
-            if (isset($data->id) and !empty($data->id)) {
-                $historico_circulo = CirculoHistorico::where(
-                    'casal_id',
-                    '=',
-                    $data->casal_id
-                )->orderBy('id', 'asc')->first();
-            } else {
-                $historico_circulo = new CirculoHistorico();
-                $historico_circulo->casal_id = $data->casal_id;
-                $historico_circulo->motivo_id = 1101;
-                $historico_circulo->obs_motivo = 'Montagem de participação como Encontrista';
-                $historico_circulo->dt_historico = date('Y-m-d');
+                        $buscacirculo = CirculoHistorico::where('casal_id', '=', $casal_id)->orderby('id', 'desc')->first();
+                        if ($buscacirculo) {
+                            $montagem->circulo_id = $buscacirculo->circulo_id;
+                        } else {
+                            $montagem->circulo_id = 17;
+                        }
+                    }
+
+                    $montagem->store(); // save the object
+
+                    $busca_encontreiro = Encontreiro::where('montagem_id', '=', $montagem->id)->first();
+                    if ($busca_encontreiro) {
+                        $encontreiro = Encontreiro::find($busca_encontreiro->id);
+                    } else {
+                        $encontreiro = new Encontreiro();  // create an empty object
+                        $encontreiro->montagem_id = $montagem->id;
+                        $encontreiro->camisa_encontro_br = 2;
+                        $encontreiro->camisa_encontro_cor = 2;
+                        $encontreiro->disponibilidade_nt = 2;
+                        $encontreiro->coordenar_s_n = 2;
+                        $encontreiro->store(); // save the object
+                    }
+
+                    $encontreiro_equipe = new EncontreiroEquipe;
+                    $encontreiro_equipe->encontreiro_id = $encontreiro->id;
+                    $encontreiro_equipe->funcao_id  = 4;
+                    $encontreiro_equipe->equipe_id = $data->equipe_id;
+                    $encontreiro_equipe->tipo_enc_id  = 1;
+
+                    // add the contact to the customer
+                    $encontreiro_equipe->store(); // save the object
+                }
             }
-
-            $historico_circulo->user_sessao_id = TSession::getValue('userid');
-            $historico_circulo->circulo_id = $data->circulo_id;
-            $historico_circulo->store(); // save the object
-
-            // fill the form with the active record data
-            $this->form->setData($encontrista);
 
             TTransaction::close();  // close the transaction
 
             // fill the form with the active record data
-            $posAction = new TAction(array('EncontristaDataGrid', 'onReload'));
+            $posAction = new TAction(array('EncontreiroDataGrid', 'onReload'));
 
             // show the message dialog
             new TMessage('info', 'Registro Salvo com Sucesso!', $posAction);

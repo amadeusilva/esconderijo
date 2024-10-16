@@ -49,6 +49,11 @@ AND montagem.tipo_id = 1
         parent::addAttribute('casal_convite');
     }
 
+    public function get_Casamento()
+    {
+        $casal = new ViewCasal($this->casal_id);
+        return TDate::date2br($casal->dt_inicial);
+    }
 
     public function get_DadosCasal()
     {
@@ -61,10 +66,37 @@ AND montagem.tipo_id = 1
             $div = new TElement('span');
             $div->class = "label label-success";
             $div->style = "text-shadow:none; font-size:12px";
-            $div->add('Secretário');
+            $div->add($this->casal);
             return $div;
         } else {
-            return '';
+            return $this->casal;
         }
+    }
+
+    public function get_Secretario2()
+    {
+        if ($this->secretario_s_n == 1) {
+            $div = new TElement('span');
+            $div->class = "label label-success";
+            $div->style = "text-shadow:none; font-size:12px";
+            $div->add('Sim');
+            return $div;
+        } else {
+            $div = new TElement('span');
+            $div->class = "label label-danger";
+            $div->style = "text-shadow:none; font-size:12px";
+            $div->add('Não');
+            return $div;
+        }
+    }
+
+    public function get_CirculoCor()
+    {
+        $circulo_cor = ListaItens::where('item', '=', $this->circulo)->first();
+        $div = new TElement('span');
+        $div->class = "label";
+        $div->style = "text-shadow:none; font-size:12px; color: black; background-color: $circulo_cor->obs;";
+        $div->add($this->circulo);
+        return $div;
     }
 }
