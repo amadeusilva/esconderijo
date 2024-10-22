@@ -54,5 +54,9 @@ class ViewCasal extends TRecord
     {
         return ViewPessoaFisica::find($this->ela_id);
     }
-    
+
+    public function get_Casamento()
+    {
+        return TDate::date2br($this->dt_inicial);
+    }
 }

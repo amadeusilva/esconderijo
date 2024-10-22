@@ -66,6 +66,11 @@ AND pessoa.tipo_pessoa = 1
         parent::addAttribute('ck_pessoa');
     }
 
+    public function get_Nascimento()
+    {
+        return TDate::date2br($this->dt_nascimento);
+    }
+
     public function get_Fone()
     {
         if (empty($this->fone)) {
