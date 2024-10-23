@@ -32,17 +32,6 @@ class EncontristaDataGrid extends TPage
         $this->addFilterField('encontro_id', '=', 'encontro_id'); // filterField, operator, formField
         $this->addFilterField('circulo_id', '=', 'circulo_id'); // filterField, operator, formField
         $this->addFilterField('casal_id', '=', 'casal_id'); // filterField, operator, formField
-        //$this->addFilterField('(SELECT casal_id FROM ViewEncontrista WHERE casal_id=view_casal.relacao_id)', '=', 'ele_id'); // add a filter field
-
-        /*
-        $this->addFilterField('dt_inicial', '>=', 'date_from', function ($value) {
-            return TDate::convertToMask($value, 'dd/mm/yyyy', 'yyyy-mm-dd');
-        }); // filterField, operator, formField, transformFunction
-
-        $this->addFilterField('dt_inicial', '<=', 'date_to', function ($value) {
-            return TDate::convertToMask($value, 'dd/mm/yyyy', 'yyyy-mm-dd');
-        }); // filterField, operator, formField, transformFunction
-        */
 
         $this->addFilterField('casal_id', '=', 'ele_id'); // filterField, operator, formField
         $this->addFilterField('casal_id', '=', 'ela_id'); // filterField, operator, formField
@@ -53,8 +42,6 @@ class EncontristaDataGrid extends TPage
 
         // create the form fields
         $id        = new TEntry('id');
-        //$date_from = new TDate('date_from');
-        //$date_to   = new TDate('date_to');
 
         $encontro_id = new TDBCombo('encontro_id', 'adea', 'ViewEncontro', 'id', '{sigla} ({id})', 'id');
         $encontro_id->enableSearch();
@@ -120,13 +107,28 @@ class EncontristaDataGrid extends TPage
         // creates the datagrid columns
         $col_id    = new TDataGridColumn('id', 'Id', 'center');
         $col_casal_id    = new TDataGridColumn('casal_id', 'Nº', 'center');
-        $col_encontro_id = new TDataGridColumn('encontro_id', 'Encontro', 'left');
+        $col_encontro_id = new TDataGridColumn('encontro_id', 'Encontro', 'center');
         $col_encontro = new TDataGridColumn('encontro', 'Evento', 'left');
         $col_casal = new TDataGridColumn('casal', 'Casal', 'left');
         $col_secretario_s_n = new TDataGridColumn('secretario_s_n', 'Secretário?', 'center');
         $col_circulo = new TDataGridColumn('CirculoCor', 'Círculo', 'left');
         $col_casal_convite = new TDataGridColumn('casal_convite', 'Casal Convite', 'left');
 
+        $col_casal_id->setTransformer(function ($value) {
+            if ($value) {
+                //$icon  = "<i class='far fa-envelope' aria-hidden='true'></i>"; //{$icon} 
+                return "<a generator='adianti' href='index.php?class=CasalPanel&method=onView&relacao_id=$value'>$value</a>";
+            }
+            return $value;
+        });
+
+        $col_encontro_id->setTransformer(function ($value) {
+            if ($value) {
+                //$icon  = "<i class='far fa-envelope' aria-hidden='true'></i>"; //{$icon} 
+                return "<a generator='adianti' href='index.php?class=EncontroPanel&method=onView&key=$value'>$value</a>";
+            }
+            return $value;
+        });
 
         // add the columns to the DataGrid
         $this->datagrid->addColumn($col_id);

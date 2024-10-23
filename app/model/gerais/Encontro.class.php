@@ -27,6 +27,7 @@ class Encontro extends TRecord
         parent::addAttribute('tema');
         parent::addAttribute('divisa');
         parent::addAttribute('cantico_id');
+        parent::addAttribute('livrao_pdf');
         //parent::addAttribute('created_at');
         //parent::addAttribute('updated_at');
     }

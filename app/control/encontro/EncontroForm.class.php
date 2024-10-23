@@ -22,6 +22,9 @@ class EncontroForm extends TWindow
     use ControleEndereco;
     protected $form; // form
 
+    // trait with saveFile, saveFiles, ...
+    use Adianti\Base\AdiantiFileSaveTrait;
+
     // trait with onSave, onClear, onEdit
     use Adianti\Base\AdiantiStandardFormTrait;
 
@@ -60,9 +63,8 @@ class EncontroForm extends TWindow
 
         $filterLocal = new TCriteria;
         $filterLocal->add(new TFilter('tipo_pessoa', '=', '2'));
-        $local_id   = new TDBUniqueSearch('local_id', 'adea', 'Pessoa', 'id', 'nome', '', $filterLocal);
-        $local_id->setMask('{nome} ({popular})');
-        $local_id->setMinLength(1);
+        $local_id = new TDBCombo('local_id', 'adea', 'Pessoa', 'id', '{nome} ({popular})', 'id', $filterLocal);
+        $local_id->enableSearch();
         $local_id->setSize('100%');
         $local_id->placeholder = 'Buscar Instituição/Escola...)';
 
@@ -85,7 +87,21 @@ class EncontroForm extends TWindow
 
         $cantico_id = new TDBCombo('cantico_id', 'adea', 'Hinario', 'id', 'titulo', 'titulo');
         $cantico_id->enableSearch();
-        $cantico_id->setSize('100%');
+        $cantico_id->setSize('calc(100% - 30px)');
+        //$cantico_id->setSize('100%');
+
+        $button = new TActionLink('', new TAction(['HinarioForm', 'onClear']), 'green', null, null, 'fa:plus-circle');
+        $button->class = 'btn btn-default inline-button';
+        $button->title = _t('New');
+        $cantico_id->after($button);
+
+        $livrao_pdf      = new TFile('livrao_pdf');
+        $livrao_pdf->setAllowedExtensions(['pdf']);
+        $livrao_pdf->setSize('100%');
+
+        // enable progress bar, preview
+        $livrao_pdf->enableFileHandling();
+        $livrao_pdf->enablePopover();
 
         // define some properties for the form fields
 
@@ -142,6 +158,14 @@ class EncontroForm extends TWindow
         );
         $row->layout = ['col-sm-12'];
 
+        $row = $this->form->addFields(
+            [
+                new TLabel('Digitalização (PDF)'),
+                $livrao_pdf
+            ]
+        );
+        $row->layout = ['col-sm-12'];
+
         // validations
         // encontro`(`id`, `num`, `evento_id`, `local_id`, `dt_inicial`, `dt_final`, `tema`, `divisa`, `cantico_id
         $num->addValidation('Número', new TRequiredValidator);
@@ -152,6 +176,7 @@ class EncontroForm extends TWindow
         $tema->addValidation('Tema', new TRequiredValidator);
         $divisa->addValidation('Divisa', new TRequiredValidator);
         $cantico_id->addValidation('Cântico', new TRequiredValidator);
+        //$livrao_pdf->addValidation('Digitalização (PDF)', new TRequiredValidator);
 
         // define the form action
         $this->form->addAction('Salvar', new TAction(array($this, 'onSave')), 'fa:save green');
@@ -217,9 +242,16 @@ class EncontroForm extends TWindow
 
             $data = $this->form->getData(); // get form data as array
 
+            if (isset($data->livrao_pdf) and empty($data->livrao_pdf)) {
+                throw new Exception(AdiantiCoreTranslator::translate('The field ^1 is required', 'Digitalização (PDF)'));
+            }
+
             $object = new Encontro();  // create an empty object
             $object->fromArray((array) $data); // load the object with data
             $object->store(); // save the object
+
+            // copy file to target folder
+            $this->saveFile($object, $data, 'livrao_pdf', 'files/documents/livrao');
 
             // fill the form with the active record data
             $this->form->setData($object);
@@ -231,7 +263,6 @@ class EncontroForm extends TWindow
 
             // show the message dialog
             new TMessage('info', 'Registro Salvo com Sucesso!', $posAction);
-
         } catch (Exception $e) // in case of exception
         {
             new TMessage('error', $e->getMessage()); // shows the exception error message

@@ -100,7 +100,7 @@ class EncontroPanel extends TPage
             $this->form->addContent([$notebook_geral]);
 
             //ENCONTRISTAS
-            $encontristas = ViewEncontrista::where('encontro_id', '=', $encontro->id)->groupBy('circulo')->countDistinctBy('id', 'contagem');
+            $encontristas = ViewEncontrista::where('encontro_id', '=', $encontro->id)->groupBy('circulo_id')->countDistinctBy('id', 'contagem');
 
             if ($encontristas) {
 
@@ -110,21 +110,32 @@ class EncontroPanel extends TPage
 
                 foreach ($encontristas as $encontrista) {
 
-                    $encontristas_circulo = ViewEncontrista::where('encontro_id', '=', $encontro->id)->where('circulo', '=', $encontrista->circulo)->orderBy('casal', 'asc')->load();
+                    $encontristas_circulo = ViewEncontrista::where('encontro_id', '=', $encontro->id)->where('circulo_id', '=', $encontrista->circulo_id)->orderBy('casal', 'asc')->load();
 
                     // creates a table
                     $table = new TTable;
                     $table->width = '100%';
                     $table->border = '1';
 
-                    // creates a label with the title
-                    $title = new TLabel('<b>' . $encontrista->circulo . ' (' . $encontrista->contagem . ')</b>');
+                    $encontro_circulos = EncontroCirculos::where('encontro_id', '=', $encontro->id)->where('circulo_id', '=', $encontrista->circulo_id)->first();
+                    $circulo_cor = ListaItens::where('id', '=', $encontrista->circulo_id)->first();
 
-                    $circulo_cor = ListaItens::where('item', '=', $encontrista->circulo)->first();
-                    $circulo_cor_item = $circulo_cor->obs;
+                    if ($encontro_circulos) {
+                        // creates a label with the title
+                        $title = new TLabel(
+                            'Nome do Círculo: <b>' . $encontro_circulos->nome_circulo . '</b><br>
+                        Casal Coordenador: <b>' . $encontro_circulos->CasalCoord->casal . '</b><br>Casal Secretaria: <b>' . $encontro_circulos->CasalSec->casal . '</b>'
+                        );
+                    } else {
+                        $title = new TLabel(
+                            'Nome do Círculo: <b>' . $circulo_cor->item . '</b><br>
+                        Casal Coordenador: <b> Não Encontrado</b><br>Casal Secretaria: <b>Não Encontrado</b>'
+                        );
+                    }
+
                     // adds a row to the table
                     $row = $table->addRow();
-                    $row->style = 'font-weight: bold; border-bottom: 2px solid black; background-color: ' . $circulo_cor_item . ';';
+                    $row->style = 'font-weight: bold; border-bottom: 2px solid black; background-color: ' . $circulo_cor->obs . ';';
                     $title = $row->addCell($title);
                     $title->colspan = 4;
 
@@ -144,6 +155,7 @@ class EncontroPanel extends TPage
                     $row->addCell('Convite');
 
                     foreach ($encontristas_circulo as $enc_cir) {
+
                         $row = $table->addRow();
 
                         $ordem += 1;
@@ -168,7 +180,7 @@ class EncontroPanel extends TPage
                         }
                     }
 
-                    $notebook_encontrista->appendPage($encontrista->circulo, $table);
+                    $notebook_encontrista->appendPage($circulo_cor->item . ' <b>(' . $encontrista->contagem . ')</b>', $table);
                 }
 
                 $notebook_geral->appendPage('<b>ENCONTRISTAS</b>', $notebook_encontrista);
@@ -298,7 +310,7 @@ class EncontroPanel extends TPage
 
                     $row->addCell($ordem_label);
                     $row->addCell($palestra_label);
-                    $row->addCell($casal_link);// . ' ' . $pales_pal->Funcao);
+                    $row->addCell($casal_link); // . ' ' . $pales_pal->Funcao);
                     //$row->addCell($pales_pal->DadosCasal->Ele->nome . ' - ' . $pales_pal->DadosCasal->Ela->nome . '<br>' . TDate::date2br($pales_pal->DadosCasal->Ele->dt_nascimento) . ' - ' . TDate::date2br($pales_pal->DadosCasal->Ela->dt_nascimento));
                     $row->addCell(TDate::date2br($pales_pal->DadosCasal->dt_inicial));
                     $row->addCell($pales_pal->CirculoCor);
@@ -364,7 +376,7 @@ class EncontroPanel extends TPage
 
                     $row->addCell($ordem_label);
                     $row->addCell($pasta_label);
-                    $row->addCell($casal_link);// . '<br>' . $edg_ed->Funcao);
+                    $row->addCell($casal_link); // . '<br>' . $edg_ed->Funcao);
                     //$row->addCell($edg_ed->DadosCasal->Ele->nome . ' - ' . $edg_ed->DadosCasal->Ela->nome . '<br>' . TDate::date2br($edg_ed->DadosCasal->Ele->dt_nascimento) . ' - ' . TDate::date2br($edg_ed->DadosCasal->Ela->dt_nascimento));
                     $row->addCell(TDate::date2br($edg_ed->DadosCasal->dt_inicial));
                     $row->addCell($edg_ed->CirculoCor);

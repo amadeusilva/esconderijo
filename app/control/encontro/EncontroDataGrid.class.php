@@ -91,11 +91,14 @@ class EncontroDataGrid extends TPage
 
         $action1 = new TDataGridAction(['EncontroPanel', 'onView'],   ['key' => '{id}', 'register_state' => 'false']);
         $action2 = new TDataGridAction(['EncontroForm', 'onEdit'],   ['key' => '{id}', 'register_state' => 'false']);
-        $action3 = new TDataGridAction([$this, 'onDelete'],   ['key' => '{id}']);
+        $actionverpdfdigitalizacaolivrao = new TDataGridAction([$this, 'onViewDigitalizaoLivrao'],   ['key' => '{id}', 'register_state' => 'false']);
+        $actionverpdfdigitalizacaolivrao->setDisplayCondition(array($this, 'displayColumn'));
+        //$action3 = new TDataGridAction([$this, 'onDelete'],   ['key' => '{id}']);
 
         $this->datagrid->addAction($action1, 'Visualizar',   'fa:search blue');
         $this->datagrid->addAction($action2, 'Editar',   'far:edit blue');
-        $this->datagrid->addAction($action3, 'Deletar', 'far:trash-alt red');
+        $this->datagrid->addAction($actionverpdfdigitalizacaolivrao, 'Ver Digitalização', 'far:fa-sharp fa-solid fa-file-pdf red');
+        //$this->datagrid->addAction($action3, 'Deletar', 'far:trash-alt red');
 
 
         // create the datagrid model
@@ -143,6 +146,61 @@ class EncontroDataGrid extends TPage
 
         // add the table inside the page
         parent::add($vbox);
+    }
+
+    /**
+     * Define when the action can be displayed
+     */
+    public function displayColumn($object)
+    {
+
+        $encontro = Encontro::find($object->id);
+
+        if (isset($encontro->livrao_pdf) and !empty($encontro->livrao_pdf)) {
+            return TRUE;
+        }
+        return FALSE;
+    }
+
+    /**
+     * method onView()
+     * Executed when the user clicks at the view button
+     */
+    public static function onViewDigitalizaoLivrao($param)
+    {
+
+        try {
+            if ($param['key']) {
+
+                TTransaction::open('adea');   // open a transaction with database 'samples'
+
+                // get the parameter
+                $encontro = new Encontro($param['key']);
+
+                $win = TWindow::create('Digitalização (PDF) - ' . $encontro->num . ' ' . $encontro->Evento->item, 0.8, 0.8);
+                //if ($object->livrao_pdf) {
+                $object = new TElement('object');
+                $object->data  = 'http://localhost/ADEA/download.php?file=' . $encontro->livrao_pdf;
+                $object->type  = 'application/pdf';
+                $object->style = "width: 100%; height:calc(100% - 10px)";
+                $object->add('O navegador não suporta a exibição deste conteúdo, <a style="color:#007bff;" target=_newwindow href="' . $object->data . '"> clique aqui para baixar</a>...');
+                //} //else {
+                //   $img_doc = new TImage('app/images/dadosderelacao/semdocimagem.jpg');
+                //}
+
+                $win->add($object);
+                //$win->add("<center><img style='height:500px;float:right;margin:5px' src='{$object->doc_imagem}'></center>");
+                $win->show();
+
+                TTransaction::close();           // close the transaction
+            } else {
+                $this->form->clear(true);
+            }
+        } catch (Exception $e) // in case of exception
+        {
+            new TMessage('error', $e->getMessage()); // shows the exception error message
+            TTransaction::rollback(); // undo all pending operations
+        }
     }
 
     /**

@@ -33,7 +33,7 @@ class CirculosForm extends TWindow
         parent::__construct();
         parent::setModal(true);
         parent::removePadding();
-        parent::setSize(400, null);
+        parent::setSize(500, null);
         parent::setTitle('Encontristas - Círculos');
 
         $this->setDatabase('adea');    // defines the database
@@ -43,22 +43,11 @@ class CirculosForm extends TWindow
         $this->form = new BootstrapFormBuilder('form_encontrista');
         $this->form->setClientValidation(true);
 
-        //dados 
-        //$id = new TEntry('id');
-        //$id->setEditable(FALSE);
-        //$id->setSize('100%');
-
         $filter = new TCriteria;
         $filter->add(new TFilter('evento_id', '=', '701'));
         $encontro_id = new TDBCombo('encontro_id', 'adea', 'ViewEncontro', 'id', '{sigla} ({id})', 'id', $filter);
         $encontro_id->enableSearch();
         $encontro_id->setSize('100%');
-        //$encontro_id->setValue(1);
-
-        //$casal_id = new TDBCombo('casal_id', 'adea', 'ViewCasal', 'relacao_id', 'casal', 'relacao_id');
-        //$casal_id->enableSearch();
-        //$casal_id->setSize('100%');
-        //$casal_id->setChangeAction(new TAction(array($this, 'onEncontrista')));
 
         $filterCasais = new TCriteria;
         $filterCasais->add(new TFilter('circulo_id', '=', 17));
@@ -67,55 +56,67 @@ class CirculosForm extends TWindow
         $casal_id->setMinLength(1);
         $casal_id->setSize('100%');
 
-        //$options = [1 => 'Sim', 2 => 'Não'];
-        //$secretario_s_n = new TRadioGroup('secretario_s_n');
-        //$secretario_s_n->setUseButton();
-        //$secretario_s_n->addItems($options);
-        //$secretario_s_n->setLayout('horizontal');
-        //$secretario_s_n->setValue(2);
-        //$secretario_s_n->setSize('100%');
-
         $filterCirculo = new TCriteria;
         $filterCirculo->add(new TFilter('lista_id', '=', '18'));
         $circulo_id = new TDBCombo('circulo_id', 'adea', 'ListaItens', 'id', 'item', 'id', $filterCirculo);
         $circulo_id->setSize('100%');
         //$circulo_id->setValue(16);
 
-        //$casal_convite_id = new TDBCombo('casal_convite_id', 'adea', 'ViewEncontrista', 'casal_id', 'casal', 'casal_id');
-        //$casal_convite_id->enableSearch();
-        //$casal_convite_id->setSize('100%');
+        $nome_circulo  = new TDBEntry('nome_circulo', 'adea', 'EncontroCirculos', '{nome_circulo} ({Circulo->item})');
+        $nome_circulo->placeholder = 'digite o nome do Círculo';
+        $nome_circulo->forceUpperCase();
+        $nome_circulo->setSize('100%');
 
-        // define some properties for the form fields
+        $casal_coord_id = new TDBCombo('casal_coord_id', 'adea', 'ViewEncontrista', 'casal_id', 'casal', 'casal_id');
+        $casal_coord_id->enableSearch();
+        $casal_coord_id->setSize('100%');
 
-        //$row = $this->form->addFields(
-        //    [new TLabel('Cod.:'),    $id]
-        //);
-        //$row->layout = ['col-sm-12'];
+        $casal_sec_id = new TDBCombo('casal_sec_id', 'adea', 'ViewEncontrista', 'casal_id', 'casal', 'casal_id');
+        $casal_sec_id->enableSearch();
+        $casal_sec_id->setSize('100%');
 
         $row = $this->form->addFields(
             [
                 new TLabel('Encontro'),
                 $encontro_id
-            ]
-        );
-        $row->layout = ['col-sm-12'];
-
-        $row = $this->form->addFields(
-            [
-                new TLabel('Casal'),
-                $casal_id
-            ]
-        );
-
-        $row->layout = ['col-sm-12'];
-
-        $row = $this->form->addFields(
+            ],
             [
                 new TLabel('Círculo'),
                 $circulo_id
             ]
         );
+        $row->layout = ['col-sm-6', 'col-sm-6'];
 
+        $row = $this->form->addFields(
+            [
+                new TLabel('Nome do Círculo'),
+                $nome_circulo
+            ]
+        );
+        $row->layout = ['col-sm-12'];
+
+        $row = $this->form->addFields(
+            [
+                new TLabel('Casal Coordenador'),
+                $casal_coord_id
+            ]
+        );
+        $row->layout = ['col-sm-12'];
+
+        $row = $this->form->addFields(
+            [
+                new TLabel('Casal Secretaria'),
+                $casal_sec_id
+            ]
+        );
+        $row->layout = ['col-sm-12'];
+
+        $row = $this->form->addFields(
+            [
+                new TLabel('Casais Membros'),
+                $casal_id
+            ]
+        );
         $row->layout = ['col-sm-12'];
 
         /*
@@ -220,6 +221,15 @@ class CirculosForm extends TWindow
             $this->form->validate(); // run form validation
 
             $data = $this->form->getData(); // get form data as array
+
+            $encontro_circulos = new EncontroCirculos;
+            //$encontro_circulos->encontro_id = $data->encontro_id;
+            //$encontro_circulos->circulo_id = $data->circulo_id;
+            //$encontro_circulos->nome_circulo = $data->nome_circulo;
+            //$encontro_circulos->casal_coord_id = $data->casal_coord_id;
+            //$encontro_circulos->casal_sec_id = $data->casal_sec_id;
+            $encontro_circulos->fromArray((array) $data); // load the object with data
+            $encontro_circulos->store(); // save the object
 
             foreach ($data->casal_id as $casal_id) {
                 $busca_montagem = Montagem::where('tipo_id', '=', 1)->where('encontro_id', '=', $data->encontro_id)->where('casal_id', '=', $casal_id)->first();
