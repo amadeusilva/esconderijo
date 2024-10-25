@@ -130,6 +130,15 @@ class EncontristaDataGrid extends TPage
             return $value;
         });
 
+        $col_casal->setTransformer(function ($value, $objeto) {
+
+            if ($objeto) {
+                //$icon  = "<i class='far fa-envelope' aria-hidden='true'></i>"; //{$icon} 
+                return "<a generator='adianti' href='index.php?class=CasalPanel&method=onView&relacao_id=$objeto->casal_id'>$value</a>";
+            }
+            return $value;
+        });
+
         // add the columns to the DataGrid
         $this->datagrid->addColumn($col_id);
         $this->datagrid->addColumn($col_casal_id);
@@ -195,6 +204,7 @@ class EncontristaDataGrid extends TPage
 
         // create the page navigation
         $this->pageNavigation = new TPageNavigation;
+        $this->pageNavigation->enableCounters();
         $this->pageNavigation->setAction(new TAction([$this, 'onReload']));
 
         // vertical box container

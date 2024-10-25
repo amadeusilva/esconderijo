@@ -42,4 +42,12 @@ class Montagem extends TRecord
     {
         return Encontreiro::where('montagem_id', '=', $this->id)->first();
     }
+
+    public function delete($id = null)
+    {
+        $id = isset($id) ? $id : $this->id;
+
+        Encontreiro::where('montagem_id', '=', $this->id)->delete();
+        parent::delete($id);
+    }
 }

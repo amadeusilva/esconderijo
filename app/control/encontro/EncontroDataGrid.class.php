@@ -1,7 +1,7 @@
 <?php
 
 /**
- * StandardDataGridView Listing
+ * SaleList
  *
  * @version    1.0
  * @package    samples
@@ -12,31 +12,69 @@
  */
 class EncontroDataGrid extends TPage
 {
+    protected $form;     // registration form
     protected $datagrid; // listing
     protected $pageNavigation;
 
-    // trait with onReload, onSearch, onDelete...
     use Adianti\Base\AdiantiStandardListTrait;
 
     /**
-     * Class constructor
-     * Creates the page, the form and the listing
+     * Page constructor
      */
     public function __construct()
     {
         parent::__construct();
 
-        //atualização cadastral
-        //TSession::delValue('dados_pf_atualizacao_cadastral');
+        $this->setDatabase('adea');          // defines the database
+        $this->setActiveRecord('ViewEncontro');         // defines the active record
+        $this->setDefaultOrder('id', 'asc');    // defines the default order
+        $this->addFilterField('id', '=', 'id'); // filterField, operator, formField
+        $this->addFilterField('relacao_id', '=', 'casal_id'); // filterField, operator, formField
 
-        $this->setDatabase('adea');        // defines the database
-        $this->setActiveRecord('ViewEncontro');       // defines the active record
-        $this->setDefaultOrder('id', 'asc');  // defines the default order
-        $this->setLimit(1000);
+        $this->addFilterField('dt_inicial', '>=', 'date_from', function ($value) {
+            return TDate::convertToMask($value, 'dd/mm/yyyy', 'yyyy-mm-dd');
+        }); // filterField, operator, formField, transformFunction
 
-        // creates the DataGrid
+        $this->addFilterField('dt_inicial', '<=', 'date_to', function ($value) {
+            return TDate::convertToMask($value, 'dd/mm/yyyy', 'yyyy-mm-dd');
+        }); // filterField, operator, formField, transformFunction
+
+        // creates the form
+        $this->form = new BootstrapFormBuilder('form_search_EncontroDataGrid');
+        $this->form->setFormTitle('Lista de Encontros (Filtros)');
+
+        // create the form fields
+        $id        = new TEntry('id');
+        $date_from = new TDate('date_from');
+        $date_to   = new TDate('date_to');
+
+        // add the fields
+        $this->form->addFields([new TLabel('Id')],          [$id]);
+        $this->form->addFields(
+            [new TLabel('Data (Inicial)')],
+            [$date_from],
+            [new TLabel('Data (Final)')],
+            [$date_to]
+        );
+
+        $id->setSize('50%');
+        $date_from->setSize('100%');
+        $date_to->setSize('100%');
+        $date_from->setMask('dd/mm/yyyy');
+        $date_to->setMask('dd/mm/yyyy');
+
+        // keep the form filled during navigation with session data
+        $this->form->setData(TSession::getValue('EncontroDataGrid_filter_data'));
+
+        // add the search form actions
+        $this->form->addAction('Buscar', new TAction([$this, 'onSearch']), 'fa:search');
+        $this->form->addActionLink('Novo',  new TAction(['EncontroForm', 'onEdit'], ['register_state' => 'false']), 'fa:plus green');
+        $this->form->addActionLink('Limpar',  new TAction([$this, 'clear']), 'fa:eraser red');
+
+        // creates a DataGrid
         $this->datagrid = new BootstrapDatagridWrapper(new TDataGrid);
-        $this->datagrid->width = "100%";
+        $this->datagrid->width = '100%';
+        //$this->datagrid->disableDefaultClick();
 
         // creates the datagrid columns
         $col_id    = new TDataGridColumn('id', 'Id', 'center');
@@ -51,6 +89,7 @@ class EncontroDataGrid extends TPage
         //divisa
         $col_cantico = new TDataGridColumn('cantico', 'Cântico', 'left');
 
+        // add the columns to the DataGrid
         $this->datagrid->addColumn($col_id);
         $this->datagrid->addColumn($col_num);
         $this->datagrid->addColumn($col_evento);
@@ -78,6 +117,7 @@ class EncontroDataGrid extends TPage
         $col_tema->enableAutoHide(1000);
         $col_cantico->enableAutoHide(1000);
 
+        // creates the datagrid column actions
         $col_id->setAction(new TAction([$this, 'onReload']),   ['order' => 'id']);
         $col_num->setAction(new TAction([$this, 'onReload']), ['order' => 'num']);
         $col_evento->setAction(new TAction([$this, 'onReload']), ['order' => 'evento']);
@@ -89,63 +129,33 @@ class EncontroDataGrid extends TPage
         $col_tema->setAction(new TAction([$this, 'onReload']), ['order' => 'tema']);
         $col_cantico->setAction(new TAction([$this, 'onReload']), ['order' => 'cantico']);
 
-        $action1 = new TDataGridAction(['EncontroPanel', 'onView'],   ['key' => '{id}', 'register_state' => 'false']);
-        $action2 = new TDataGridAction(['EncontroForm', 'onEdit'],   ['key' => '{id}', 'register_state' => 'false']);
+        $action_view   = new TDataGridAction(['EncontroPanel', 'onView'],   ['key' => '{id}', 'register_state' => 'false']);
+        $action_edit   = new TDataGridAction(['EncontroForm', 'onEdit'],   ['key' => '{id}', 'register_state' => 'false']);
         $actionverpdfdigitalizacaolivrao = new TDataGridAction([$this, 'onViewDigitalizaoLivrao'],   ['key' => '{id}', 'register_state' => 'false']);
         $actionverpdfdigitalizacaolivrao->setDisplayCondition(array($this, 'displayColumn'));
-        //$action3 = new TDataGridAction([$this, 'onDelete'],   ['key' => '{id}']);
+        //$action_delete = new TDataGridAction([$this, 'onDelete'],   ['key' => '{id}'] );
 
-        $this->datagrid->addAction($action1, 'Visualizar',   'fa:search blue');
-        $this->datagrid->addAction($action2, 'Editar',   'far:edit blue');
+
+        $this->datagrid->addAction($action_view, 'Ver Detalhes', 'fa:search green fa-fw');
+        $this->datagrid->addAction($action_edit, 'Editar',   'far:edit blue fa-fw');
         $this->datagrid->addAction($actionverpdfdigitalizacaolivrao, 'Ver Digitalização', 'far:fa-sharp fa-solid fa-file-pdf red');
-        //$this->datagrid->addAction($action3, 'Deletar', 'far:trash-alt red');
-
+        //$this->datagrid->addAction($action_delete, 'Delete', 'far:trash-alt red fa-fw');
 
         // create the datagrid model
         $this->datagrid->createModel();
 
-        // search box
-        $input_search = new TEntry('input_search');
-        $input_search->placeholder = 'Buscar';
-        $input_search->setSize('100%');
-
-        // enable fuse search by column name
-        // encontro`(`id`, `num`, `evento_id`, `local_id`, `dt_inicial`, `dt_final`, `tema`, `divisa`, `cantico_id
-        $this->datagrid->enableSearch($input_search, 'id, num, evento, local, endereco, tema, divisa, cantico');
-
-        // creates the page navigation
+        // create the page navigation
         $this->pageNavigation = new TPageNavigation;
-        $this->pageNavigation->enableCounters();
-        $this->pageNavigation->setAction(new TAction(array($this, 'onReload')));
+        $this->pageNavigation->setAction(new TAction([$this, 'onReload']));
 
-        $panel = new TPanelGroup('Encontros');
-        $panel->addHeaderWidget($input_search);
-        $panel->add($this->datagrid);
-        $panel->addFooter($this->pageNavigation);
-
-        // turn on horizontal scrolling inside panel body
-        $panel->getBody()->style = "overflow-x:auto;";
-
-        // header actions
-        $dropdown = new TDropDown('Export', 'fa:download');
-        $dropdown->setButtonClass('btn btn-default waves-effect dropdown-toggle');
-        $dropdown->addAction('Save as CSV', new TAction([$this, 'onExportCSV'], ['register_state' => 'false', 'static' => '1']), 'fa:table fa-fw blue');
-        $dropdown->addAction('Save as XLS', new TAction([$this, 'onExportXLS'], ['register_state' => 'false', 'static' => '1']), 'fa:file-excel fa-fw purple');
-        $dropdown->addAction('Save as PDF', new TAction([$this, 'onExportPDF'], ['register_state' => 'false', 'static' => '1']), 'far:file-pdf fa-fw red');
-        $dropdown->addAction('Save as XML', new TAction([$this, 'onExportXML'], ['register_state' => 'false', 'static' => '1']), 'fa:code fa-fw green');
-
-        // add form actions
-        $panel->addHeaderActionLink('Novo',  new TAction(['EncontroForm', 'onClear'], ['register_state' => 'false']), 'fa:plus green');
-        $panel->addHeaderWidget($dropdown);
-
-        // creates the page structure using a table
-        $vbox = new TVBox;
-        $vbox->style = 'width: 100%';
-        $vbox->add(new TXMLBreadCrumb('menu.xml', __CLASS__));
-        $vbox->add($panel);
-
-        // add the table inside the page
-        parent::add($vbox);
+        // vertical box container
+        $container = new TVBox;
+        $container->style = 'width: 100%';
+        $container->add(new TXMLBreadCrumb('menu.xml', __CLASS__));
+        $container->add($this->form);
+        $container->add($panel = TPanelGroup::pack('', $this->datagrid, $this->pageNavigation));
+        $panel->getBody()->style = 'overflow-x:auto';
+        parent::add($container);
     }
 
     /**
@@ -203,53 +213,13 @@ class EncontroDataGrid extends TPage
         }
     }
 
-    /**
-     * Ask before deletion
-     */
-    public static function onDelete($param)
-    {
-        // define the delete action
-        $action = new TAction(array(__CLASS__, 'Delete'));
-        $action->setParameters($param); // pass the key parameter ahead
-
-        // shows a dialog to the user
-        new TQuestion('Deseja realmente excluir esta pessoa?', $action);
-    }
 
     /**
-     * Delete a record
+     * Clear filters
      */
-    public static function Delete($param)
+    function clear()
     {
-        try {
-            $key = $param['key']; // get the parameter $key
-            TTransaction::open('adea'); // open a transaction with database
-
-            PessoaFisica::where('pessoa_id', '=', $param['key'])->delete();
-            PessoaContato::where('pessoa_id', '=', $param['key'])->delete();
-
-            $buscarelacao = PessoaParentesco::where('pessoa_id', '=', $param['key'])->load();
-
-            if ($buscarelacao) {
-                foreach ($buscarelacao as $br) {
-                    PessoasRelacao::where('id', '=', $br->relacao_id)->delete();
-                }
-            }
-
-            PessoaParentesco::where('pessoa_id', '=', $param['key'])->delete();
-            PessoaParentesco::where('pessoa_parente_id', '=', $param['key'])->delete();
-
-            $object = new Pessoa($key, FALSE); // instantiates the Active Record
-            $object->delete(); // deletes the object from the database
-
-            TTransaction::close(); // close the transaction
-
-            $pos_action = new TAction([__CLASS__, 'onReload']);
-            new TMessage('info', AdiantiCoreTranslator::translate('Record deleted'), $pos_action); // success message
-        } catch (Exception $e) // in case of exception
-        {
-            new TMessage('error', $e->getMessage()); // shows the exception error message
-            TTransaction::rollback(); // undo all pending operations
-        }
+        $this->clearFilters();
+        $this->onReload();
     }
 }

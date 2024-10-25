@@ -33,6 +33,11 @@ class Encontreiro extends TRecord
         return EncontreiroEquipe::where('encontreiro_id', '=', $this->id)->load();
     }
 
+    public function get_ContagemEncontreiroEquipe()
+    {
+        return EncontreiroEquipe::where('encontreiro_id', '=', $this->id)->count();
+    }
+
     public function delete($id = null)
     {
         $id = isset($id) ? $id : $this->id;

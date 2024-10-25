@@ -32,7 +32,7 @@ class AddEncontrista extends TWindow
         parent::__construct();
         parent::setModal(true);
         parent::removePadding();
-        parent::setSize(500, null);
+        parent::setSize(600, null);
         parent::setTitle('Encontrista');
 
         $this->setDatabase('adea');    // defines the database
@@ -45,7 +45,7 @@ class AddEncontrista extends TWindow
         // create the form fields
 
         // dados dele
-        $this->form->appendPage('Dados Dele');
+        //$this->form->appendPage('Dados Dele');
         $filterGeneroM = new TCriteria;
         $filterGeneroM->add(new TFilter('genero', '=', 'M'));
         $ele_nome  = new TDBEntry('ele_nome', 'adea', 'ViewPessoaFisica', 'nome', '', $filterGeneroM);
@@ -53,18 +53,18 @@ class AddEncontrista extends TWindow
         $ele_nome->placeholder = ' Nome Completo';
         $ele_nome->forceUpperCase();
         $ele_nome->setSize('100%');
-        $row = $this->form->addFields([new TLabel('Nome dele:', '#2196F3'), $ele_nome]);
-        $row->layout = ['col-sm-12'];
-        $ele_nome->addValidation('Nome Dele', new TRequiredValidator);
-        $ele_nome->setExitAction(new TAction(array($this, 'onNome')));
 
         $ele_popular  = new TDBEntry('ele_popular', 'adea', 'ViewPessoaFisica', 'popular', '', $filterGeneroM);
         $ele_popular->setInnerIcon(new TImage('fa:user #2196F3'), 'left');
-        $ele_popular->placeholder = ' Nome pelo qual é conhecido ou gosta de ser chamado';
+        $ele_popular->placeholder = ' Apelido';
         $ele_popular->forceUpperCase();
         $ele_popular->setSize('100%');
-        $row = $this->form->addFields([new TLabel('Popular dele:', '#2196F3'), $ele_popular]);
-        $row->layout = ['col-sm-12'];
+
+        $row = $this->form->addFields([new TLabel('Popular dele:', '#2196F3'), $ele_popular], [new TLabel('Nome dele:', '#2196F3'), $ele_nome]);
+        $row->layout = ['col-sm-5', 'col-sm-7'];
+
+        $ele_nome->addValidation('Nome Dele', new TRequiredValidator);
+        $ele_nome->setExitAction(new TAction(array($this, 'onNome')));
         $ele_popular->addValidation('Popular Dele', new TRequiredValidator);
 
         $dn_ele       = new TDate('dn_ele');
@@ -83,7 +83,7 @@ class AddEncontrista extends TWindow
         $row->layout = ['col-sm-6', 'col-sm-6'];
 
         // dados dela
-        $this->form->appendPage('Dados Dela');
+        //$this->form->appendPage('Dados Dela');
         $filterGeneroF = new TCriteria;
         $filterGeneroF->add(new TFilter('genero', '=', 'F'));
         $ela_nome  = new TDBEntry('ela_nome', 'adea', 'ViewPessoaFisica', 'nome', '', $filterGeneroF);
@@ -91,17 +91,17 @@ class AddEncontrista extends TWindow
         $ela_nome->placeholder = ' Nome Completo';
         $ela_nome->forceUpperCase();
         $ela_nome->setSize('100%');
-        $row = $this->form->addFields([new TLabel('Nome dela:', '#FF007F'), $ela_nome]);
-        $row->layout = ['col-sm-12'];
-        $ela_nome->addValidation('Nome dela', new TRequiredValidator);
 
         $ela_popular  = new TDBEntry('ela_popular', 'adea', 'ViewPessoaFisica', 'popular', '', $filterGeneroF);
         $ela_popular->setInnerIcon(new TImage('fa:user #FF007F'), 'left');
-        $ela_popular->placeholder = ' Nome pelo qual é conhecido ou gosta de ser chamado';
+        $ela_popular->placeholder = ' Apelido';
         $ela_popular->forceUpperCase();
         $ela_popular->setSize('100%');
-        $row = $this->form->addFields([new TLabel('Popular dela:', '#FF007F'), $ela_popular]);
-        $row->layout = ['col-sm-12'];
+
+        $row = $this->form->addFields([new TLabel('Popular dela:', '#FF007F'), $ela_popular], [new TLabel('Nome dela:', '#FF007F'), $ela_nome]);
+        $row->layout = ['col-sm-5', 'col-sm-7'];
+
+        $ela_nome->addValidation('Nome dela', new TRequiredValidator);
         $ela_popular->addValidation('Popular dela', new TRequiredValidator);
 
         $dn_ela       = new TDate('dn_ela');
@@ -120,7 +120,7 @@ class AddEncontrista extends TWindow
         $row->layout = ['col-sm-6', 'col-sm-6'];
 
         // dados deles
-        $this->form->appendPage('Dados Relação');
+        //$this->form->appendPage('Dados Relação');
         $relacao_id       = new TEntry('relacao_id');
         $relacao_id->setEditable(FALSE);
         $relacao_id->setSize('100%');
@@ -131,15 +131,15 @@ class AddEncontrista extends TWindow
         $dt_casamento->setSize('100%');
         $dt_casamento->addValidation('Casamento', new TRequiredValidator);
 
-        $row = $this->form->addFields([new TLabel('Cod.:', 'red'), $relacao_id], [new TLabel('Casamento:', 'red'), $dt_casamento]);
-        $row->layout = ['col-sm-4', 'col-sm-8'];
+        $row = $this->form->addFields([new TLabel('Casamento.:', 'red'), $dt_casamento], [new TLabel('Cod:', 'red'), $relacao_id]);
+        $row->layout = ['col-sm-8', 'col-sm-4'];
 
         $filter = new TCriteria;
         $filter->add(new TFilter('evento_id', '=', '701'));
         $encontro_id = new TDBCombo('encontro_id', 'adea', 'ViewEncontro', 'id', 'sigla', 'id', $filter);
         $encontro_id->setSize('100%');
         $encontro_id->enableSearch();
-        $encontro_id->setValue(5);
+        $encontro_id->setValue(6);
         $encontro_id->addValidation('Encontro', new TRequiredValidator);
 
         $filterCirculo = new TCriteria;
