@@ -27,6 +27,7 @@ class EncontreiroDataGrid extends TPage
 
         $this->setDatabase('adea');          // defines the database
         $this->setActiveRecord('ViewEncontreiro');         // defines the active record
+        $this->setLimit(40);
         $this->setDefaultOrder('id', 'desc');    // defines the default order
         $this->addFilterField('id', '=', 'id'); // filterField, operator, formField
         $this->addFilterField('encontro_id', '=', 'encontro_id'); // filterField, operator, formField

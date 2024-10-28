@@ -40,7 +40,7 @@ class CirculosForm extends TWindow
         $this->setActiveRecord('Encontrista');   // defines the active record
 
         // creates the form
-        $this->form = new BootstrapFormBuilder('form_encontrista');
+        $this->form = new BootstrapFormBuilder('form_CirculosForm');
         $this->form->setClientValidation(true);
 
         $filter = new TCriteria;
@@ -60,14 +60,16 @@ class CirculosForm extends TWindow
         $filterCirculo->add(new TFilter('lista_id', '=', '18'));
         $circulo_id = new TDBCombo('circulo_id', 'adea', 'ListaItens', 'id', 'item', 'id', $filterCirculo);
         $circulo_id->setSize('100%');
-        //$circulo_id->setValue(16);
+        $circulo_id->setChangeAction(new TAction(array($this, 'onCoordenador')));
 
-        $nome_circulo  = new TDBEntry('nome_circulo', 'adea', 'EncontroCirculos', '{nome_circulo} ({Circulo->item})');
+        $nome_circulo  = new TDBEntry('nome_circulo', 'adea', 'EncontroCirculos', 'nome_circulo');
         $nome_circulo->placeholder = 'digite o nome do Círculo';
         $nome_circulo->forceUpperCase();
         $nome_circulo->setSize('100%');
 
-        $casal_coord_id = new TDBCombo('casal_coord_id', 'adea', 'ViewEncontrista', 'casal_id', 'casal', 'casal_id');
+        $filterCoordenador = new TCriteria;
+        $filterCoordenador->add(new TFilter('id', '<', '0'));
+        $casal_coord_id = new TDBCombo('casal_coord_id', 'adea', 'ViewCasalCirculo', 'casal_id', '{casal} ({Casamento})', 'casal_id', $filterCoordenador);
         $casal_coord_id->enableSearch();
         $casal_coord_id->setSize('100%');
 
@@ -159,6 +161,29 @@ class CirculosForm extends TWindow
         parent::add($this->form);
     }
 
+    /**
+     * Action to be executed when the user changes the state
+     * @param $param Action parameters
+     */
+    public static function onCoordenador($param)
+    {
+        try {
+            TTransaction::open('adea');
+            if (!empty($param['circulo_id'])) {
+                $criteria = TCriteria::create(['circulo_id' => $param['circulo_id']]);
+
+                // formname, field, database, model, key, value, ordercolumn = NULL, criteria = NULL, startEmpty = FALSE
+                TDBCombo::reloadFromModel('form_CirculosForm', 'casal_coord_id', 'adea', 'ViewCasalCirculo', 'casal_id', '{casal} ({Casamento})', 'casal_id', $criteria, TRUE);
+            } else {
+                TCombo::clearField('form_CirculosForm', 'casal_coord_id');
+            }
+
+            TTransaction::close();
+        } catch (Exception $e) {
+            new TMessage('error', $e->getMessage());
+        }
+    }
+
     public static function onEncontrista($param)
     {
         try {
@@ -235,6 +260,12 @@ class CirculosForm extends TWindow
                 $busca_montagem = Montagem::where('tipo_id', '=', 1)->where('encontro_id', '=', $data->encontro_id)->where('casal_id', '=', $casal_id)->first();
                 $busca_montagem->circulo_id = $data->circulo_id;
                 $busca_montagem->store(); // save the object
+
+                if ($data->casal_sec_id == $casal_id) {
+                    $atualiza_secre = Encontrista::where('montagem_id', '=', $busca_montagem->id)->where('casal_id', '=', $casal_id)->first();
+                    $atualiza_secre->secretario_s_n = 1;
+                    $atualiza_secre->store(); // save the object
+                }
 
                 $historico_circulo = CirculoHistorico::where(
                     'casal_id',

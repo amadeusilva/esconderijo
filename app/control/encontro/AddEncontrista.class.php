@@ -139,7 +139,7 @@ class AddEncontrista extends TWindow
         $encontro_id = new TDBCombo('encontro_id', 'adea', 'ViewEncontro', 'id', 'sigla', 'id', $filter);
         $encontro_id->setSize('100%');
         $encontro_id->enableSearch();
-        $encontro_id->setValue(6);
+        $encontro_id->setValue(8);
         $encontro_id->addValidation('Encontro', new TRequiredValidator);
 
         $filterCirculo = new TCriteria;
@@ -567,7 +567,7 @@ class AddEncontrista extends TWindow
 
             //montagem
             if (isset($data->relacao_id) and !empty($data->relacao_id)) {
-                $montagem = Montagem::where('casal_id', '=', $relacao_deles->id)->first();
+                $montagem = Montagem::where('casal_id', '=', $relacao_deles->id)->where('tipo_id', '=', 1)->first();
                 $encontrista = Encontrista::where('montagem_id', '=', $montagem->id)->first();
             } else {
                 $montagem = new Montagem();

@@ -53,11 +53,11 @@ class EquipesForm extends TWindow
         $encontro_id = new TDBCombo('encontro_id', 'adea', 'ViewEncontro', 'id', '{sigla} ({id})', 'id', $filter);
         $encontro_id->enableSearch();
         $encontro_id->setSize('100%');
-        $encontro_id->setValue(5);
+        $encontro_id->setValue(7);
 
-        //$casal_id = new TDBCombo('casal_id', 'adea', 'ViewCasal', 'relacao_id', 'casal', 'relacao_id');
-        //$casal_id->enableSearch();
-        //$casal_id->setSize('100%');
+        $coordenador_id = new TDBCombo('coordenador_id', 'adea', 'ViewEncontrista', 'casal_id', '{casal} ({Casamento})', 'casal');
+        $coordenador_id->enableSearch();
+        $coordenador_id->setSize('100%');
         //$casal_id->setChangeAction(new TAction(array($this, 'onEncontrista')));
 
         //$filterCasais = new TCriteria;
@@ -103,8 +103,8 @@ class EquipesForm extends TWindow
 
         $row = $this->form->addFields(
             [
-                new TLabel('Casal'),
-                $casal_id
+                new TLabel('Equipe'),
+                $equipe_id
             ]
         );
 
@@ -112,8 +112,17 @@ class EquipesForm extends TWindow
 
         $row = $this->form->addFields(
             [
-                new TLabel('Equipe'),
-                $equipe_id
+                new TLabel('Coordenador'),
+                $coordenador_id
+            ]
+        );
+
+        $row->layout = ['col-sm-12'];
+
+        $row = $this->form->addFields(
+            [
+                new TLabel('Casais (Membros)'),
+                $casal_id
             ]
         );
 
@@ -145,7 +154,7 @@ class EquipesForm extends TWindow
         //id`, `encontro_id`, `casal_pessoa_id`, `funcao_id`, `circulo_id`, `casal_pessoa_convite_id
         $encontro_id->addValidation('Encontro', new TRequiredValidator);
         $casal_id->addValidation('Casal', new TRequiredValidator);
-        //$secretario_s_n->addValidation('Secretário', new TRequiredValidator);
+        //$coordenador_id->addValidation('Coordenador', new TRequiredValidator);
         $equipe_id->addValidation('Equipe', new TRequiredValidator);
         //$casal_convite_id->addValidation('Convite', new TRequiredValidator);
 
@@ -157,34 +166,6 @@ class EquipesForm extends TWindow
         $this->setUseMessages(false);
 
         parent::add($this->form);
-    }
-
-    /**
-     * method onEdit()
-     * Executed whenever the user clicks at the edit button da datagrid
-     */
-    function onEdit($param)
-    {
-        try {
-            if (isset($param['id'])) {
-                $key = $param['id'];  // get the parameter
-                TTransaction::open('adea');   // open a transaction with database 'samples'
-                $montagem = new Montagem($key);        // instantiates object City
-                $encontrista = Encontrista::where('montagem_id', '=', $montagem->id)->first();
-
-                $montagem->secretario_s_n = $encontrista->secretario_s_n;
-                $montagem->casal_convite_id = $encontrista->casal_convite_id;
-
-                $this->form->setData($montagem);   // fill the form with the active record data
-                TTransaction::close();           // close the transaction
-            } else {
-                $this->form->clear(true);
-            }
-        } catch (Exception $e) // in case of exception
-        {
-            new TMessage('error', $e->getMessage()); // shows the exception error message
-            TTransaction::rollback(); // undo all pending operations
-        }
     }
 
     /**
@@ -200,6 +181,53 @@ class EquipesForm extends TWindow
             $this->form->validate(); // run form validation
 
             $data = $this->form->getData(); // get form data as array
+
+            if (!empty($data->coordenador_id) and !empty($data->encontro_id)) {
+
+                $busca_montagem = Montagem::where('casal_id', '=', $data->coordenador_id)->where('encontro_id', '=', $data->encontro_id)->where('tipo_id', '=', 2)->first();
+                if ($busca_montagem) {
+                    $montagem = Montagem::find($busca_montagem->id);
+                } else {
+                    $montagem = new Montagem();  // create an empty object
+                    $montagem->tipo_id = 2;
+                    $montagem->encontro_id = $data->encontro_id;
+                    $montagem->casal_id = $data->coordenador_id;
+                    $montagem->conducao_propria_id = 0;
+
+                    $buscacirculo = CirculoHistorico::where('casal_id', '=', $data->coordenador_id)->orderby('id', 'desc')->first();
+                    if ($buscacirculo) {
+                        $montagem->circulo_id = $buscacirculo->circulo_id;
+                    } else {
+                        $montagem->circulo_id = 17;
+                    }
+                }
+
+                $montagem->store(); // save the object
+
+                $busca_encontreiro = Encontreiro::where('montagem_id', '=', $montagem->id)->first();
+                if ($busca_encontreiro) {
+                    $encontreiro = Encontreiro::find($busca_encontreiro->id);
+                } else {
+                    $encontreiro = new Encontreiro();  // create an empty object
+                    $encontreiro->montagem_id = $montagem->id;
+                    $encontreiro->camisa_encontro_br = 2;
+                    $encontreiro->camisa_encontro_cor = 2;
+                    $encontreiro->disponibilidade_nt = 2;
+                    $encontreiro->coordenar_s_n = 2;
+
+                    $encontreiro->store(); // save the object
+                }
+
+                $encontreiro_equipe = new EncontreiroEquipe;
+                $encontreiro_equipe->encontreiro_id = $encontreiro->id;
+                $encontreiro_equipe->funcao_id  = 1;
+                $encontreiro_equipe->equipe_id = $data->equipe_id;
+                $encontreiro_equipe->tipo_enc_id  = 1;
+
+                // add the contact to the customer
+                $encontreiro_equipe->store(); // save the object
+
+            }
 
             if (!empty($data->casal_id) and !empty($data->encontro_id)) {
 
@@ -235,6 +263,7 @@ class EquipesForm extends TWindow
                         $encontreiro->camisa_encontro_cor = 2;
                         $encontreiro->disponibilidade_nt = 2;
                         $encontreiro->coordenar_s_n = 2;
+
                         $encontreiro->store(); // save the object
                     }
 

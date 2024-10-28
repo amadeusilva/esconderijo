@@ -261,9 +261,9 @@ class EncontreiroForm extends TWindow
             $funcao_id->setSize('100%');
             $funcao_id->addItems([1 => 'Coordenador', 2 => 'Adjunto']);
 
-            $filterPalestra = new TCriteria;
-            $filterPalestra->add(new TFilter('lista_id', '=', '20'));
-            $equipe_id = new TDBCombo('equipe_id[]', 'adea', 'ListaItens', 'id', 'item', 'id', $filterPalestra);
+            $filterPasta = new TCriteria;
+            $filterPasta->add(new TFilter('lista_id', '=', '20'));
+            $equipe_id = new TDBCombo('equipe_id[]', 'adea', 'ListaItens', 'id', 'item', 'id', $filterPasta);
             $equipe_id->enableSearch();
             $equipe_id->setSize('100%');
 

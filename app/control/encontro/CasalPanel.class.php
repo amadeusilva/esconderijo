@@ -50,7 +50,7 @@ class CasalPanel extends TWindow
         //$dropdown->addAction(
         $dropdown->addAction('Imprimir', new TAction([$this, 'onPrint'], ['key' => 1, 'static' => '1']), 'far:file-pdf red');
         //$dropdown->addAction( 'Gerar etiqueta', new TAction([$this, 'onGeraEtiqueta'], ['key'=>$param['key'], 'static' => '1']), 'far:envelope purple');
-        //$dropdown->addAction('Editar', new TAction([$this, 'onEdit'], ['key' => $param['key']]), 'far:edit blue');
+        //$dropdown->addAction('Editar', new TAction(['AddEncontrista', 'onEdit'], ['key' => $param['relacao_id']]), 'far:edit blue');
 
         $this->form->addHeaderWidget($dropdown);
 
@@ -89,10 +89,20 @@ class CasalPanel extends TWindow
             $row = $this->form->addFields([new TLabel('<b>Casal:</b>', ''), $dados_encontristas->casal], [new TLabel('<b>Convite:</b>', ''), $dados_encontristas->casal_convite]);
             $row->layout = ['col-sm-6', 'col-sm-6'];
 
-            $row = $this->form->addFields([new TLabel('<b>Ele:</b>', ''), $dados_encontristas->DadosCasal->Ele->nome], [new TLabel('<b>Nasc.:</b>', ''), TDate::date2br($dados_encontristas->DadosCasal->Ele->dt_nascimento)]);
+            $action_ele = new TAction(['PessoaPanel', 'onView']);
+            $action_ele->setParameter('key', $dados_encontristas->DadosCasal->Ele->id);
+
+            $nome_ele = new TActionLink($dados_encontristas->DadosCasal->Ele->nome, $action_ele, 'blue', 12, 'bu'); //biu
+
+            $action_ela = new TAction(['PessoaPanel', 'onView']);
+            $action_ela->setParameter('key', $dados_encontristas->DadosCasal->Ela->id);
+
+            $nome_ela = new TActionLink($dados_encontristas->DadosCasal->Ela->nome, $action_ela, 'blue', 12, 'bu'); //biu
+
+            $row = $this->form->addFields([new TLabel('<b>Ele:</b>', ''), $nome_ele], [new TLabel('<b>Nasc.:</b>', ''), TDate::date2br($dados_encontristas->DadosCasal->Ele->dt_nascimento)]);
             $row->layout = ['col-sm-8', 'col-sm-4'];
 
-            $row = $this->form->addFields([new TLabel('<b>Ela:</b>', ''), $dados_encontristas->DadosCasal->Ela->nome], [new TLabel('<b>Nasc.:</b>', ''), TDate::date2br($dados_encontristas->DadosCasal->Ela->dt_nascimento)]);
+            $row = $this->form->addFields([new TLabel('<b>Ela:</b>', ''), $nome_ela], [new TLabel('<b>Nasc.:</b>', ''), TDate::date2br($dados_encontristas->DadosCasal->Ela->dt_nascimento)]);
             $row->layout = ['col-sm-8', 'col-sm-4'];
 
             //[new TLabel('<b>Casamento</b>', ''), TDate::date2br($dados_encontristas->DadosCasal->dt_inicial)]
