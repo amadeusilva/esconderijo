@@ -43,6 +43,11 @@ class CasalPanel extends TWindow
 
         //parent::setTargetContainer('adianti_right_panel');
 
+        //echo '<pre>';
+        //        print_r($param);
+        //        echo '</pre>';
+        //        exit;
+
         $this->form = new BootstrapFormBuilder('form_Casal_Panel');
         $this->form->setFormTitle('Dados do Casal');
 
@@ -50,7 +55,7 @@ class CasalPanel extends TWindow
         //$dropdown->addAction(
         $dropdown->addAction('Imprimir', new TAction([$this, 'onPrint'], ['key' => 1, 'static' => '1']), 'far:file-pdf red');
         //$dropdown->addAction( 'Gerar etiqueta', new TAction([$this, 'onGeraEtiqueta'], ['key'=>$param['key'], 'static' => '1']), 'far:envelope purple');
-        //$dropdown->addAction('Editar', new TAction(['AddEncontrista', 'onEdit'], ['key' => $param['relacao_id']]), 'far:edit blue');
+        //$dropdown->addAction('Editar', new TAction(['AddEncontrista', 'onEdit'], ['id' => $param['relacao_id'], 'key' => $param['relacao_id']]), 'far:edit blue');
 
         $this->form->addHeaderWidget($dropdown);
 
@@ -86,15 +91,22 @@ class CasalPanel extends TWindow
                 $dados_encontristas->casal_convite = 'NÃO INFORMADO';
             }
 
-            $row = $this->form->addFields([new TLabel('<b>Casal:</b>', ''), $dados_encontristas->casal], [new TLabel('<b>Convite:</b>', ''), $dados_encontristas->casal_convite]);
+            $action_casal = new TAction(['AddEncontrista', 'onEdit']);
+            $action_casal->setParameter('casal_id', $dados_encontristas->casal_id);
+            $action_casal->setParameter('id', $dados_encontristas->id);
+            $action_casal->setParameter('refer_id', 2);
+
+            $nome_casal = new TActionLink($dados_encontristas->casal, $action_casal, 'blue', 12, 'bu'); //biu
+
+            $row = $this->form->addFields([new TLabel('<b>Casal:</b>', ''), $nome_casal], [new TLabel('<b>Convite:</b>', ''), $dados_encontristas->casal_convite]);
             $row->layout = ['col-sm-6', 'col-sm-6'];
 
-            $action_ele = new TAction(['PessoaPanel', 'onView']);
+            $action_ele = new TAction([$this, 'onViewPessoa']);
             $action_ele->setParameter('key', $dados_encontristas->DadosCasal->Ele->id);
 
             $nome_ele = new TActionLink($dados_encontristas->DadosCasal->Ele->nome, $action_ele, 'blue', 12, 'bu'); //biu
 
-            $action_ela = new TAction(['PessoaPanel', 'onView']);
+            $action_ela = new TAction([$this, 'onViewPessoa']);
             $action_ela->setParameter('key', $dados_encontristas->DadosCasal->Ela->id);
 
             $nome_ela = new TActionLink($dados_encontristas->DadosCasal->Ela->nome, $action_ela, 'blue', 12, 'bu'); //biu
@@ -471,7 +483,7 @@ class CasalPanel extends TWindow
 
             $this->historico_equipes->createModel();
 
-            $historicoequipes = ViewEncontreiro::where('casal_id', '=', $param['relacao_id'])->orderBy('encontro', 'asc')->load();
+            $historicoequipes = ViewEncontreiro::where('casal_id', '=', $param['relacao_id'])->orderBy('encontro_id', 'asc')->load();
             $this->historico_equipes->addItems($historicoequipes);
             //TSession::setValue('pessoa_painel_vinculos', $circulohistorico);
 
@@ -656,6 +668,70 @@ class CasalPanel extends TWindow
             $win->add('<br>');
 
             $win->add($table);
+            $win->show();
+        } catch (Exception $e) {
+            new TMessage('error', $e->getMessage());
+        }
+
+        //$notebook_encontreiro->appendPage($encontreiro->equipe . ' <b>(' . $encontreiro->contagem . ')</b>', $table);
+
+
+        //$win->add("<br> &nbsp; You have clicked at <b>{$name}</b>");
+
+    }
+
+    public static function onViewPessoa($param)
+    {
+
+        $win = TWindow::create('Detalhes da Pessoa', 0.5, 0.5);
+
+        try {
+            TTransaction::open('adea');
+
+            //PESSOA
+            $pessoa = new ViewPessoaFisica($param['key']);
+
+            $date = new DateTime($pessoa->dt_nascimento);
+            $interval = $date->diff(new DateTime(date('Y-m-d')));
+
+            $pessoa->genero = $pessoa->genero == 'F' ? 'Feminino' : 'Masculino';
+            $pessoa->dt_nascimento =  TDate::date2br($pessoa->dt_nascimento);
+
+            $formpessoa = new BootstrapFormBuilder('form_PessoaView');
+
+            $row = $formpessoa->addFields(['<b>Cod.:</b>', $pessoa->id], ['<b>Status:</b>', $pessoa->status_pessoa]);
+            $row->layout = ['col-sm-7', 'col-sm-5'];
+
+            $row = $formpessoa->addFields(['<b>Nome:</b>', $pessoa->nome]);
+            $row->layout = ['col-sm-12'];
+
+            $row = $formpessoa->addFields(['<b>Popular:</b>', $pessoa->popular]);
+            $row->layout = ['col-sm-12'];
+
+            $row = $formpessoa->addFields(['<b>Nascimento:</b>', $pessoa->dt_nascimento]);
+            $row->layout = ['col-sm-12'];
+
+            $row = $formpessoa->addFields(['<b>Idade:</b>', $interval->format('%Y anos')], ['<b>Gênero:</b>', $pessoa->genero]);
+            $row->layout = ['col-sm-7', 'col-sm-5'];
+
+            $row = $formpessoa->addFields(['<b>Estado Civil:</b>', $pessoa->estado_civil]);
+            $row->layout = ['col-sm-12'];
+
+            $row = $formpessoa->addFields(['<b>Endereço:</b>', $pessoa->endereco]);
+            $row->layout = ['col-sm-12'];
+
+            TTransaction::close();
+
+            //$win->add('<br>');
+
+            //$win->add("Casal: <b>{$nome_casal}</b><br>
+            //{$nome_desc}: <b>{$param['equipe']}</b><br>
+            //Total de Participações: <b>{$param['contagem_equipe']}</b><br>
+            //");
+
+            //$win->add('<br>');
+
+            $win->add($formpessoa);
             $win->show();
         } catch (Exception $e) {
             new TMessage('error', $e->getMessage());

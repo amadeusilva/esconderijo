@@ -93,6 +93,7 @@ class EdgDataGrid extends TPage
         // add the search form actions
         $this->form->addAction('Buscar', new TAction([$this, 'onSearch']), 'fa:search');
         $this->form->addActionLink('Novo',  new TAction(['EncontreiroForm', 'onEdit'], ['tipo_enc_id' => 3, 'register_state' => 'false']), 'fa:plus green');
+        $this->form->addActionLink('Pastas <b>(+)</b>',  new TAction(['EquipesUnicasForm', 'onClear'], ['tipo_enc_id' => 3, 'register_state' => 'false']), 'fa:plus black');
         $this->form->addActionLink('Limpar',  new TAction([$this, 'clear']), 'fa:eraser red');
 
         // creates a DataGrid

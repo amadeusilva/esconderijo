@@ -93,6 +93,7 @@ class EncontreiroDataGrid extends TPage
         $this->form->addAction('Buscar', new TAction([$this, 'onSearch']), 'fa:search');
         $this->form->addActionLink('Novo',  new TAction(['EncontreiroForm', 'onEdit'], ['tipo_enc_id' => 1, 'register_state' => 'false']), 'fa:plus green');
         $this->form->addActionLink('Equipes',  new TAction(['EquipesForm', 'onClear'], ['register_state' => 'false']), 'fa:plus black');
+        $this->form->addActionLink('Equipes <b>(+)</b>',  new TAction(['EquipesUnicasForm', 'onClear'], ['tipo_enc_id' => 1, 'register_state' => 'false']), 'fa:plus black');
         $this->form->addActionLink('Limpar',  new TAction([$this, 'clear']), 'fa:eraser red');
 
         // creates a DataGrid
@@ -354,13 +355,18 @@ class EncontreiroDataGrid extends TPage
                     $row->style = 'font-weight: bold; background-color: #eee8aa;';
                 }
 
+                $action = new TAction(['CasalPanel', 'onView']);
+                $action->setParameter('relacao_id', $enc_equip->casal_id);
+
+                $casal_link = new TActionLink($enc_equip->casal, $action, 'black', 12, 'u'); //biu
+
                 $ordem_label = new TLabel($ordem);
                 $ordem_label->setFontStyle('b');
                 $ordem_label->setValue($ordem);
 
                 $row->addCell($ordem_label);
                 $row->addCell($enc_equip->Funcao);
-                $row->addCell($enc_equip->casal);
+                $row->addCell($casal_link);
                 $row->addCell($enc_equip->DadosCasal->Casamento);
 
 

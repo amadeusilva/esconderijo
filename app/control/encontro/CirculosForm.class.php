@@ -73,7 +73,7 @@ class CirculosForm extends TWindow
         $casal_coord_id->enableSearch();
         $casal_coord_id->setSize('100%');
 
-        $casal_sec_id = new TDBCombo('casal_sec_id', 'adea', 'ViewEncontrista', 'casal_id', 'casal', 'casal_id');
+        $casal_sec_id = new TDBCombo('casal_sec_id', 'adea', 'ViewEncontrista', 'casal_id', 'casal', 'casal', $filterCasais);
         $casal_sec_id->enableSearch();
         $casal_sec_id->setSize('100%');
 
@@ -262,7 +262,7 @@ class CirculosForm extends TWindow
                 $busca_montagem->store(); // save the object
 
                 if ($data->casal_sec_id == $casal_id) {
-                    $atualiza_secre = Encontrista::where('montagem_id', '=', $busca_montagem->id)->where('casal_id', '=', $casal_id)->first();
+                    $atualiza_secre = Encontrista::where('montagem_id', '=', $busca_montagem->id)->first();
                     $atualiza_secre->secretario_s_n = 1;
                     $atualiza_secre->store(); // save the object
                 }
@@ -276,6 +276,51 @@ class CirculosForm extends TWindow
                 $historico_circulo->user_sessao_id = TSession::getValue('userid');
                 $historico_circulo->circulo_id = $data->circulo_id;
                 $historico_circulo->store(); // save the object
+            }
+
+            if (isset($data->casal_coord_id) and !empty($data->casal_coord_id)) {
+                $busca_montagem = Montagem::where('casal_id', '=', $data->casal_coord_id)->where('encontro_id', '=', $data->encontro_id)->where('tipo_id', '=', 2)->first();
+                if ($busca_montagem) {
+                    $montagem = Montagem::find($busca_montagem->id);
+                } else {
+                    $montagem = new Montagem();  // create an empty object
+                    $montagem->tipo_id = 2;
+                    $montagem->encontro_id = $data->encontro_id;
+                    $montagem->casal_id = $data->casal_coord_id;
+                    $montagem->conducao_propria_id = 0;
+
+                    $buscacirculo = CirculoHistorico::where('casal_id', '=', $data->casal_coord_id)->orderby('id', 'desc')->first();
+                    if ($buscacirculo) {
+                        $montagem->circulo_id = $buscacirculo->circulo_id;
+                    } else {
+                        $montagem->circulo_id = 17;
+                    }
+                }
+
+                $montagem->store(); // save the object
+
+                $busca_encontreiro = Encontreiro::where('montagem_id', '=', $montagem->id)->first();
+                if ($busca_encontreiro) {
+                    $encontreiro = Encontreiro::find($busca_encontreiro->id);
+                } else {
+                    $encontreiro = new Encontreiro();  // create an empty object
+                    $encontreiro->montagem_id = $montagem->id;
+                    $encontreiro->camisa_encontro_br = 2;
+                    $encontreiro->camisa_encontro_cor = 2;
+                    $encontreiro->disponibilidade_nt = 2;
+                    $encontreiro->coordenar_s_n = 2;
+
+                    $encontreiro->store(); // save the object
+                }
+
+                $encontreiro_equipe = new EncontreiroEquipe;
+                $encontreiro_equipe->encontreiro_id = $encontreiro->id;
+                $encontreiro_equipe->funcao_id  = 4;
+                $encontreiro_equipe->equipe_id = 8;
+                $encontreiro_equipe->tipo_enc_id  = 1;
+
+                // add the contact to the customer
+                $encontreiro_equipe->store(); // save the object
             }
 
             TTransaction::close();  // close the transaction

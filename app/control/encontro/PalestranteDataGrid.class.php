@@ -93,6 +93,7 @@ class PalestranteDataGrid extends TPage
         // add the search form actions
         $this->form->addAction('Buscar', new TAction([$this, 'onSearch']), 'fa:search');
         $this->form->addActionLink('Novo',  new TAction(['EncontreiroForm', 'onEdit'], ['tipo_enc_id' => 2, 'register_state' => 'false']), 'fa:plus green');
+        $this->form->addActionLink('Palestras <b>(+)</b>',  new TAction(['EquipesUnicasForm', 'onClear'], ['tipo_enc_id' => 2, 'register_state' => 'false']), 'fa:plus black');
         $this->form->addActionLink('Limpar',  new TAction([$this, 'clear']), 'fa:eraser red');
 
         // creates a DataGrid
@@ -265,7 +266,7 @@ class PalestranteDataGrid extends TPage
 
                 $ordem += 1;
 
-                if ($param['casal_id'] == $enc_equip->casal_id AND $param['encontro_id'] == $enc_equip->encontro_id) {
+                if ($param['casal_id'] == $enc_equip->casal_id and $param['encontro_id'] == $enc_equip->encontro_id) {
                     $nome_casal = $enc_equip->casal;
                     $row->style = 'font-weight: bold; background-color: #eee8aa;';
                 }

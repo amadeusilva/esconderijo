@@ -194,7 +194,7 @@ class EncontristaDataGrid extends TPage
         */
 
         $action1 = new TDataGridAction(['EncontristaForm', 'onEdit'],   ['key' => '{id}', 'register_state' => 'false']);
-        $action3 = new TDataGridAction(['AddEncontrista', 'onEdit'],   ['id' => '{id}', 'casal_id' => '{casal_id}', 'register_state' => 'false']);
+        $action3 = new TDataGridAction(['AddEncontrista', 'onEdit'],   ['id' => '{id}', 'casal_id' => '{casal_id}', 'refer_id' => 1, 'register_state' => 'false']);
 
         $this->datagrid->addAction($action1, 'Editar',   'far:edit blue');
         $this->datagrid->addAction($action3, 'Editar',   'far:edit orange');

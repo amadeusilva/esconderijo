@@ -121,10 +121,20 @@ class EncontroPanel extends TPage
                     $circulo_cor = ListaItens::where('id', '=', $encontrista->circulo_id)->first();
 
                     if ($encontro_circulos) {
+
+                        $action_coord = new TAction(['CasalPanel', 'onView']);
+                        $action_coord->setParameter('relacao_id', $encontro_circulos->casal_coord_id);
+
+                        $action_sec = new TAction(['CasalPanel', 'onView']);
+                        $action_sec->setParameter('relacao_id', $encontro_circulos->casal_sec_id);
+
+                        $casal_link_coord = new TActionLink($encontro_circulos->CasalCoord->casal, $action_coord, 'black', 12, 'u'); //biu
+                        $casal_link_sec = new TActionLink($encontro_circulos->CasalSec->casal, $action_sec, 'black', 12, 'u'); //biu
+
                         // creates a label with the title
                         $title = new TLabel(
                             'Nome do Círculo: <b>' . $encontro_circulos->nome_circulo . '</b><br>
-                        Casal Coordenador: <b>' . $encontro_circulos->CasalCoord->casal . '</b><br>Casal Secretaria: <b>' . $encontro_circulos->CasalSec->casal . '</b>'
+                        Casal Coordenador: <b>' . $casal_link_coord . '</b><br>Casal Secretaria: <b>' . $casal_link_sec . '</b>'
                         );
                     } else {
                         $title = new TLabel(
@@ -299,9 +309,19 @@ class EncontroPanel extends TPage
                     $ordem_label->setFontStyle('b');
                     $ordem_label->setValue($ordem);
 
+                    $action = new TAction(['PalestranteDataGrid', 'onViewDetalhesPalestra']);
+                    $action->setParameter('tipo', 2);
+                    $action->setParameter('encontro_id', $pales_pal->encontro_id);
+                    $action->setParameter('equipe_id', $pales_pal->palestra_id);
+                    $action->setParameter('encontro', $pales_pal->encontro);
+                    $action->setParameter('equipe', $pales_pal->palestra);
+                    $action->setParameter('casal_id', $pales_pal->casal_id);
+
+                    $palestra_link = new TActionLink($pales_pal->palestra, $action, 'black', 12, 'u'); //biu
+
                     $palestra_label = new TLabel('palestra');
                     $palestra_label->setFontStyle('b');
-                    $palestra_label->setValue($pales_pal->palestra);
+                    $palestra_label->setValue($palestra_link);
 
                     $action = new TAction(['CasalPanel', 'onView']);
                     $action->setParameter('relacao_id', $pales_pal->casal_id);
@@ -364,9 +384,19 @@ class EncontroPanel extends TPage
                     $ordem_label->setFontStyle('b');
                     $ordem_label->setValue($ordem);
 
+                    $action = new TAction(['EdgDataGrid', 'onViewDetalhesPasta']);
+                    $action->setParameter('tipo', 3);
+                    $action->setParameter('encontro_id', $edg_ed->encontro_id);
+                    $action->setParameter('equipe_id', $edg_ed->pasta_id);
+                    $action->setParameter('encontro', $edg_ed->encontro);
+                    $action->setParameter('equipe', $edg_ed->pasta);
+                    $action->setParameter('casal_id', $edg_ed->casal_id);
+
+                    $pasta_link = new TActionLink($edg_ed->pasta, $action, 'black', 12, 'u'); //biu
+
                     $pasta_label = new TLabel('pasta');
                     $pasta_label->setFontStyle('b');
-                    $pasta_label->setValue($edg_ed->pasta);
+                    $pasta_label->setValue($pasta_link);
 
                     $action = new TAction(['CasalPanel', 'onView']);
                     $action->setParameter('relacao_id', $edg_ed->casal_id);

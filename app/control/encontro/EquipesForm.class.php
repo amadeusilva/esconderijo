@@ -53,7 +53,7 @@ class EquipesForm extends TWindow
         $encontro_id = new TDBCombo('encontro_id', 'adea', 'ViewEncontro', 'id', '{sigla} ({id})', 'id', $filter);
         $encontro_id->enableSearch();
         $encontro_id->setSize('100%');
-        $encontro_id->setValue(7);
+        $encontro_id->setValue(10);
 
         $coordenador_id = new TDBCombo('coordenador_id', 'adea', 'ViewEncontrista', 'casal_id', '{casal} ({Casamento})', 'casal');
         $coordenador_id->enableSearch();

@@ -125,21 +125,25 @@ class AddEncontrista extends TWindow
         $relacao_id->setEditable(FALSE);
         $relacao_id->setSize('100%');
 
+        $refer_id       = new TEntry('refer_id');
+        $refer_id->setEditable(FALSE);
+        $refer_id->setSize('100%');
+
         $dt_casamento       = new TDate('dt_casamento');
         $dt_casamento->setMask('dd/mm/yyyy');
         $dt_casamento->setDatabaseMask('yyyy-mm-dd');
         $dt_casamento->setSize('100%');
         $dt_casamento->addValidation('Casamento', new TRequiredValidator);
 
-        $row = $this->form->addFields([new TLabel('Casamento.:', 'red'), $dt_casamento], [new TLabel('Cod:', 'red'), $relacao_id]);
-        $row->layout = ['col-sm-8', 'col-sm-4'];
+        $row = $this->form->addFields([new TLabel('Casamento.:', 'red'), $dt_casamento], [new TLabel('Ref:', 'red'), $refer_id], [new TLabel('Cod:', 'red'), $relacao_id]);
+        $row->layout = ['col-sm-6', 'col-sm-3', 'col-sm-3'];
 
         $filter = new TCriteria;
         $filter->add(new TFilter('evento_id', '=', '701'));
         $encontro_id = new TDBCombo('encontro_id', 'adea', 'ViewEncontro', 'id', 'sigla', 'id', $filter);
         $encontro_id->setSize('100%');
         $encontro_id->enableSearch();
-        $encontro_id->setValue(8);
+        $encontro_id->setValue(10);
         $encontro_id->addValidation('Encontro', new TRequiredValidator);
 
         $filterCirculo = new TCriteria;
@@ -361,6 +365,8 @@ class AddEncontrista extends TWindow
                     } else if ($endereco->cep == '66.017-070') {
                         $dados_endereco->local            = 3;
                     }
+
+                    $dados_endereco->refer_id            = $param['refer_id'];
 
                     TForm::sendData('form_AddEncontrista', $dados_endereco);
                 }
@@ -608,8 +614,11 @@ class AddEncontrista extends TWindow
 
             self::onClose();
 
-            $posAction = new TDataGridAction(['EncontristaDataGrid', 'onReload'],   ['register_state' => 'false']);
-
+            if ($data->refer_id == 2) {
+                $posAction = new TDataGridAction(['EncontreiroDataGrid', 'onReload'],   ['register_state' => 'false']);
+            } else {
+                $posAction = new TDataGridAction(['EncontristaDataGrid', 'onReload'],   ['register_state' => 'false']);
+            }
             TTransaction::close();  // close the transaction
 
             // shows the success message
