@@ -39,7 +39,7 @@ class CasalPanel extends TWindow
         parent::disableEscape();
 
         // with: 500, height: automatic
-        parent::setSize(0.6, null); // use 0.6, 0.4 (for relative sizes 60%, 40%)
+        parent::setSize(0.9, null); // use 0.6, 0.4 (for relative sizes 60%, 40%)
 
         //parent::setTargetContainer('adianti_right_panel');
 
@@ -57,7 +57,7 @@ class CasalPanel extends TWindow
         //$dropdown->addAction( 'Gerar etiqueta', new TAction([$this, 'onGeraEtiqueta'], ['key'=>$param['key'], 'static' => '1']), 'far:envelope purple');
         //$dropdown->addAction('Editar', new TAction(['AddEncontrista', 'onEdit'], ['id' => $param['relacao_id'], 'key' => $param['relacao_id']]), 'far:edit blue');
 
-        $this->form->addHeaderWidget($dropdown);
+        //$this->form->addHeaderWidget($dropdown);
 
         $this->form->addHeaderActionLink('Fechar', new TAction([$this, 'onClose']), 'fa:times red');
 

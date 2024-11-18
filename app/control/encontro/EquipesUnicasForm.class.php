@@ -35,7 +35,7 @@ class EquipesUnicasForm extends TWindow
         parent::__construct();
         parent::setModal(true);
         parent::removePadding();
-        parent::setSize(600, null);
+        parent::setSize(0.9, null);
 
         if ($param['tipo_enc_id'] == 1) {
             parent::setTitle('Equipes');
@@ -245,6 +245,7 @@ class EquipesUnicasForm extends TWindow
             $this->form->validate(); // run form validation
 
             $data = $this->form->getData(); // get form data as array
+            TSession::setValue('encontro_id', (array) $data->encontro_id);
 
             if (!empty($data->casal_id) and !empty($data->encontro_id)) {
 
@@ -325,7 +326,10 @@ class EquipesUnicasForm extends TWindow
 
         $form_vazio = new stdClass;
         $form_vazio->tipo_enc_id = $param['tipo_enc_id'];
-        //$form_vazio->encontro_id = 4;
+        if (TSession::getValue('encontro_id')) {
+            $pega_encontro = TSession::getValue('encontro_id');
+            $form_vazio->encontro_id = $pega_encontro[0];
+        }
         TForm::sendData('form_equipes_unicas', $form_vazio);
 
         $this->equipe->addHeader();

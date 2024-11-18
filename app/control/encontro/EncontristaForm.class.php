@@ -54,6 +54,10 @@ class EncontristaForm extends TWindow
         $encontro_id->enableSearch();
         $encontro_id->setSize('100%');
         //$encontro_id->setValue(1);
+        if (TSession::getValue('encontro_id')) {
+            $pega_encontro = TSession::getValue('encontro_id');
+            $encontro_id->setValue($pega_encontro[0]);
+        }
 
         $casal_id = new TDBCombo('casal_id', 'adea', 'ViewCasal', 'relacao_id', 'casal', 'relacao_id');
         $casal_id->enableSearch();
@@ -211,6 +215,7 @@ class EncontristaForm extends TWindow
             $this->form->validate(); // run form validation
 
             $data = $this->form->getData(); // get form data as array
+            TSession::setValue('encontro_id', (array) $data->encontro_id);
 
             $montagem = new Montagem();  // create an empty object
             $montagem->fromArray((array) $data); // load the object with data

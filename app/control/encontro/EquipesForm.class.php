@@ -33,7 +33,7 @@ class EquipesForm extends TWindow
         parent::__construct();
         parent::setModal(true);
         parent::removePadding();
-        parent::setSize(400, null);
+        parent::setSize(0.9, null);
         parent::setTitle('Encontreiros - Equipes');
 
         $this->setDatabase('adea');    // defines the database
@@ -53,7 +53,10 @@ class EquipesForm extends TWindow
         $encontro_id = new TDBCombo('encontro_id', 'adea', 'ViewEncontro', 'id', '{sigla} ({id})', 'id', $filter);
         $encontro_id->enableSearch();
         $encontro_id->setSize('100%');
-        $encontro_id->setValue(10);
+        if (TSession::getValue('encontro_id')) {
+            $pega_encontro = TSession::getValue('encontro_id');
+            $encontro_id->setValue($pega_encontro[0]);
+        }
 
         $coordenador_id = new TDBCombo('coordenador_id', 'adea', 'ViewEncontrista', 'casal_id', '{casal} ({Casamento})', 'casal');
         $coordenador_id->enableSearch();
@@ -181,6 +184,8 @@ class EquipesForm extends TWindow
             $this->form->validate(); // run form validation
 
             $data = $this->form->getData(); // get form data as array
+
+            TSession::setValue('encontro_id', (array) $data->encontro_id);
 
             if (!empty($data->coordenador_id) and !empty($data->encontro_id)) {
 

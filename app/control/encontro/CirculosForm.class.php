@@ -245,7 +245,7 @@ class CirculosForm extends TWindow
 
             $this->form->validate(); // run form validation
 
-            $data = $this->form->getData(); // get form data as array
+            $data = $this->form->getData(); // get form data as array            
 
             $encontro_circulos = new EncontroCirculos;
             //$encontro_circulos->encontro_id = $data->encontro_id;

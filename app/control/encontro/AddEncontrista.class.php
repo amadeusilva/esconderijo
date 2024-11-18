@@ -140,10 +140,13 @@ class AddEncontrista extends TWindow
 
         $filter = new TCriteria;
         $filter->add(new TFilter('evento_id', '=', '701'));
-        $encontro_id = new TDBCombo('encontro_id', 'adea', 'ViewEncontro', 'id', 'sigla', 'id', $filter);
+        $encontro_id = new TDBCombo('encontro_id', 'adea', 'ViewEncontro', 'id', '{sigla} ({id})', 'id', $filter);
         $encontro_id->setSize('100%');
         $encontro_id->enableSearch();
-        $encontro_id->setValue(10);
+        if (TSession::getValue('encontro_id')) {
+            $pega_encontro = TSession::getValue('encontro_id');
+            $encontro_id->setValue($pega_encontro[0]);
+        }
         $encontro_id->addValidation('Encontro', new TRequiredValidator);
 
         $filterCirculo = new TCriteria;
@@ -413,6 +416,8 @@ class AddEncontrista extends TWindow
             $this->form->validate(); // run form validation
 
             $data = $this->form->getData(); // get form data as array
+
+            TSession::setValue('encontro_id', (array) $data->encontro_id);
 
             if (isset($data->relacao_id) and !empty($data->relacao_id)) {
                 $id_dele = ViewCasal::find($data->relacao_id);

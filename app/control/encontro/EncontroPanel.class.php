@@ -40,7 +40,7 @@ class EncontroPanel extends TPage
         //$dropdown->addAction( 'Gerar etiqueta', new TAction([$this, 'onGeraEtiqueta'], ['key'=>$param['key'], 'static' => '1']), 'far:envelope purple');
         //$dropdown->addAction('Editar', new TAction([$this, 'onEdit'], ['key' => $param['key']]), 'far:edit blue');
 
-        $this->form->addHeaderWidget($dropdown);
+        //$this->form->addHeaderWidget($dropdown);
 
         $this->form->addHeaderActionLink('Fechar', new TAction([$this, 'onClose']), 'fa:times red');
 

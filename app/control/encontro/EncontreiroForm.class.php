@@ -428,6 +428,8 @@ class EncontreiroForm extends TWindow
 
             $data = $this->form->getData(); // get form data as array
 
+            TSession::setValue('encontro_id', (array) $data->encontro_id);
+
             $montagem = new Montagem();  // create an empty object
             $montagem->fromArray((array) $data); // load the object with data
             $montagem->tipo_id = 2;
@@ -496,7 +498,10 @@ class EncontreiroForm extends TWindow
 
         $form_vazio = new stdClass;
         $form_vazio->tipo_enc_id = $param['tipo_enc_id'];
-        //$form_vazio->encontro_id = 4;
+        if (TSession::getValue('encontro_id')) {
+            $pega_encontro = TSession::getValue('encontro_id');
+            $form_vazio->encontro_id = $pega_encontro[0];
+        }
         $form_vazio->camisa_encontro_br = 2;
         $form_vazio->camisa_encontro_cor = 2;
         $form_vazio->disponibilidade_nt = 2;
