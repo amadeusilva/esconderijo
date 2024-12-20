@@ -12,36 +12,23 @@ class ViewPessoaFisica extends TRecord
 
     /**
 	CREATE VIEW pessoas.view_pessoa_fisica AS
-SELECT
-	pessoa.id,
-    pessoa.cpf_cnpj AS cpf,
-    pessoa.nome,
-    pessoa.popular,
-    pessoa_fisica.genero,
-    pessoa_fisica.dt_nascimento,
-    pessoa_fisica.estado_civil_id,
-    (SELECT item FROM globais.lista_itens WHERE lista_itens.id = pessoa_fisica.estado_civil_id) AS estado_civil,
-    pessoa.endereco_id,
-    (SELECT CONCAT(
-        (SELECT CONCAT(
-            (SELECT tipo_logradouro.abrev FROM enderecos.tipo_logradouro WHERE tipo_logradouro.id = logradouro.tipo_id),
-            ' ', logradouro.logradouro) FROM enderecos.logradouro WHERE logradouro.id = endereco.logradouro_id),
-        ', nº ', endereco.n, ', ', 
-        (SELECT 
-         CONCAT(bairro.bairro, ', ', 
-                (SELECT 
-                 CONCAT(cidade.cidade, '-', 
-                        (SELECT estado.sigla FROM enderecos.estado WHERE estado.id = cidade.estado_id)
-                       )
-                 FROM enderecos.cidade WHERE cidade.id = bairro.cidade_id)
-               )
-         FROM enderecos.bairro WHERE bairro.id = endereco.bairro_id), 
-        ', ', endereco.ponto_referencia) FROM enderecos.endereco WHERE endereco.id = pessoa.endereco_id) AS endereco,
-        pessoa.status_pessoa AS status_pessoa_id,
-    (SELECT item FROM globais.lista_itens WHERE lista_itens.id = pessoa.status_pessoa) AS status_pessoa,
-    pessoa.ck_pessoa
-FROM pessoas.pessoa, pessoas.pessoa_fisica WHERE pessoa.id = pessoa_fisica.pessoa_id
-AND pessoa.tipo_pessoa = 1
+SELECT    p.id,    p.cpf_cnpj AS cpf,    
+p.nome,    p.popular,    pf.genero,    pf.dt_nascimento,    pf.estado_civil_id,    li_estado.item AS estado_civil,    
+p.endereco_id,    CONCAT(        CONCAT(            tl.abrev, ' ', l.logradouro        ),        ', nº ', e.n, ', ',       
+CONCAT(            b.bairro, ', ',            CONCAT(                c.cidade, '-',                
+es.sigla            )        ),        ', ', e.ponto_referencia    ) AS endereco,    p.status_pessoa AS status_pessoa_id,    
+li_status.item AS status_pessoa,    p.ck_pessoa
+FROM    pessoas.pessoa p
+JOIN    pessoas.pessoa_fisica pf ON p.id = pf.pessoa_id 
+LEFT JOIN    globais.lista_itens li_estado ON li_estado.id = pf.estado_civil_id
+JOIN    enderecos.endereco e ON e.id = p.endereco_id
+JOIN    enderecos.logradouro l ON l.id = e.logradouro_id
+JOIN    enderecos.bairro b ON b.id = e.bairro_id
+JOIN    enderecos.cidade c ON c.id = b.cidade_id
+JOIN    enderecos.estado es ON es.id = c.estado_id
+JOIN    enderecos.tipo_logradouro tl ON tl.id = l.tipo_id 
+LEFT JOIN    globais.lista_itens li_status ON li_status.id = p.status_pessoa
+WHERE    p.tipo_pessoa = 1;
      */
 
     private $fone;

@@ -46,6 +46,9 @@ class CasalDataGrid extends TPage
         $this->form = new BootstrapFormBuilder('form_search_CasalDataGrid');
         $this->form->setFormTitle('Lista de Casais (Filtros)');
 
+        $this->setAfterSearchCallback( [$this, 'closeWindow' ] );
+
+
         // create the form fields
         $id        = new TEntry('relacao_id');
         $date_from = new TDate('date_from');
@@ -58,10 +61,10 @@ class CasalDataGrid extends TPage
         $casal_id = new TDBCombo('casal_id', 'adea', 'ViewCasal', 'relacao_id', '{casal} ({Casamento})', 'relacao_id');
         $casal_id->enableSearch();
 
-        $ele_id = new TDBCombo('ele_id', 'adea', 'ViewCasal', 'ele_id', '{Ele->nome} ({Ele->Nascimento})', 'ele_id');
+        $ele_id = new TDBCombo('ele_id', 'adea', 'ViewCasal', 'ele_id', '{ele_nome} ({EleNascimento})', 'ele_id');
         $ele_id->enableSearch();
 
-        $ela_id = new TDBCombo('ela_id', 'adea', 'ViewCasal', 'ela_id', '{Ela->nome} ({Ela->Nascimento})', 'ela_id');
+        $ela_id = new TDBCombo('ela_id', 'adea', 'ViewCasal', 'ela_id', '{ela_nome} ({ElaNascimento})', 'ela_id');
         $ela_id->enableSearch();
 
         //$ele_id = new TDBUniqueSearch('ele_id', 'adea', 'ViewCasal', 'Ele->nome', 'Ele->nome');
@@ -93,9 +96,8 @@ class CasalDataGrid extends TPage
         $this->form->setData(TSession::getValue('CasalDataGrid_filter_data'));
 
         // add the search form actions
-        $this->form->addAction('Buscar', new TAction([$this, 'onSearch']), 'fa:search');
-        $this->form->addActionLink('Novo',  new TAction(['DadosIniciaisPF', 'onClear'], ['register_state' => 'false']), 'fa:plus green');
-        $this->form->addActionLink('Limpar',  new TAction([$this, 'clear']), 'fa:eraser red');
+        $btn = $this->form->addAction(_t('Find'), new TAction([$this, 'onSearch']), 'fa:search');
+        $btn->class = 'btn btn-sm btn-primary';
 
         // creates a DataGrid
         $this->datagrid = new BootstrapDatagridWrapper(new TDataGrid);
@@ -192,14 +194,62 @@ class CasalDataGrid extends TPage
         $this->pageNavigation = new TPageNavigation;
         $this->pageNavigation->setAction(new TAction([$this, 'onReload']));
 
+        $panel = new TPanelGroup('', 'white');
+        $panel->add($this->datagrid);
+        $panel->addFooter($this->pageNavigation);
+        
+        $panel->addHeaderActionLink('Novo', new TAction(['DadosIniciaisPF', 'onClear'], ['register_state' => 'false']), 'fa:plus green');
+        $panel->addHeaderActionLink('Limpar', new TAction([$this, 'clear'], ['register_state' => 'false']), 'fa:eraser red');
+        $btn = $panel->addHeaderActionLink('Filtros', new TAction([$this, 'onShowWindowFilters']), 'fa:filter');
+        $btn->class = 'btn btn-primary';
+
+        // header actions
+        //$dropdown = new TDropDown('Exportar', 'fa:list');
+        //$dropdown->setPullSide('right');
+        //$dropdown->setButtonClass('btn btn-default waves-effect dropdown-toggle');
+        //$dropdown->addAction('Gerar CSV', new TAction([$this, 'onExportCSV'], ['register_state' => 'false', 'static'=>'1']), 'fa:table blue' );
+        //$dropdown->addAction('Gerar PDF', new TAction([$this, 'onExportPDF'], ['register_state' => 'false', 'static'=>'1']), 'far:file-pdf red' );
+        //$panel->addHeaderWidget( $dropdown );
+
         // vertical box container
         $container = new TVBox;
         $container->style = 'width: 100%';
         $container->add(new TXMLBreadCrumb('menu.xml', __CLASS__));
-        $container->add($this->form);
-        $container->add($panel = TPanelGroup::pack('', $this->datagrid, $this->pageNavigation));
-        $panel->getBody()->style = 'overflow-x:auto';
+        $container->add($panel);
         parent::add($container);
+    }
+
+    /**
+     *
+     */
+    public static function onShowWindowFilters($param = null)
+    {
+        try
+        {
+            // create a window
+            $page = TWindow::create('Filters', 600, null);
+            $page->removePadding();
+            
+            // instantiate self class, populate filters in construct
+            $embed = new self;
+            
+            // embed form inside window
+            $page->add($embed->form);
+            $page->setIsWrapped(true);
+            $page->show();
+        }
+        catch (Exception $e) 
+        {
+            new TMessage('error', $e->getMessage());    
+        }
+    }
+    
+    /**
+     * Close Windows
+     */
+    public static function closeWindow($param = null)
+    {
+        TWindow::closeWindow();
     }
 
     /**

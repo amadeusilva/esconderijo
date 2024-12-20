@@ -1,7 +1,10 @@
 <?php
 
+use Adianti\Widget\Form\TDate;
+use Adianti\Widget\Form\TEntry;
+
 /**
- * StandardDataGridView Listing
+ * SaleList
  *
  * @version    1.0
  * @package    samples
@@ -12,15 +15,14 @@
  */
 class PessoaFisicaDataGrid extends TPage
 {
+    protected $form;     // registration form
     protected $datagrid; // listing
     protected $pageNavigation;
 
-    // trait with onReload, onSearch, onDelete...
     use Adianti\Base\AdiantiStandardListTrait;
 
     /**
-     * Class constructor
-     * Creates the page, the form and the listing
+     * Page constructor
      */
     public function __construct()
     {
@@ -38,13 +40,55 @@ class PessoaFisicaDataGrid extends TPage
         //atualização cadastral
         //TSession::delValue('dados_pf_atualizacao_cadastral');
 
-        $this->setDatabase('adea');        // defines the database
-        $this->setActiveRecord('ViewPessoaFisica');       // defines the active record
-        $this->setLimit(1000);
+        $this->setDatabase('adea');          // defines the database
+        $this->setActiveRecord('ViewPessoaFisica');         // defines the active record
+        $this->setDefaultOrder('id', 'desc');    // defines the default order
+        $this->addFilterField('id', '=', 'id'); // filterField, operator, formField
+        $this->addFilterField('id', '=', 'nome'); // filterField, operator, formField
+        $this->addFilterField('popular', 'ilike', 'popular'); // filterField, operator, formField
+        $this->addFilterField('genero', '=', 'genero'); // filterField, operator, formField
+        $this->addFilterField('dt_nascimento', '=', 'dt_nascimento'); // filterField, operator, formField
+        $this->addFilterField('endereco', 'ilike', 'endereco'); // filterField, operator, formField
 
-        // creates the DataGrid
+        // creates the form
+        $this->form = new BootstrapFormBuilder('form_search_PessoaFisicaDataGrid');
+        $this->form->setFormTitle('Lista de Pessoas (Filtros)');
+
+        // create the form fields
+        $id        = new TEntry('id');
+
+        $nome = new TDBCombo('nome', 'adea', 'ViewPessoaFisica', 'id', '{nome} ({Nascimento})', 'id');
+        $nome->enableSearch();
+
+        $popular = new TEntry('popular');
+
+        $endereco = new TEntry('endereco');
+        //$dt_nascimento = new TDate('dt_nascimento');
+
+        // add the fields
+        $this->form->addFields([new TLabel('Id')],          [$id]);
+        $this->form->addFields([new TLabel('Nome')],    [$nome]);
+        $this->form->addFields([new TLabel('Nome Popular')],    [$popular]);
+        $this->form->addFields([new TLabel('Endereço')],    [$endereco]);
+        //$this->form->addFields([new TLabel('Nascimento')],    [$dt_nascimento]);
+
+        $id->setSize('50%');
+        $nome->setSize('100%');
+        $popular->setSize('100%');
+        //$dt_nascimento->setSize('100%');
+
+        // keep the form filled during navigation with session data
+        $this->form->setData(TSession::getValue('EncontristaDataGrid_filter_data'));
+
+        // add the search form actions
+        $this->form->addAction('Buscar', new TAction([$this, 'onSearch']), 'fa:search');
+        $this->form->addActionLink('Nova',  new TAction(['DadosIniciaisPF', 'onClear'], ['register_state' => 'false']), 'fa:plus green');
+        $this->form->addActionLink('Limpar',  new TAction([$this, 'clear']), 'fa:eraser red');
+
+        // creates a DataGrid
         $this->datagrid = new BootstrapDatagridWrapper(new TDataGrid);
-        $this->datagrid->width = "100%";
+        $this->datagrid->width = '100%';
+        //$this->datagrid->disableDefaultClick();
 
         // creates the datagrid columns
         $col_id    = new TDataGridColumn('id', 'Id', 'right');
@@ -56,6 +100,7 @@ class PessoaFisicaDataGrid extends TPage
         $col_endereco = new TDataGridColumn('endereco', 'Endereço', 'left');
         $col_status_pessoa = new TDataGridColumn('status_pessoa', 'Status', 'center');
 
+        // add the columns to the DataGrid
         $this->datagrid->addColumn($col_id);
         $this->datagrid->addColumn($col_cpf);
         $this->datagrid->addColumn($col_nome);
@@ -75,6 +120,7 @@ class PessoaFisicaDataGrid extends TPage
             return $value == 'F' ? 'Feminino' : 'Masculino';
         });
 
+        // creates the datagrid column actions
         $col_nome->enableAutoHide(1000);
         $col_endereco->enableAutoHide(1000);
 
@@ -96,47 +142,19 @@ class PessoaFisicaDataGrid extends TPage
         // create the datagrid model
         $this->datagrid->createModel();
 
-        // search box
-        $input_search = new TEntry('input_search');
-        $input_search->placeholder = 'Buscar';
-        $input_search->setSize('100%');
-
-        // enable fuse search by column name
-        $this->datagrid->enableSearch($input_search, 'id, cpf, nome, popular, genero, dt_nascimento, endereco, status_pessoa');
-
-        // creates the page navigation
+        // create the page navigation
         $this->pageNavigation = new TPageNavigation;
         $this->pageNavigation->enableCounters();
-        $this->pageNavigation->setAction(new TAction(array($this, 'onReload')));
+        $this->pageNavigation->setAction(new TAction([$this, 'onReload']));
 
-        $panel = new TPanelGroup('Pessoas Físicas');
-        $panel->addHeaderWidget($input_search);
-        $panel->add($this->datagrid);
-        $panel->addFooter($this->pageNavigation);
-
-        // turn on horizontal scrolling inside panel body
-        $panel->getBody()->style = "overflow-x:auto;";
-
-        // header actions
-        $dropdown = new TDropDown('Export', 'fa:download');
-        $dropdown->setButtonClass('btn btn-default waves-effect dropdown-toggle');
-        $dropdown->addAction('Save as CSV', new TAction([$this, 'onExportCSV'], ['register_state' => 'false', 'static' => '1']), 'fa:table fa-fw blue');
-        $dropdown->addAction('Save as XLS', new TAction([$this, 'onExportXLS'], ['register_state' => 'false', 'static' => '1']), 'fa:file-excel fa-fw purple');
-        $dropdown->addAction('Save as PDF', new TAction([$this, 'onExportPDF'], ['register_state' => 'false', 'static' => '1']), 'far:file-pdf fa-fw red');
-        $dropdown->addAction('Save as XML', new TAction([$this, 'onExportXML'], ['register_state' => 'false', 'static' => '1']), 'fa:code fa-fw green');
-
-        // add form actions
-        $panel->addHeaderActionLink('Nova',  new TAction(['DadosIniciaisPF', 'onClear'], ['register_state' => 'false']), 'fa:plus green');
-        $panel->addHeaderWidget($dropdown);
-
-        // creates the page structure using a table
-        $vbox = new TVBox;
-        $vbox->style = 'width: 100%';
-        $vbox->add(new TXMLBreadCrumb('menu.xml', __CLASS__));
-        $vbox->add($panel);
-
-        // add the table inside the page
-        parent::add($vbox);
+        // vertical box container
+        $container = new TVBox;
+        $container->style = 'width: 100%';
+        $container->add(new TXMLBreadCrumb('menu.xml', __CLASS__));
+        $container->add($this->form);
+        $container->add($panel = TPanelGroup::pack('', $this->datagrid, $this->pageNavigation));
+        $panel->getBody()->style = 'overflow-x:auto';
+        parent::add($container);
     }
 
     /**
@@ -187,5 +205,15 @@ class PessoaFisicaDataGrid extends TPage
             new TMessage('error', $e->getMessage()); // shows the exception error message
             TTransaction::rollback(); // undo all pending operations
         }
+    }
+
+
+    /**
+     * Clear filters
+     */
+    function clear()
+    {
+        $this->clearFilters();
+        $this->onReload();
     }
 }

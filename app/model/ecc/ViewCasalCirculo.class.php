@@ -12,18 +12,17 @@ class ViewCasalCirculo extends TRecord
 
     /**
 	CREATE VIEW ecc.view_casal_circulo AS
-SELECT
-circulo_historico.id,
-circulo_historico.casal_id,
-view_casal.casal,
-view_casal.dt_inicial as dt_casamento,
-circulo_historico.circulo_id
-FROM ecc.circulo_historico, pessoas.view_casal
-WHERE circulo_historico.casal_id = view_casal.relacao_id AND id IN (
-	SELECT MAX(id) 
-	FROM ecc.circulo_historico 
-	GROUP BY casal_id
-) order by id asc;
+        SELECT
+            ch.id,
+            ch.casal_id,
+            vc.casal,
+            vc.dt_inicial AS dt_casamento,    
+            ch.circulo_id
+        FROM    ecc.circulo_historico ch
+            JOIN     pessoas.view_casal vc ON ch.casal_id = vc.relacao_id
+            JOIN (    SELECT         casal_id,         MAX(id) AS max_id    FROM         ecc.circulo_historico   
+                GROUP BY         casal_id) AS max_ch ON ch.casal_id = max_ch.casal_id AND ch.id = max_ch.max_id
+                ORDER BY     ch.id ASC;
      */
 
     /**
@@ -40,8 +39,8 @@ WHERE circulo_historico.casal_id = view_casal.relacao_id AND id IN (
 
     public function get_Casamento()
     {
-        $casal = new ViewCasal($this->casal_id);
-        return TDate::date2br($casal->dt_casamento);
+        //$casal = new ViewCasal($this->casal_id);
+        return TDate::date2br($this->dt_casamento);
     }
 
     public function get_DadosCasal()

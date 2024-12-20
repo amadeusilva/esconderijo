@@ -12,26 +12,21 @@ class ViewEncontreiro extends TRecord
 
     /**
 	CREATE VIEW ecc.view_encontreiro AS
-SELECT 
-            montagem.id,
-            montagem.encontro_id,
-            CONCAT((SELECT num FROM globais.encontro WHERE encontro.id = montagem.encontro_id), ' ',
-            (SELECT (SELECT abrev FROM globais.lista_itens WHERE lista_itens.id = encontro.evento_id) FROM globais.encontro WHERE encontro.id = montagem.encontro_id)) AS encontro,
-            montagem.casal_id,
-            (SELECT casal FROM pessoas.view_casal WHERE view_casal.relacao_id = montagem.casal_id) AS casal,
-            montagem.conducao_propria_id,
-            (SELECT placa FROM globais.conducao_propria WHERE conducao_propria.id = montagem.conducao_propria_id) AS conducao_propria,
-            montagem.circulo_id,
-            (SELECT item FROM globais.lista_itens WHERE lista_itens.id = montagem.circulo_id) AS circulo,
-            encontreiro.camisa_encontro_br,
-            encontreiro.camisa_encontro_cor,
-            encontreiro.disponibilidade_nt,
-            encontreiro.coordenar_s_n,
-            encontreiro_equipe.funcao_id,  
-            encontreiro_equipe.equipe_id,            
-            (SELECT equipe FROM globais.equipe WHERE equipe.id = encontreiro_equipe.equipe_id) AS equipe
-FROM ecc.montagem, ecc.encontreiro, ecc.encontreiro_equipe WHERE montagem.id = encontreiro.montagem_id AND encontreiro.id = encontreiro_equipe.encontreiro_id
-AND montagem.tipo_id = 2 AND encontreiro_equipe.tipo_enc_id = 1
+SELECT     montagem.id,    montagem.encontro_id,    CONCAT(encontro.num, ' ', evento.abrev) AS encontro,    
+montagem.casal_id,    casal.casal AS casal,    montagem.conducao_propria_id,    conducao_propria.placa AS conducao_propria,    
+montagem.circulo_id,    circulo.item AS circulo,    encontreiro.camisa_encontro_br,    encontreiro.camisa_encontro_cor,    
+encontreiro.disponibilidade_nt,    encontreiro.coordenar_s_n,    encontreiro_equipe.funcao_id,      encontreiro_equipe.equipe_id,                
+equipe.equipe AS equipe
+FROM     ecc.montagem
+JOIN     ecc.encontreiro ON montagem.id = encontreiro.montagem_id
+JOIN     ecc.encontreiro_equipe ON encontreiro.id = encontreiro_equipe.encontreiro_id
+JOIN     globais.encontro ON encontro.id = montagem.encontro_id
+JOIN     globais.lista_itens AS evento ON evento.id = encontro.evento_id
+JOIN     pessoas.view_casal AS casal ON casal.relacao_id = montagem.casal_id
+LEFT JOIN     globais.conducao_propria ON conducao_propria.id = montagem.conducao_propria_id
+LEFT JOIN     globais.lista_itens AS circulo ON circulo.id = montagem.circulo_id
+LEFT JOIN     globais.equipe ON equipe.id = encontreiro_equipe.equipe_id
+WHERE     montagem.tipo_id = 2     AND encontreiro_equipe.tipo_enc_id = 1;
      */
 
     /**

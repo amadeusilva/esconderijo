@@ -13,21 +13,36 @@ class ViewEncontrista extends TRecord
     /**
 	CREATE VIEW ecc.view_encontrista AS
 SELECT 
-            montagem.id,
-            montagem.encontro_id,
-            CONCAT((SELECT num FROM globais.encontro WHERE encontro.id = montagem.encontro_id), ' ',
-            (SELECT (SELECT abrev FROM globais.lista_itens WHERE lista_itens.id = encontro.evento_id) FROM globais.encontro WHERE encontro.id = montagem.encontro_id)) AS encontro,
-            montagem.casal_id,
-            (SELECT casal FROM pessoas.view_casal WHERE view_casal.relacao_id = montagem.casal_id) AS casal,
-            montagem.conducao_propria_id,
-            (SELECT placa FROM globais.conducao_propria WHERE conducao_propria.id = montagem.conducao_propria_id) AS conducao_propria,
-            montagem.circulo_id,
-            (SELECT item FROM globais.lista_itens WHERE lista_itens.id = montagem.circulo_id) AS circulo,
-            encontrista.secretario_s_n,
-            encontrista.casal_convite_id,
-            (SELECT casal FROM pessoas.view_casal WHERE view_casal.relacao_id = encontrista.casal_convite_id) AS casal_convite
-FROM ecc.montagem, ecc.encontrista WHERE montagem.id = encontrista.montagem_id
-AND montagem.tipo_id = 1
+    montagem.id,
+    montagem.encontro_id,
+    CONCAT(encontro.num, ' ', evento.abrev) AS encontro,
+    montagem.casal_id,
+    casal_info.casal AS casal,
+    montagem.conducao_propria_id,
+    conducao_propria.placa AS conducao_propria,
+    montagem.circulo_id,
+    circulo.item AS circulo,
+    encontrista.secretario_s_n,
+    encontrista.casal_convite_id,
+    casal_convite_info.casal AS casal_convite
+FROM 
+    ecc.montagem
+INNER JOIN 
+    ecc.encontrista ON montagem.id = encontrista.montagem_id
+LEFT JOIN 
+    globais.encontro AS encontro ON montagem.encontro_id = encontro.id
+LEFT JOIN 
+    globais.lista_itens AS evento ON encontro.evento_id = evento.id
+LEFT JOIN 
+    pessoas.view_casal AS casal_info ON montagem.casal_id = casal_info.relacao_id
+LEFT JOIN 
+    globais.conducao_propria AS conducao_propria ON montagem.conducao_propria_id = conducao_propria.id
+LEFT JOIN 
+    globais.lista_itens AS circulo ON montagem.circulo_id = circulo.id
+LEFT JOIN 
+    pessoas.view_casal AS casal_convite_info ON encontrista.casal_convite_id = casal_convite_info.relacao_id
+WHERE 
+    montagem.tipo_id = 1;
      */
 
     /**

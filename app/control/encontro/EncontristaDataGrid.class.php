@@ -54,10 +54,10 @@ class EncontristaDataGrid extends TPage
         $casal_id = new TDBCombo('casal_id', 'adea', 'ViewCasal', 'relacao_id', '{casal} ({Casamento})', 'relacao_id');
         $casal_id->enableSearch();
 
-        $ele_id = new TDBCombo('ele_id', 'adea', 'ViewCasal', 'relacao_id', '{Ele->nome} ({Ele->Nascimento})', 'ele_id');
+        $ele_id = new TDBCombo('ele_id', 'adea', 'ViewCasal', 'relacao_id', '{ele_nome} ({EleNascimento})', 'ele_id');
         $ele_id->enableSearch();
 
-        $ela_id = new TDBCombo('ela_id', 'adea', 'ViewCasal', 'relacao_id', '{Ela->nome} ({Ela->Nascimento})', 'ela_id');
+        $ela_id = new TDBCombo('ela_id', 'adea', 'ViewCasal', 'relacao_id', '{ela_nome} ({ElaNascimento})', 'ela_id');
         $ela_id->enableSearch();
 
         //$ele_id = new TDBUniqueSearch('ele_id', 'adea', 'ViewCasal', 'Ele->nome', 'Ele->nome');

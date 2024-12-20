@@ -12,26 +12,20 @@ class ViewEdg extends TRecord
 
     /**
 	CREATE VIEW ecc.view_edg AS
-SELECT 
-            montagem.id,
-            montagem.encontro_id,
-            CONCAT((SELECT num FROM globais.encontro WHERE encontro.id = montagem.encontro_id), ' ',
-            (SELECT (SELECT abrev FROM globais.lista_itens WHERE lista_itens.id = encontro.evento_id) FROM globais.encontro WHERE encontro.id = montagem.encontro_id)) AS encontro,
-            montagem.casal_id,
-            (SELECT casal FROM pessoas.view_casal WHERE view_casal.relacao_id = montagem.casal_id) AS casal,
-            montagem.conducao_propria_id,
-            (SELECT placa FROM globais.conducao_propria WHERE conducao_propria.id = montagem.conducao_propria_id) AS conducao_propria,
-            montagem.circulo_id,
-            (SELECT item FROM globais.lista_itens WHERE lista_itens.id = montagem.circulo_id) AS circulo,
-            encontreiro.camisa_encontro_br,
-            encontreiro.camisa_encontro_cor,
-            encontreiro.disponibilidade_nt,
-            encontreiro.coordenar_s_n,
-            encontreiro_equipe.funcao_id,  
-            encontreiro_equipe.equipe_id as pasta_id,            
-            (SELECT item FROM globais.lista_itens WHERE lista_itens.id = encontreiro_equipe.equipe_id) AS pasta
-FROM ecc.montagem, ecc.encontreiro, ecc.encontreiro_equipe WHERE montagem.id = encontreiro.montagem_id AND encontreiro.id = encontreiro_equipe.encontreiro_id
-AND montagem.tipo_id = 2 AND encontreiro_equipe.tipo_enc_id = 3
+SELECT     m.id,    m.encontro_id,    CONCAT(e.num, ' ', li.abrev) AS encontro,    m.casal_id,    vc.casal AS casal,    
+m.conducao_propria_id,    cp.placa AS conducao_propria,    m.circulo_id,    li_c.item AS circulo,    
+e_cam.camisa_encontro_br,    e_cam.camisa_encontro_cor,    e_cam.disponibilidade_nt,    e_cam.coordenar_s_n,    
+ee.funcao_id,      ee.equipe_id AS pasta_id,                li_e.item AS pasta
+FROM     ecc.montagem m
+JOIN     ecc.encontreiro e_cam ON m.id = e_cam.montagem_id
+JOIN     ecc.encontreiro_equipe ee ON e_cam.id = ee.encontreiro_id
+JOIN     globais.encontro e ON e.id = m.encontro_id
+JOIN     globais.lista_itens li ON li.id = e.evento_id
+JOIN     pessoas.view_casal vc ON vc.relacao_id = m.casal_id
+LEFT JOIN     globais.conducao_propria cp ON cp.id = m.conducao_propria_id
+LEFT JOIN     globais.lista_itens li_c ON li_c.id = m.circulo_id
+LEFT JOIN     globais.lista_itens li_e ON li_e.id = ee.equipe_id
+WHERE     m.tipo_id = 2     AND ee.tipo_enc_id = 3;
      */
 
     /**
